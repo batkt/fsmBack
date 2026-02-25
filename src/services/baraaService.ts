@@ -1,5 +1,5 @@
 import { getConn } from "../utils/db";
-import getBaraaModel from "../models/baraa";
+const getBaraaModel = require("../models/baraa");
 
 export const baraaJagsaalt = async (query: any) => {
   return await getBaraaModel(getConn()).find(query).sort({ createdAt: -1 }).lean();

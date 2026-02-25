@@ -11,7 +11,7 @@ import { taskTuukhUusgekh } from "../services/taskTuukhService";
 export const getTasks = async (req: any, res: Response, next: any) => {
   try {
     const query: any = {
-      baiguullagiinId: req.ajiltan.baiguullagiinId,
+      baiguullagiinId: req.ajiltan?.baiguullagiinId || req.query.baiguullagiinId,
     };
 
     if (req.query.projectId) query.projectId = req.query.projectId;
@@ -41,7 +41,7 @@ export const createTask = async (req: any, res: Response, next: any) => {
   try {
     const data = {
       ...req.body,
-      baiguullagiinId: req.ajiltan.baiguullagiinId,
+      baiguullagiinId: req.ajiltan?.baiguullagiinId || req.body.baiguullagiinId,
     };
     const task = await taskUusgekh(data);
     res.status(201).json({ success: true, data: task });

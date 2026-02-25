@@ -1,4 +1,5 @@
-import mongoose, { Schema } from "mongoose";
+const mongoose = require("mongoose");
+const Schema = mongoose.Schema;
 
 mongoose.pluralize(null);
 
@@ -28,9 +29,9 @@ chatSchema.index({ projectId: 1, taskId: 1, createdAt: -1 });
 chatSchema.index({ baiguullagiinId: 1, barilgiinId: 1 });
 chatSchema.index({ ajiltniiId: 1 });
 
-export default function getChatModel(conn: any) {
-  if (!conn || !conn.kholbolt) {
+module.exports = function (conn: any) {
+  if (!conn || !conn.kholbolt)
     throw new Error("Холболтын мэдээлэл заавал бөглөх шаардлагатай!");
-  }
-  return conn.kholbolt.model("chat", chatSchema);
-}
+  conn = conn.kholbolt;
+  return conn.model("chat", chatSchema);
+};

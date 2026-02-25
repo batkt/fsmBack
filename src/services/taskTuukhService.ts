@@ -1,5 +1,5 @@
 import { getConn } from "../utils/db";
-import getTaskTuukhModel from "../models/taskTuukh";
+const getTaskTuukhModel = require("../models/taskTuukh");
 
 export const taskTuukhJagsaalt = async (query: any) => {
   return await getTaskTuukhModel(getConn()).find(query).sort({ createdAt: -1 }).lean();

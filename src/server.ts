@@ -6,13 +6,32 @@ const { db }: any = require("zevbackv2");
 
 const app: Application = express();
 
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
+  if (req.method === "OPTIONS") return res.sendStatus(200);
+  next();
+});
+
 app.use(express.json());
 
 // Routes
 import authRoutes from "./routes/authRoutes";
 import projectRoutes from "./routes/projectRoutes";
-// app.use(authRoutes);
+import taskRoutes from "./routes/taskRoutes";
+import taskTuukhRoutes from "./routes/taskTuukhRoutes";
+import chatRoutes from "./routes/chatRoutes";
+import baraaRoutes from "./routes/baraaRoutes";
+import uilchluulegchRoutes from "./routes/uilchluulegchRoutes";
+
+app.use(authRoutes);
 app.use(projectRoutes);
+app.use(taskRoutes);
+app.use(taskTuukhRoutes);
+app.use(chatRoutes);
+app.use(baraaRoutes);
+app.use(uilchluulegchRoutes);
 
 
 const server = http.createServer(app);
@@ -21,7 +40,7 @@ async function start() {
   try {
     await db.kholboltUusgey(
       app,
-      "mongodb://admin:Br1stelback1@103.143.40.175:27017/turees?authSource=admin",
+      process.env.BAAZ,
     );
 
     server.listen(config.PORT, () => {

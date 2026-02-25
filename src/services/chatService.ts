@@ -1,5 +1,5 @@
 import { getConn } from "../utils/db";
-import getChatModel from "../models/chat";
+const getChatModel = require("../models/chat");
 
 export const chatJagsaalt = async (query: any) => {
   return await getChatModel(getConn()).find(query).sort({ createdAt: 1 }).lean();

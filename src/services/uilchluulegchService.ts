@@ -1,5 +1,5 @@
 import { getConn } from "../utils/db";
-import getUilchluulegchModel from "../models/uilchluulegch";
+const getUilchluulegchModel = require("../models/uilchluulegch");
 
 export const uilchluulegchJagsaalt = async (query: any) => {
   return await getUilchluulegchModel(getConn()).find(query).sort({ createdAt: -1 }).lean();

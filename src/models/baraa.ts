@@ -1,27 +1,28 @@
-import mongoose, { Schema } from "mongoose";
+const mongoose = require("mongoose");
+const Schema = mongoose.Schema;
 
 mongoose.pluralize(null);
 
 const baraaSchema = new Schema(
   {
-    ner: { type: String, required: true }, 
+    ner: { type: String, required: true },
     turul: {
       type: String,
       enum: ["tseverlegch", "ugaalgiin", "ariutgagch", "bagaj", "busad"],
       default: "tseverlegch"
     },
-    tailbar: { type: String }, 
+    tailbar: { type: String },
     negj: {
       type: String,
       enum: ["shirheg", "litr", "kg", "haire", "bogts", "dana"],
       default: "shirheg"
     },
     une: { type: Number, default: 0 },
-    uldegdel: { type: Number, default: 0 }, 
+    uldegdel: { type: Number, default: 0 },
     doodUldegdel: { type: Number, default: 0 },
-    barcode: { type: String }, 
+    barcode: { type: String },
     zurgiinId: { type: String },
-    brand: { type: String }, 
+    brand: { type: String },
     niiluulegch: { type: String },
     idevhtei: { type: Boolean, default: true },
     baiguullagiinId: { type: String, required: true },
@@ -37,9 +38,9 @@ baraaSchema.index({ baiguullagiinId: 1, turul: 1 });
 baraaSchema.index({ ner: "text" });
 baraaSchema.index({ barcode: 1 });
 
-export default function getBaraaModel(conn: any) {
-  if (!conn || !conn.kholbolt) {
+module.exports = function (conn: any) {
+  if (!conn || !conn.kholbolt)
     throw new Error("Холболтын мэдээлэл заавал бөглөх шаардлагатай!");
-  }
-  return conn.kholbolt.model("baraa", baraaSchema);
-}
+  conn = conn.kholbolt;
+  return conn.model("baraa", baraaSchema);
+};

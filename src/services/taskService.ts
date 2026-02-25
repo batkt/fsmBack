@@ -1,5 +1,5 @@
 import { getConn } from "../utils/db";
-import getTaskModel from "../models/task";
+const getTaskModel = require("../models/task");
 
 export const taskJagsaalt = async (query: any) => {
   return await getTaskModel(getConn()).find(query).sort({ createdAt: -1 }).lean();

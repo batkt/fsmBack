@@ -1,4 +1,5 @@
-import mongoose, { Schema } from "mongoose";
+const mongoose = require("mongoose");
+const Schema = mongoose.Schema;
 
 mongoose.pluralize(null);
 
@@ -35,9 +36,9 @@ taskTuukhSchema.index({ baiguullagiinId: 1, barilgiinId: 1, projectId: 1 });
 taskTuukhSchema.index({ projectId: 1, duussanOgnoo: -1 });
 taskTuukhSchema.index({ hariutsagchId: 1 });
 
-export default function getTaskTuukhModel(conn: any) {
-  if (!conn || !conn.kholbolt) {
+module.exports = function (conn: any) {
+  if (!conn || !conn.kholbolt)
     throw new Error("Холболтын мэдээлэл заавал бөглөх шаардлагатай!");
-  }
-  return conn.kholbolt.model("taskTuukh", taskTuukhSchema);
-}
+  conn = conn.kholbolt;
+  return conn.model("taskTuukh", taskTuukhSchema);
+};

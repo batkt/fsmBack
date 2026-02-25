@@ -1,5 +1,5 @@
 import { getConn } from "../utils/db";
-import getProjectModel from "../models/project";
+const getProjectModel = require("../models/project");
 
 export const projectJagsaalt = async (query: any) => {
   return await getProjectModel(getConn()).find(query).sort({ createdAt: -1 }).lean();

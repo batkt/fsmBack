@@ -10,10 +10,10 @@ import { authMiddleware } from "../middlewares/auth";
 
 const router = Router();
 
-router.get("/projects", authMiddleware, getProjects);
-router.get("/projects/:id", authMiddleware, getProject);
-router.post("/projects", authMiddleware, createProject);
-router.put("/projects/:id", authMiddleware, updateProject);
-router.delete("/projects/:id", authMiddleware, deleteProject);
+router.get("/projects",  getProjects);
+router.get("/projects/:id", getProject);
+router.post("/projects", createProject);
+router.put("/projects/:id", updateProject);
+router.delete("/projects/:id", deleteProject);
 
 export default router;
