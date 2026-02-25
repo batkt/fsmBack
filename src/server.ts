@@ -1,29 +1,41 @@
 import express, { Application, Request, Response } from "express";
 import http from "http";
+import { config } from "./config";
 
-const PORT = process.env.PORT || 3000;
+const { db }: any = require("zevbackv2");
 
 const app: Application = express();
 
-// Middleware
 app.use(express.json());
 
-// Basic health check route
-app.get("/health", (req: Request, res: Response) => {
-  res.status(200).json({ status: "ok" });
-});
+// Routes
+import authRoutes from "./routes/authRoutes";
+import projectRoutes from "./routes/projectRoutes";
+// app.use(authRoutes);
+app.use(projectRoutes);
 
-// Root route
-app.get("/", (req: Request, res: Response) => {
-  res.send("Hello from TypeScript Express server 👋");
-});
 
-// Create HTTP server
 const server = http.createServer(app);
 
-server.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
-});
+async function start() {
+  try {
+    await db.kholboltUusgey(
+      app,
+      "mongodb://admin:Br1stelback1@103.143.40.175:27017/turees?authSource=admin",
+    );
+
+    server.listen(config.PORT, () => {
+      console.log(
+        `Server is running on http://localhost:${config.PORT} and connected via zevbackv2`,
+      );
+    });
+  } catch (err) {
+    console.error("[startup] Failed to start service:", err);
+    process.exit(1);
+  }
+}
+
+start();
 
 export default app;
 
