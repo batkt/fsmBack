@@ -9,7 +9,17 @@ export const getChats = async (req: any, res: Response, next: any) => {
     };
 
     if (req.query.projectId) query.projectId = req.query.projectId;
-    if (req.query.taskId) query.taskId = req.query.taskId;
+    
+    if (req.query.taskId) {
+      query.taskId = req.query.taskId;
+    } else if (req.query.projectId) {
+  
+      query.$or = [
+        { taskId: { $exists: false } },
+        { taskId: null },
+        { taskId: "" }
+      ];
+    }
 
     const chats = await chatJagsaalt(query);
     res.json({ success: true, data: chats });

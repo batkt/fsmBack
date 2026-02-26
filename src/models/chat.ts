@@ -32,9 +32,9 @@ chatSchema.index({ projectId: 1, taskId: 1, createdAt: -1 });
 chatSchema.index({ baiguullagiinId: 1, barilgiinId: 1 });
 chatSchema.index({ ajiltniiId: 1 });
 
-module.exports = function (conn: any) {
-  if (!conn || !conn.kholbolt)
+module.exports = function a(conn: any, connectFSM = true, modelName = "chat") {
+  if (!conn || !conn.kholbolt || !conn.kholboltFSM)
     throw new Error("Холболтын мэдээлэл заавал бөглөх шаардлагатай!");
-  conn = conn.kholbolt;
-  return conn.model("chat", chatSchema);
+  conn = connectFSM && !!conn.kholboltFSM ? conn.kholboltFSM : conn.kholbolt;
+  return conn.model(modelName, chatSchema);
 };

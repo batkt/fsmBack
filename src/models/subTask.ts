@@ -20,9 +20,9 @@ const subTaskSchema = new Schema(
 subTaskSchema.index({ taskId: 1 });
 subTaskSchema.index({ baiguullagiinId: 1, barilgiinId: 1 });
 
-module.exports = function (conn: any) {
-  if (!conn || !conn.kholbolt)
+module.exports = function a(conn: any, connectFSM = true, modelName = "subTask") {
+  if (!conn || !conn.kholbolt || !conn.kholboltFSM)
     throw new Error("Холболтын мэдээлэл заавал бөглөх шаардлагатай!");
-  conn = conn.kholbolt;
-  return conn.model("subTask", subTaskSchema);
+  conn = connectFSM && !!conn.kholboltFSM ? conn.kholboltFSM : conn.kholbolt;
+  return conn.model(modelName, subTaskSchema);
 };

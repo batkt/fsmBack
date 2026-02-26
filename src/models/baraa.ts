@@ -38,9 +38,9 @@ baraaSchema.index({ baiguullagiinId: 1, turul: 1 });
 baraaSchema.index({ ner: "text" });
 baraaSchema.index({ barcode: 1 });
 
-module.exports = function (conn: any) {
-  if (!conn || !conn.kholbolt)
+module.exports = function a(conn: any, connectFSM = true, modelName = "baraa") {
+  if (!conn || !conn.kholbolt || !conn.kholboltFSM)
     throw new Error("Холболтын мэдээлэл заавал бөглөх шаардлагатай!");
-  conn = conn.kholbolt;
-  return conn.model("baraa", baraaSchema);
+  conn = connectFSM && !!conn.kholboltFSM ? conn.kholboltFSM : conn.kholbolt;
+  return conn.model(modelName, baraaSchema);
 };
