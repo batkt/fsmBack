@@ -107,3 +107,30 @@ To send a file, send a `multipart/form-data` request.
 *   **Response**: Returns the chat message object including `fileZam` and `turul` (`zurag` for images, `file` for others).
 *   **Action**: The server saves the file to `/uploads`, creates a chat record, and broadcasts a `new_message` event with the file link.
 
+### Marking Messages as Read
+To track which users have read which messages, send an array of message IDs.
+
+*   **URL**: `PUT /chats/read`
+*   **Body**:
+    ```json
+    {
+      "chatIds": ["699fc125...", "699fad12..."],
+      "projectId": "...",  
+      "taskId": "...",     
+      "ajiltniiId": "..."  
+    }
+    ```
+    *(Note: `ajiltniiId` is taken from the token if available. `projectId` or `taskId` are optional but needed if you want the server to broadcast a socket update.)*
+*   **Action**: The server will push `ajiltniiId` into the `unshsan` array of those chat messages. It will also broadcast a `messages_read` socket event to the corresponding room so other users can see read receipts.
+
+### Read Receipts (Socket)
+Listen for this to show "Seen by X" in real-time.
+*   **Event:** `messages_read`
+*   **Data:**
+    ```json
+    {
+      "chatIds": ["699fc1..."],
+      "ajiltniiId": "695c57..."
+    }
+    ```
+

@@ -22,7 +22,8 @@ export const initSocket = (server: HttpServer) => {
       userStatus.set(data.userId, status);
       socketToUser.set(socket.id, data.userId);
       
-      // Broadcast to all that this user is online/updated
+      socket.emit("online_users", Array.from(userStatus.entries()));
+
       io.emit("user_status_changed", { userId: data.userId, status });
       console.log(`User ${data.userId} is now ${status}`);
     });

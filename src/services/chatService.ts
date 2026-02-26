@@ -12,3 +12,10 @@ export const chatUusgekh = async (data: any) => {
 export const chatUstgakh = async (id: string) => {
   return await getChatModel(getConn()).findByIdAndDelete(id);
 };
+
+export const chatUnshuulakh = async (chatIds: string[], ajiltniiId: string) => {
+  return await getChatModel(getConn()).updateMany(
+    { _id: { $in: chatIds } },
+    { $addToSet: { unshsan: ajiltniiId } }
+  );
+};

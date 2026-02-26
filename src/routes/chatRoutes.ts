@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getChats, createChat, deleteChat, uploadFile } from "../controllers/chatController";
+import { getChats, createChat, deleteChat, uploadFile, readChats } from "../controllers/chatController";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
@@ -26,6 +26,7 @@ const upload = multer({ storage });
 
 router.get("/chats", getChats);
 router.post("/chats", createChat);
+router.put("/chats/read", readChats);
 router.post("/chats/upload", upload.single("file"), uploadFile);
 router.delete("/chats/:id", deleteChat);
 

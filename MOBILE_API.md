@@ -266,6 +266,21 @@ Content-Type: multipart/form-data
 > Images auto-detect as `turul: "zurag"`, everything else is `turul: "file"`.
 > Files are accessible at: `http://localhost:8000/uploads/[filename]`
 
+### Mark Messages as Read
+Mark multiple messages as read by pushing the user's ID into the `unshsan` array.
+```
+PUT /chats/read
+```
+```json
+{
+  "chatIds": ["699fc1...", "699fa..."],
+  "projectId": "...",  
+  "taskId": "...",     
+  "ajiltniiId": "..."
+}
+```
+> Including `projectId` or `taskId` allows the server to broadcast a `messages_read` socket event to other users.
+
 ### Delete Message
 ```
 DELETE /chats/:id
