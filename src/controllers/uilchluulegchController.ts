@@ -9,9 +9,9 @@ import {
 
 export const getUilchluulegchs = async (req: any, res: Response, next: any) => {
   try {
-    const query: any = {
-      baiguullagiinId: req.ajiltan.baiguullagiinId,
-    };
+    const query: any = {};
+    const bid = req.ajiltan?.baiguullagiinId || req.query.baiguullagiinId;
+    if (bid) query.baiguullagiinId = bid;
 
     if (req.query.tuluv) query.tuluv = req.query.tuluv;
     if (req.query.barilgiinId) query.barilgiinId = req.query.barilgiinId;
@@ -35,9 +35,10 @@ export const getUilchluulegch = async (req: any, res: Response, next: any) => {
 
 export const createUilchluulegch = async (req: any, res: Response, next: any) => {
   try {
+    const bid = req.ajiltan?.baiguullagiinId || req.body.baiguullagiinId;
     const data = {
       ...req.body,
-      baiguullagiinId: req.ajiltan.baiguullagiinId,
+      ...(bid && { baiguullagiinId: bid })
     };
     const item = await uilchluulegchUusgekh(data);
     res.status(201).json({ success: true, data: item });

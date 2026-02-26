@@ -1,10 +1,11 @@
 import { Response } from "express";
 import { chatJagsaalt, chatUusgekh, chatUstgakh } from "../services/chatService";
+import { emitToRoom } from "../utils/socket";
 
 export const getChats = async (req: any, res: Response, next: any) => {
   try {
     const query: any = {
-      baiguullagiinId: req.ajiltan.baiguullagiinId,
+      baiguullagiinId: req.ajiltan?.baiguullagiinId || req.query.baiguullagiinId,
     };
 
     if (req.query.projectId) query.projectId = req.query.projectId;
@@ -21,11 +22,15 @@ export const createChat = async (req: any, res: Response, next: any) => {
   try {
     const data = {
       ...req.body,
-      ajiltniiId: req.ajiltan.id,
-      ajiltniiNer: req.ajiltan.ner,
-      baiguullagiinId: req.ajiltan.baiguullagiinId,
+      ajiltniiId: req.ajiltan?.id || req.body.ajiltniiId,
+      ajiltniiNer: req.ajiltan?.ner || req.body.ajiltniiNer,
+      baiguullagiinId: req.ajiltan?.baiguullagiinId || req.body.baiguullagiinId,
     };
     const chat = await chatUusgekh(data);
+
+    const room = chat.taskId ? `task_${chat.taskId}` : `project_${chat.projectId}`;
+    emitToRoom(room, "new_message", chat);
+
     res.status(201).json({ success: true, data: chat });
   } catch (err) {
     next(err);

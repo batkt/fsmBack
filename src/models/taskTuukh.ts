@@ -5,7 +5,8 @@ mongoose.pluralize(null);
 
 const taskTuukhSchema = new Schema(
   {
-    taskId: { type: String, required: true },
+    sourceTaskId: { type: String, required: true }, 
+    taskCode: { type: String }, 
     projectId: { type: String, required: true },
     ner: { type: String },
     tailbar: { type: String },
@@ -25,7 +26,11 @@ const taskTuukhSchema = new Schema(
       ognoo: { type: Date }
     }],
     baiguullagiinId: { type: String, required: true },
-    barilgiinId: { type: String, required: true }
+    barilgiinId: { type: String, required: true },
+    ajiltniiId: { type: String },
+    ajiltniiNer: { type: String },
+    uildel: { type: String }, // e.g., 'created', 'updated', 'completed', 'deleted'
+    turul: { type: String, default: "task" } // e.g., 'task', 'milestone'
   },
   {
     timestamps: true

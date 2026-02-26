@@ -6,7 +6,6 @@ import {
   updateTask,
   deleteTask,
 } from "../controllers/taskController";
-import { authMiddleware } from "../middlewares/auth";
 
 const router = Router();
 

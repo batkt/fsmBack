@@ -24,6 +24,7 @@ import taskTuukhRoutes from "./routes/taskTuukhRoutes";
 import chatRoutes from "./routes/chatRoutes";
 import baraaRoutes from "./routes/baraaRoutes";
 import uilchluulegchRoutes from "./routes/uilchluulegchRoutes";
+import subTaskRoutes from "./routes/subTaskRoutes";
 
 app.use(authRoutes);
 app.use(projectRoutes);
@@ -32,9 +33,13 @@ app.use(taskTuukhRoutes);
 app.use(chatRoutes);
 app.use(baraaRoutes);
 app.use(uilchluulegchRoutes);
+app.use(subTaskRoutes);
 
+
+import { initSocket } from "./utils/socket";
 
 const server = http.createServer(app);
+initSocket(server);
 
 async function start() {
   try {

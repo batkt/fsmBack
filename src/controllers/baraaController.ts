@@ -9,9 +9,9 @@ import {
 
 export const getBaraas = async (req: any, res: Response, next: any) => {
   try {
-    const query: any = {
-      baiguullagiinId: req.ajiltan.baiguullagiinId,
-    };
+    const query: any = {};
+    const bid = req.ajiltan?.baiguullagiinId || req.query.baiguullagiinId;
+    if (bid) query.baiguullagiinId = bid;
 
     if (req.query.turul) query.turul = req.query.turul;
     if (req.query.barilgiinId) query.barilgiinId = req.query.barilgiinId;
@@ -36,9 +36,10 @@ export const getBaraa = async (req: any, res: Response, next: any) => {
 
 export const createBaraa = async (req: any, res: Response, next: any) => {
   try {
+    const bid = req.ajiltan?.baiguullagiinId || req.body.baiguullagiinId;
     const data = {
       ...req.body,
-      baiguullagiinId: req.ajiltan.baiguullagiinId,
+      ...(bid && { baiguullagiinId: bid })
     };
     const baraa = await baraaUusgekh(data);
     res.status(201).json({ success: true, data: baraa });

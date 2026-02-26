@@ -6,6 +6,7 @@ mongoose.pluralize(null);
 const taskSchema = new Schema(
   {
     projectId: { type: String, required: true },
+    taskId: { type: String, unique: true }, 
     ner: { type: String, required: true },
     tailbar: { type: String },
     zereglel: {

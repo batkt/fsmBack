@@ -27,6 +27,7 @@
     "moment": "^2.30.1",
     "mongoose": "^6.13.9",
     "request": "^2.88.2",
+    "socket.io": "^4.8.3",
     "zevbackv2": "^1.1.52",
     "zuragpack": "^1.0.17"
   },

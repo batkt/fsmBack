@@ -4,7 +4,7 @@ import { taskTuukhJagsaalt, taskTuukhNegAvakh } from "../services/taskTuukhServi
 export const getTaskTuukhs = async (req: any, res: Response, next: any) => {
   try {
     const query: any = {
-      baiguullagiinId: req.ajiltan.baiguullagiinId,
+      baiguullagiinId: req.ajiltan?.baiguullagiinId || req.query.baiguullagiinId,
     };
 
     if (req.query.projectId) query.projectId = req.query.projectId;

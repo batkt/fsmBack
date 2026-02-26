@@ -6,7 +6,28 @@ export const taskJagsaalt = async (query: any) => {
 };
 
 export const taskUusgekh = async (data: any) => {
-  return await getTaskModel(getConn()).create(data);
+  const conn = getConn();
+  const getProjectModel = require("../models/project");
+  const TaskModel = getTaskModel(conn);
+  const ProjectModel = getProjectModel(conn);
+
+  const project = await ProjectModel.findById(data.projectId);
+  if (!project) throw new Error("Төсөл олдсонгүй");
+
+  const prefix = (project.ner).substring(0, 3).toUpperCase();
+
+  const updatedProject = await ProjectModel.findByIdAndUpdate(
+    data.projectId,
+    { $inc: { taskCount: 1 } },
+    { new: true }
+  );
+
+  const taskNumber = updatedProject.taskCount;
+  const formattedNumber = taskNumber.toString().padStart(4, "0");
+
+  data.taskId = `${prefix}-${formattedNumber}`;
+
+  return await TaskModel.create(data);
 };
 
 export const taskZasakh = async (id: string, data: any) => {
