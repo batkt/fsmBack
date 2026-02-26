@@ -10,7 +10,15 @@ export const projectUusgekh = async (data: any) => {
 };
 
 export const projectZasakh = async (id: string, data: any) => {
-  return await getProjectModel(getConn()).findByIdAndUpdate(id, data, { new: true }).lean();
+  const result = await getProjectModel(getConn()).findByIdAndUpdate(id, data, { new: true }).lean();
+  
+  // If color was updated, update all tasks under this project
+  if (data.color) {
+    const getTaskModel = require("../models/task");
+    await getTaskModel(getConn()).updateMany({ projectId: id }, { color: data.color });
+  }
+
+  return result;
 };
 
 export const projectUstgakh = async (id: string) => {

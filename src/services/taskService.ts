@@ -26,6 +26,9 @@ export const taskUusgekh = async (data: any) => {
   const formattedNumber = taskNumber.toString().padStart(4, "0");
 
   data.taskId = `${prefix}-${formattedNumber}`;
+  if (project.color) {
+    data.color = project.color;
+  }
 
   return await TaskModel.create(data);
 };

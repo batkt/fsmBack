@@ -92,3 +92,18 @@ Listen for this event to show status indicators (green/yellow/red dots) next to 
 *   **URL:** `POST /chats`
 *   **Body:** Same as payload in `new_message`. 
 *   **Action:** This saves to DB and automatically triggers the WebSocket event for all connected users in that room.
+
+### Sending Files (RAR, ZIP, Images, Documents)
+To send a file, send a `multipart/form-data` request.
+
+*   **URL**: `POST /chats/upload`
+*   **Method**: `POST`
+*   **Content-Type**: `multipart/form-data`
+*   **Form Data**:
+    *   `file`: The binary file (RAR, ZIP, JPG, PDF, DOCX, etc.)
+    *   `projectId`: (String)
+    *   `taskId`: (String, Optional)
+    *   `barilgiinId`: (String)
+*   **Response**: Returns the chat message object including `fileZam` and `turul` (`zurag` for images, `file` for others).
+*   **Action**: The server saves the file to `/uploads`, creates a chat record, and broadcasts a `new_message` event with the file link.
+

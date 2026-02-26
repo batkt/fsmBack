@@ -33,6 +33,7 @@ const taskSchema = new Schema(
     }],
     baiguullagiinId: { type: String, required: true },
     barilgiinId: { type: String, required: true },
+    color: { type: String }
   },
   {
     timestamps: true

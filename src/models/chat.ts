@@ -9,13 +9,16 @@ const chatSchema = new Schema(
     taskId: { type: String },
     ajiltniiId: { type: String, required: true },
     ajiltniiNer: { type: String },
-    medeelel: { type: String, required: true },
+    medeelel: { type: String },
     turul: {
       type: String,
       enum: ["text", "zurag", "file"],
       default: "text"
     },
     fileZam: { type: String },
+    fileNer: { type: String },
+    khemjee: { type: Number },
+    fType: { type: String }, // MIME type
     unshsan: [{ type: String }],
     baiguullagiinId: { type: String, required: true },
     barilgiinId: { type: String, required: true }

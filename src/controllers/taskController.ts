@@ -66,8 +66,9 @@ export const createTask = async (req: any, res: Response, next: any) => {
     emitToRoom(`task_${task._id}`, "new_message", initialMessage);
 
     // Log history
+    const { _id: taskObjId, ...taskData } = task.toObject();
     await taskTuukhUusgekh({
-      ...task.toObject(),
+      ...taskData,
       sourceTaskId: task._id,
       taskCode: task.taskId,
       ajiltniiId: req.ajiltan?.id,
@@ -90,8 +91,9 @@ export const updateTask = async (req: any, res: Response, next: any) => {
     let action = "updated";
     if (req.body.tuluv === "duussan") action = "completed";
 
+    const { _id: updTaskId, ...updTaskData } = task;
     await taskTuukhUusgekh({
-      ...task,
+      ...updTaskData,
       sourceTaskId: task._id,
       taskCode: task.taskId,
       ajiltniiId: req.ajiltan?.id,
@@ -111,8 +113,9 @@ export const deleteTask = async (req: any, res: Response, next: any) => {
     const existing = await taskNegAvakh(req.params.id);
     if (!existing) return res.status(404).json({ success: false, message: "Даалгавар олдсонгүй" });
 
+    const { _id: delTaskId, ...delTaskData } = existing;
     await taskTuukhUusgekh({
-      ...existing,
+      ...delTaskData,
       sourceTaskId: existing._id,
       taskCode: existing.taskId,
       duussanOgnoo: new Date(),

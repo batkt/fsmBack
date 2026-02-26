@@ -18,7 +18,8 @@ const projectSchema = new Schema(
     ajiltnuud: [{ type: String }],
     baiguullagiinId: { type: String, required: true },
     barilgiinId: { type: String, required: true },
-    taskCount: { type: Number, default: 0 }
+    taskCount: { type: Number, default: 0 },
+    color: { type: String }
   },
   {
     timestamps: true

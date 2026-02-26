@@ -16,9 +16,15 @@ export const getProjects = async (req: any, res: Response, next: any) => {
     if (req.query.tuluv) query.tuluv = req.query.tuluv;
     if (req.query.barilgiinId) query.barilgiinId = req.query.barilgiinId;
 
-    console.log("[DEBUG] Project Query:", query);
+    const ajiltniiId = req.ajiltan?.id || req.query.ajiltniiId;
+    if (ajiltniiId) {
+      query.$or = [
+        { udirdagchId: ajiltniiId },
+        { ajiltnuud: ajiltniiId }
+      ];
+    }
+
     const projects = await projectJagsaalt(query);
-    console.log("[DEBUG] Results count:", projects.length);
     res.json({ success: true, data: projects });
   } catch (err) {
     next(err);

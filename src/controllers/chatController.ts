@@ -46,3 +46,43 @@ export const deleteChat = async (req: any, res: Response, next: any) => {
     next(err);
   }
 };
+
+export const uploadFile = async (req: any, res: Response, next: any) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: "Файл олдсонгүй" });
+    }
+
+    const { projectId, taskId, barilgiinId } = req.body;
+    
+    // Determine type
+    let turul = "file";
+    if (req.file.mimetype.startsWith("image/")) {
+      turul = "zurag";
+    }
+
+    const data = {
+      projectId,
+      taskId,
+      barilgiinId,
+      ajiltniiId: req.ajiltan?.id || req.body.ajiltniiId,
+      ajiltniiNer: req.ajiltan?.ner || req.body.ajiltniiNer,
+      baiguullagiinId: req.ajiltan?.baiguullagiinId || req.body.baiguullagiinId,
+      turul,
+      fileZam: `uploads/${req.file.filename}`,
+      fileNer: req.file.originalname,
+      khemjee: req.file.size,
+      fType: req.file.mimetype,
+      medeelel: req.body.medeelel || req.file.originalname // Use provided message or default to file name
+    };
+
+    const chat = await chatUusgekh(data);
+
+    const room = chat.taskId ? `task_${chat.taskId}` : `project_${chat.projectId}`;
+    emitToRoom(room, "new_message", chat);
+
+    res.status(201).json({ success: true, data: chat });
+  } catch (err) {
+    next(err);
+  }
+};

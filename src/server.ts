@@ -1,5 +1,6 @@
 import express, { Application, Request, Response } from "express";
 import http from "http";
+import path from "path";
 import { config } from "./config";
 
 const { db }: any = require("zevbackv2");
@@ -34,6 +35,8 @@ app.use(chatRoutes);
 app.use(baraaRoutes);
 app.use(uilchluulegchRoutes);
 app.use(subTaskRoutes);
+
+app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
 
 import { initSocket } from "./utils/socket";
