@@ -16,11 +16,12 @@ export const getProjects = async (req: any, res: Response, next: any) => {
     if (req.query.tuluv) query.tuluv = req.query.tuluv;
     if (req.query.barilgiinId) query.barilgiinId = req.query.barilgiinId;
 
-    const ajiltniiId = req.ajiltan?.id || req.query.ajiltniiId;
-    if (ajiltniiId) {
+    // Only filter by employee if explicitly requested via query parameter
+    // Don't automatically filter by authenticated user to allow broader queries
+    if (req.query.ajiltniiId) {
       query.$or = [
-        { udirdagchId: ajiltniiId },
-        { ajiltnuud: ajiltniiId }
+        { udirdagchId: req.query.ajiltniiId },
+        { ajiltnuud: req.query.ajiltniiId }
       ];
     }
 

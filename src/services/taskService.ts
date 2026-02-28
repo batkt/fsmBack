@@ -30,6 +30,14 @@ export const taskUusgekh = async (data: any) => {
     data.color = project.color;
   }
 
+  // Inherit baiguullagiinId and barilgiinId from project if not provided
+  if (!data.baiguullagiinId && project.baiguullagiinId) {
+    data.baiguullagiinId = project.baiguullagiinId;
+  }
+  if (!data.barilgiinId && project.barilgiinId) {
+    data.barilgiinId = project.barilgiinId;
+  }
+
   return await TaskModel.create(data);
 };
 
