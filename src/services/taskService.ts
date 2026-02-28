@@ -38,11 +38,58 @@ export const taskUusgekh = async (data: any) => {
     data.barilgiinId = project.barilgiinId;
   }
 
-  return await TaskModel.create(data);
+  const task = await TaskModel.create(data);
+
+  // Automatically add assigned employees to project's ajiltnuud array
+  const employeesToAdd: string[] = [];
+  if (data.hariutsagchId) {
+    employeesToAdd.push(data.hariutsagchId);
+  }
+  if (data.ajiltnuud && Array.isArray(data.ajiltnuud)) {
+    employeesToAdd.push(...data.ajiltnuud);
+  }
+
+  if (employeesToAdd.length > 0) {
+    await ProjectModel.findByIdAndUpdate(
+      data.projectId,
+      { $addToSet: { ajiltnuud: { $each: employeesToAdd } } },
+      { new: true }
+    );
+  }
+
+  return task;
 };
 
 export const taskZasakh = async (id: string, data: any) => {
-  return await getTaskModel(getConn()).findByIdAndUpdate(id, data, { new: true }).lean();
+  const conn = getConn();
+  const TaskModel = getTaskModel(conn);
+  const getProjectModel = require("../models/project");
+  const ProjectModel = getProjectModel(conn);
+
+  // Get the task to find its projectId
+  const existingTask = await TaskModel.findById(id).lean();
+  if (!existingTask) return null;
+
+  const updatedTask = await TaskModel.findByIdAndUpdate(id, data, { new: true }).lean();
+
+  // Automatically add assigned employees to project's ajiltnuud array
+  const employeesToAdd: string[] = [];
+  if (data.hariutsagchId) {
+    employeesToAdd.push(data.hariutsagchId);
+  }
+  if (data.ajiltnuud && Array.isArray(data.ajiltnuud)) {
+    employeesToAdd.push(...data.ajiltnuud);
+  }
+
+  if (employeesToAdd.length > 0) {
+    await ProjectModel.findByIdAndUpdate(
+      existingTask.projectId,
+      { $addToSet: { ajiltnuud: { $each: employeesToAdd } } },
+      { new: true }
+    );
+  }
+
+  return updatedTask;
 };
 
 export const taskUstgakh = async (id: string) => {
