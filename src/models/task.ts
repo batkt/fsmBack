@@ -23,6 +23,8 @@ const taskSchema = new Schema(
     ajiltnuud: [{ type: String }],
     ekhlekhTsag: { type: Date },
     duusakhTsag: { type: Date },
+    ekhlekhMinute: { type: Number }, // Start minute (0-1439, minutes from midnight)
+    duusakhMinute: { type: Number }, // End minute (0-1439, minutes from midnight)
     khugatsaaDuusakhOgnoo: { type: Date },
     zurag: [{
       zamNer: { type: String },

@@ -3,7 +3,10 @@ import { Response } from "express";
 import { config } from "../config";
 
 export const authMiddleware = (req: any, res: Response, next: any) => {
-  // Extract token from Authorization header: "Bearer <token>" or just "<token>"
+  if (req.method === "OPTIONS") {
+    return next();
+  }
+
   const authHeader = req.header("Authorization");
   const token = authHeader?.startsWith("Bearer ") 
     ? authHeader.split(" ")[1] 
@@ -14,7 +17,6 @@ export const authMiddleware = (req: any, res: Response, next: any) => {
   }
 
   try {
-    // Use the same APP_SECRET as tureesBack for token compatibility
     const decoded = jwt.verify(token, config.APP_SECRET) as any;
     req.ajiltan = decoded;
     next();
