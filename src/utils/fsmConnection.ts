@@ -23,6 +23,18 @@ export async function connectFSMDatabase(): Promise<void> {
     // Query baiguullaga collection from main turees database for FSM database config
     const baiguullagaCol = mainConn.collection("baiguullaga");
     
+    // First, let's see what's actually in the collection for debugging
+    const allDocs = await baiguullagaCol.find({}).toArray();
+    console.log(`[FSM Connection] Found ${allDocs.length} documents in baiguullaga collection`);
+    if (allDocs.length > 0) {
+      console.log("[FSM Connection] Sample documents:", allDocs.slice(0, 3).map((doc: any) => ({
+        _id: doc._id,
+        baaz: doc.baaz,
+        fsmEsekh: doc.fsmEsekh,
+        clusterUrl: doc.clusterUrl,
+      })));
+    }
+    
     // Try multiple query patterns to find FSM config
     let fsmConfig = await baiguullagaCol.findOne({
       fsmEsekh: true,
@@ -31,6 +43,7 @@ export async function connectFSMDatabase(): Promise<void> {
 
     // If not found, try with just fsmEsekh: true
     if (!fsmConfig) {
+      console.log("[FSM Connection] Trying query with just fsmEsekh: true");
       fsmConfig = await baiguullagaCol.findOne({
         fsmEsekh: true,
       });
@@ -38,8 +51,17 @@ export async function connectFSMDatabase(): Promise<void> {
 
     // If still not found, try with just baaz: "fManageFsm"
     if (!fsmConfig) {
+      console.log("[FSM Connection] Trying query with just baaz: 'fManageFsm'");
       fsmConfig = await baiguullagaCol.findOne({
         baaz: "fManageFsm",
+      });
+    }
+
+    // If still not found, try with baaz containing "fManage"
+    if (!fsmConfig) {
+      console.log("[FSM Connection] Trying query with baaz containing 'fManage'");
+      fsmConfig = await baiguullagaCol.findOne({
+        baaz: { $regex: /fManage/i },
       });
     }
 
