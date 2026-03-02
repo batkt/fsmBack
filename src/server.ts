@@ -47,7 +47,12 @@ import { initSocket } from "./utils/socket";
 import { connectFSMDatabase } from "./utils/fsmConnection";
 
 const server = http.createServer(app);
-initSocket(server);
+const socketIO = initSocket(server);
+if (socketIO) {
+  console.log("[Server] ✅ Socket.IO initialized and ready");
+} else {
+  console.error("[Server] ❌ Socket.IO initialization failed");
+}
 
 async function start() {
   try {

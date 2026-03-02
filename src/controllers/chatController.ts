@@ -41,6 +41,66 @@ export const createChat = async (req: any, res: Response, next: any) => {
     const room = chat.taskId ? `task_${chat.taskId}` : `project_${chat.projectId}`;
     emitToRoom(room, "new_message", chat);
 
+    // Create notifications for project/task members (except sender)
+    const { medegdelUusgekh }: any = require("../services/medegdelService");
+    const { projectNegAvakh } = require("../services/projectService");
+    const { taskNegAvakh } = require("../services/taskService");
+    const senderId = chat.ajiltniiId;
+
+    try {
+      // Get project to find members
+      const project = await projectNegAvakh(chat.projectId);
+      if (project) {
+        const membersToNotify = new Set<string>();
+
+        // Add project manager
+        if (project.udirdagchId && project.udirdagchId !== senderId) {
+          membersToNotify.add(project.udirdagchId);
+        }
+
+        // Add project members
+        if (project.ajiltnuud && Array.isArray(project.ajiltnuud)) {
+          project.ajiltnuud.forEach((id: string) => {
+            if (id !== senderId) {
+              membersToNotify.add(id);
+            }
+          });
+        }
+
+        // If task chat, also notify task assigned user
+        if (chat.taskId) {
+          const task = await taskNegAvakh(chat.taskId);
+          if (task && task.hariutsagchId && task.hariutsagchId !== senderId) {
+            membersToNotify.add(task.hariutsagchId);
+          }
+        }
+
+        // Create notifications for all members
+        for (const memberId of membersToNotify) {
+          const messagePreview = chat.medeelel 
+            ? (chat.medeelel.length > 50 ? chat.medeelel.substring(0, 50) + "..." : chat.medeelel)
+            : (chat.turul === "zurag" ? "Зураг илгээлээ" : chat.turul === "file" ? "Файл илгээлээ" : "Шинэ мессеж");
+
+          const notification = await medegdelUusgekh({
+            ajiltniiId: memberId,
+            baiguullagiinId: chat.baiguullagiinId,
+            barilgiinId: chat.barilgiinId,
+            projectId: chat.projectId,
+            taskId: chat.taskId || undefined,
+            turul: "chatMessage",
+            title: chat.taskId ? "Даалгаврын мессеж" : "Төслийн мессеж",
+            message: `${chat.ajiltniiNer || "Хэрэглэгч"}: ${messagePreview}`,
+            object: chat
+          });
+
+          emitToRoom(`user_${memberId}`, "new_notification", notification);
+        }
+      }
+    } catch (notifError) {
+      // Don't fail the chat creation if notification creation fails
+      console.error("[Chat] Failed to create notifications:", notifError);
+    }
+
     res.status(201).json({ success: true, data: chat });
   } catch (err) {
     next(err);
@@ -90,6 +150,66 @@ export const uploadFile = async (req: any, res: Response, next: any) => {
 
     const room = chat.taskId ? `task_${chat.taskId}` : `project_${chat.projectId}`;
     emitToRoom(room, "new_message", chat);
+
+    // Create notifications for project/task members (except sender)
+    const { medegdelUusgekh }: any = require("../services/medegdelService");
+    const { projectNegAvakh } = require("../services/projectService");
+    const { taskNegAvakh } = require("../services/taskService");
+    const senderId = chat.ajiltniiId;
+
+    try {
+      // Get project to find members
+      const project = await projectNegAvakh(chat.projectId);
+      if (project) {
+        const membersToNotify = new Set<string>();
+
+        // Add project manager
+        if (project.udirdagchId && project.udirdagchId !== senderId) {
+          membersToNotify.add(project.udirdagchId);
+        }
+
+        // Add project members
+        if (project.ajiltnuud && Array.isArray(project.ajiltnuud)) {
+          project.ajiltnuud.forEach((id: string) => {
+            if (id !== senderId) {
+              membersToNotify.add(id);
+            }
+          });
+        }
+
+        // If task chat, also notify task assigned user
+        if (chat.taskId) {
+          const task = await taskNegAvakh(chat.taskId);
+          if (task && task.hariutsagchId && task.hariutsagchId !== senderId) {
+            membersToNotify.add(task.hariutsagchId);
+          }
+        }
+
+        // Create notifications for all members
+        for (const memberId of membersToNotify) {
+          const fileTypeLabel = chat.turul === "zurag" ? "Зураг" : "Файл";
+          const messageText = chat.medeelel || `${fileTypeLabel}: ${chat.fileNer}`;
+
+          const notification = await medegdelUusgekh({
+            ajiltniiId: memberId,
+            baiguullagiinId: chat.baiguullagiinId,
+            barilgiinId: chat.barilgiinId,
+            projectId: chat.projectId,
+            taskId: chat.taskId || undefined,
+            turul: "chatMessage",
+            title: chat.taskId ? "Даалгаврын мессеж" : "Төслийн мессеж",
+            message: `${chat.ajiltniiNer || "Хэрэглэгч"}: ${messageText}`,
+            zurag: chat.turul === "zurag" ? chat.fileZam : undefined,
+            object: chat
+          });
+
+          emitToRoom(`user_${memberId}`, "new_notification", notification);
+        }
+      }
+    } catch (notifError) {
+      // Don't fail the chat creation if notification creation fails
+      console.error("[Chat] Failed to create notifications:", notifError);
+    }
 
     res.status(201).json({ success: true, data: chat });
   } catch (err) {
