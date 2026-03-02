@@ -42,21 +42,21 @@ app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
 
 import { initSocket } from "./utils/socket";
+import { connectFSMDatabase } from "./utils/fsmConnection";
 
 const server = http.createServer(app);
 initSocket(server);
 
 async function start() {
   try {
+    // Connect to main database (turees)
     await db.kholboltUusgey(
       app,
       process.env.BAAZ,
     );
 
-    // Ensure central connection has kholboltFSM for models that require it
-    if (db.erunkhiiKholbolt && !db.erunkhiiKholbolt.kholboltFSM) {
-      db.erunkhiiKholbolt.kholboltFSM = db.erunkhiiKholbolt.kholbolt;
-    }
+    // Connect to FSM database (fManageFsm) using config from baiguullaga collection
+    await connectFSMDatabase();
 
     server.listen(config.PORT, () => {
       console.log(
