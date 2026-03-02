@@ -4,6 +4,7 @@ import jwt from "jsonwebtoken";
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { db }: any = require("zevbackv2");
 import mongoose from "mongoose";
+import { config } from "../config";
 
 const getCol = (name: string) => db.erunkhiiKholbolt.kholbolt.collection(name);
 
@@ -12,7 +13,12 @@ export const loginWithTurees = async (nevtrekhNer: string, nuutsUg: string) => {
   if (!ajiltan || !(await bcrypt.compare(nuutsUg, ajiltan.nuutsUg))) return null;
 
   const baiguullaga = ajiltan.baiguullagiinId ? await getCol("baiguullaga").findOne({ _id: new mongoose.Types.ObjectId(ajiltan.baiguullagiinId) }) : null;
-  const token = jwt.sign({ id: ajiltan._id, ner: ajiltan.ner, baiguullagiinId: ajiltan.baiguullagiinId }, process.env.APP_SECRET || "tokenUusgekhZevTabs2022", { expiresIn: "12h" });
+  // Use the same APP_SECRET as tureesBack so tokens are compatible
+  const token = jwt.sign(
+    { id: ajiltan._id, ner: ajiltan.ner, baiguullagiinId: ajiltan.baiguullagiinId },
+    config.APP_SECRET,
+    { expiresIn: "12h" }
+  );
   delete ajiltan.nuutsUg;
 
   return { token, result: ajiltan, baiguullaga };

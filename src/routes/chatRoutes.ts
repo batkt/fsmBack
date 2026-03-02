@@ -24,10 +24,13 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage });
 
-router.get("/chats", getChats);
-router.post("/chats", createChat);
-router.put("/chats/read", readChats);
-router.post("/chats/upload", upload.single("file"), uploadFile);
-router.delete("/chats/:id", deleteChat);
+import { authMiddleware } from "../middlewares/auth";
+
+// All chat routes require Bearer token authentication (from tureesBack)
+router.get("/chats", authMiddleware, getChats);
+router.post("/chats", authMiddleware, createChat);
+router.put("/chats/read", authMiddleware, readChats);
+router.post("/chats/upload", authMiddleware, upload.single("file"), uploadFile);
+router.delete("/chats/:id", authMiddleware, deleteChat);
 
 export default router;
