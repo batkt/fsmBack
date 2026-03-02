@@ -66,6 +66,52 @@ export const createProject = async (req: any, res: Response, next: any) => {
     });
 
     emitToRoom(`project_${project._id}`, "new_message", initialMessage);
+    
+    // Emit project creation event to project room and organization-wide
+    emitToRoom(`project_${project._id}`, "project_created", project);
+    if (project.barilgiinId) {
+      emitToRoom(`barilga_${project.barilgiinId}`, "project_created", project);
+    }
+
+    // Create notifications for project members
+    const { medegdelUusgekh }: any = require("../services/medegdelService");
+    const notifications: any[] = [];
+    
+    // Notify project manager
+    if (project.udirdagchId) {
+      const notif = await medegdelUusgekh({
+        ajiltniiId: project.udirdagchId,
+        baiguullagiinId: project.baiguullagiinId,
+        barilgiinId: project.barilgiinId,
+        projectId: project._id.toString(),
+        turul: "projectCreated",
+        title: "Шинэ төсөл",
+        message: `${project.ner} төсөл үүсгэгдлээ`,
+        object: project
+      });
+      notifications.push(notif);
+      emitToRoom(`user_${project.udirdagchId}`, "new_notification", notif);
+    }
+
+    // Notify project members
+    if (project.ajiltnuud && Array.isArray(project.ajiltnuud)) {
+      for (const ajiltniiId of project.ajiltnuud) {
+        if (ajiltniiId !== project.udirdagchId) {
+          const notif = await medegdelUusgekh({
+            ajiltniiId: ajiltniiId,
+            baiguullagiinId: project.baiguullagiinId,
+            barilgiinId: project.barilgiinId,
+            projectId: project._id.toString(),
+            turul: "projectCreated",
+            title: "Шинэ төсөл",
+            message: `${project.ner} төсөлд танд хандалт олгогдлоо`,
+            object: project
+          });
+          notifications.push(notif);
+          emitToRoom(`user_${ajiltniiId}`, "new_notification", notif);
+        }
+      }
+    }
 
     res.status(201).json({ success: true, data: project });
   } catch (err) {
@@ -77,6 +123,13 @@ export const updateProject = async (req: any, res: Response, next: any) => {
   try {
     const project = await projectZasakh(req.params.id, req.body);
     if (!project) return res.status(404).json({ success: false, message: "Төсөл олдсонгүй" });
+
+    // Emit project update event
+    const { emitToRoom }: any = require("../utils/socket");
+    emitToRoom(`project_${project._id}`, "project_updated", project);
+    if (project.barilgiinId) {
+      emitToRoom(`barilga_${project.barilgiinId}`, "project_updated", project);
+    }
 
     // Log history if completed
     if (req.body.tuluv === "duussan") {

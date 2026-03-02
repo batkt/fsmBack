@@ -43,6 +43,13 @@ export const initSocket = (server: HttpServer) => {
       console.log(`User ${socket.id} joined room: ${room}`);
     });
 
+    // Join user-specific notification room
+    socket.on("join_notifications", (data: { userId: string }) => {
+      const room = `user_${data.userId}`;
+      socket.join(room);
+      console.log(`User ${socket.id} joined notification room: ${room}`);
+    });
+
     socket.on("leave_room", (roomData: { projectId: string; taskId?: string }) => {
       const room = roomData.taskId ? `task_${roomData.taskId}` : `project_${roomData.projectId}`;
       socket.leave(room);

@@ -27,6 +27,7 @@ import baraaRoutes from "./routes/baraaRoutes";
 import uilchluulegchRoutes from "./routes/uilchluulegchRoutes";
 import subTaskRoutes from "./routes/subTaskRoutes";
 import baiguullagaRoute from "./routes/dbRoute";
+import medegdelRoutes from "./routes/medegdelRoutes";
 
 app.use(authRoutes);
 app.use(projectRoutes);
@@ -37,6 +38,7 @@ app.use(baraaRoutes);
 app.use(uilchluulegchRoutes);
 app.use(subTaskRoutes);
 app.use(baiguullagaRoute);
+app.use(medegdelRoutes);
 
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 

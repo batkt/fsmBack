@@ -64,6 +64,27 @@ export const createTask = async (req: any, res: Response, next: any) => {
     // Notify project room and task room
     emitToRoom(`project_${task.projectId}`, "new_message", initialMessage);
     emitToRoom(`task_${task._id}`, "new_message", initialMessage);
+    
+    // Emit task creation event to project and task rooms
+    emitToRoom(`project_${task.projectId}`, "task_created", task);
+    emitToRoom(`task_${task._id}`, "task_created", task);
+
+    // Create notification for assigned users
+    const { medegdelUusgekh }: any = require("../services/medegdelService");
+    if (task.hariutsagchId) {
+      const notification = await medegdelUusgekh({
+        ajiltniiId: task.hariutsagchId,
+        baiguullagiinId: task.baiguullagiinId,
+        barilgiinId: task.barilgiinId,
+        projectId: task.projectId,
+        taskId: task._id.toString(),
+        turul: "taskCreated",
+        title: "Шинэ даалгавар",
+        message: `${task.ner} (${task.taskId}) даалгавар танд хуваарилагдлаа`,
+        object: task
+      });
+      emitToRoom(`user_${task.hariutsagchId}`, "new_notification", notification);
+    }
 
     // Log history
     const { _id: taskObjId, ...taskData } = task.toObject();
@@ -86,6 +107,28 @@ export const updateTask = async (req: any, res: Response, next: any) => {
   try {
     const task = await taskZasakh(req.params.id, req.body);
     if (!task) return res.status(404).json({ success: false, message: "Даалгавар олдсонгүй" });
+
+    // Emit task update event
+    const { emitToRoom }: any = require("../utils/socket");
+    emitToRoom(`project_${task.projectId}`, "task_updated", task);
+    emitToRoom(`task_${task._id}`, "task_updated", task);
+
+    // Create notification if task was completed
+    if (req.body.tuluv === "duussan" && task.hariutsagchId) {
+      const { medegdelUusgekh }: any = require("../services/medegdelService");
+      const notification = await medegdelUusgekh({
+        ajiltniiId: task.hariutsagchId,
+        baiguullagiinId: task.baiguullagiinId,
+        barilgiinId: task.barilgiinId,
+        projectId: task.projectId,
+        taskId: task._id.toString(),
+        turul: "taskCompleted",
+        title: "Даалгавар дууссан",
+        message: `${task.ner} (${task.taskId}) даалгавар амжилттай дууссан`,
+        object: task
+      });
+      emitToRoom(`user_${task.hariutsagchId}`, "new_notification", notification);
+    }
 
     // Log history
     let action = "updated";
