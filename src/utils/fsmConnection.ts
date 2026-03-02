@@ -22,18 +22,45 @@ export async function connectFSMDatabase(): Promise<void> {
 
     // Query baiguullaga collection from main turees database for FSM database config
     const baiguullagaCol = mainConn.collection("baiguullaga");
-    const fsmConfig = await baiguullagaCol.findOne({
+    
+    // Try multiple query patterns to find FSM config
+    let fsmConfig = await baiguullagaCol.findOne({
       fsmEsekh: true,
       baaz: "fManageFsm",
     });
 
+    // If not found, try with just fsmEsekh: true
+    if (!fsmConfig) {
+      fsmConfig = await baiguullagaCol.findOne({
+        fsmEsekh: true,
+      });
+    }
+
+    // If still not found, try with just baaz: "fManageFsm"
+    if (!fsmConfig) {
+      fsmConfig = await baiguullagaCol.findOne({
+        baaz: "fManageFsm",
+      });
+    }
+
     if (!fsmConfig) {
       console.warn(
         "[FSM Connection] No FSM database config found in baiguullaga collection. " +
-          "Models requiring kholboltFSM may not work.",
+          "Using main database connection as fallback for kholboltFSM.",
       );
+      // Set kholboltFSM to main connection as fallback so models don't crash
+      if (db.erunkhiiKholbolt) {
+        db.erunkhiiKholbolt.kholboltFSM = db.erunkhiiKholbolt.kholbolt;
+        console.log("[FSM Connection] kholboltFSM set to main connection as fallback");
+      }
       return;
     }
+
+    console.log("[FSM Connection] Found FSM config:", {
+      baaz: fsmConfig.baaz,
+      clusterUrl: fsmConfig.clusterUrl,
+      userName: fsmConfig.userName,
+    });
 
     // Build MongoDB connection URI
     const { clusterUrl, userName, password, baaz } = fsmConfig;
