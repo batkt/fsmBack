@@ -13,12 +13,22 @@ const { db }: any = require("zevbackv2");
  */
 export async function connectFSMDatabase(): Promise<void> {
   try {
+    // Check if zevbackv2 already has FSM connections set up
+    if (db.erunkhiiKholbolt?.kholboltFSM) {
+      console.log("[FSM Connection] kholboltFSM already exists, skipping setup");
+      return;
+    }
+
     // Get the main connection (turees database) to query baiguullaga collection
     // baiguullaga and ajiltan are stored in the main turees database, not FSM
     const mainConn = db.erunkhiiKholbolt?.kholbolt;
     if (!mainConn) {
       throw new Error("Main database connection not available");
     }
+
+    // Check if zevbackv2 has any FSM connections stored elsewhere
+    console.log("[FSM Connection] Checking zevbackv2 FSM connections...");
+    console.log("[FSM Connection] db.erunkhiiKholbolt keys:", Object.keys(db.erunkhiiKholbolt || {}));
 
     // Query baiguullaga collection from main turees database for FSM database config
     const baiguullagaCol = mainConn.collection("baiguullaga");
@@ -113,6 +123,13 @@ export async function connectFSMDatabase(): Promise<void> {
     if (db.erunkhiiKholbolt) {
       db.erunkhiiKholbolt.kholboltFSM = fsmConnection;
       console.log("[FSM Connection] kholboltFSM set successfully");
+      
+      // Verify it's set
+      if (db.erunkhiiKholbolt.kholboltFSM) {
+        console.log("[FSM Connection] Verified: kholboltFSM is now available");
+      } else {
+        console.error("[FSM Connection] ERROR: kholboltFSM was not set properly!");
+      }
     } else {
       throw new Error("db.erunkhiiKholbolt not available");
     }

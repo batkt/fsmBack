@@ -55,6 +55,20 @@ async function start() {
       process.env.BAAZ,
     );
 
+    // Wait a moment for zevbackv2 to potentially set up FSM connections
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    // Check what zevbackv2 has set up
+    console.log("[Startup] Checking zevbackv2 connection structure...");
+    if (db.erunkhiiKholbolt) {
+      console.log("[Startup] db.erunkhiiKholbolt keys:", Object.keys(db.erunkhiiKholbolt));
+      if (db.erunkhiiKholbolt.kholboltFSM) {
+        console.log("[Startup] kholboltFSM already exists from zevbackv2!");
+      } else {
+        console.log("[Startup] kholboltFSM not found, will attempt to create it");
+      }
+    }
+
     // Connect to FSM database (fManageFsm) using config from baiguullaga collection
     await connectFSMDatabase();
 
