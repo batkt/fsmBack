@@ -4,12 +4,13 @@ import mongoose from "mongoose";
 const { db }: any = require("zevbackv2");
 
 /**
- * Connects to the FSM database (fManageFsm) using credentials from baiguullaga collection
+ * Connects to the FSM database (fManageFsm) using credentials from baaziinMedeelel collection
  * Sets the connection as kholboltFSM for models to use
  * 
  * Note: baiguullaga and ajiltan collections are in the main turees database (kholbolt),
- * not in the FSM database. This function queries baiguullaga from the main DB to get
- * FSM connection config, then connects to the separate fManageFsm database.
+ * not in the FSM database. The FSM database config is stored in baaziinMedeelel collection.
+ * This function queries baaziinMedeelel from the main DB to get FSM connection config,
+ * then connects to the separate fManageFsm database.
  */
 export async function connectFSMDatabase(): Promise<void> {
   try {
@@ -30,23 +31,12 @@ export async function connectFSMDatabase(): Promise<void> {
     console.log("[FSM Connection] Checking zevbackv2 FSM connections...");
     console.log("[FSM Connection] db.erunkhiiKholbolt keys:", Object.keys(db.erunkhiiKholbolt || {}));
 
-    // Query baiguullaga collection from main turees database for FSM database config
-    const baiguullagaCol = mainConn.collection("baiguullaga");
-    
-    // First, let's see what's actually in the collection for debugging
-    const allDocs = await baiguullagaCol.find({}).toArray();
-    console.log(`[FSM Connection] Found ${allDocs.length} documents in baiguullaga collection`);
-    if (allDocs.length > 0) {
-      console.log("[FSM Connection] Sample documents:", allDocs.slice(0, 3).map((doc: any) => ({
-        _id: doc._id,
-        baaz: doc.baaz,
-        fsmEsekh: doc.fsmEsekh,
-        clusterUrl: doc.clusterUrl,
-      })));
-    }
+    // Query baaziinMedeelel collection from main turees database for FSM database config
+    // The FSM config is stored in baaziinMedeelel, not baiguullaga
+    const baaziinMedeelelCol = mainConn.collection("baaziinMedeelel");
     
     // Try multiple query patterns to find FSM config
-    let fsmConfig = await baiguullagaCol.findOne({
+    let fsmConfig = await baaziinMedeelelCol.findOne({
       fsmEsekh: true,
       baaz: "fManageFsm",
     });
@@ -54,7 +44,7 @@ export async function connectFSMDatabase(): Promise<void> {
     // If not found, try with just fsmEsekh: true
     if (!fsmConfig) {
       console.log("[FSM Connection] Trying query with just fsmEsekh: true");
-      fsmConfig = await baiguullagaCol.findOne({
+      fsmConfig = await baaziinMedeelelCol.findOne({
         fsmEsekh: true,
       });
     }
@@ -62,7 +52,7 @@ export async function connectFSMDatabase(): Promise<void> {
     // If still not found, try with just baaz: "fManageFsm"
     if (!fsmConfig) {
       console.log("[FSM Connection] Trying query with just baaz: 'fManageFsm'");
-      fsmConfig = await baiguullagaCol.findOne({
+      fsmConfig = await baaziinMedeelelCol.findOne({
         baaz: "fManageFsm",
       });
     }
@@ -70,14 +60,14 @@ export async function connectFSMDatabase(): Promise<void> {
     // If still not found, try with baaz containing "fManage"
     if (!fsmConfig) {
       console.log("[FSM Connection] Trying query with baaz containing 'fManage'");
-      fsmConfig = await baiguullagaCol.findOne({
+      fsmConfig = await baaziinMedeelelCol.findOne({
         baaz: { $regex: /fManage/i },
       });
     }
 
     if (!fsmConfig) {
       console.warn(
-        "[FSM Connection] No FSM database config found in baiguullaga collection. " +
+        "[FSM Connection] No FSM database config found in baaziinMedeelel collection. " +
           "Using main database connection as fallback for kholboltFSM.",
       );
       // Set kholboltFSM to main connection as fallback so models don't crash
