@@ -74,9 +74,16 @@ export const createTask = async (req: any, res: Response, next: any) => {
     const creatorId = req.ajiltan?.id;
     const membersToNotify = new Set<string>();
 
+    console.log("[Task Creation] Creating notifications:", {
+      creatorId: creatorId,
+      hariutsagchId: task.hariutsagchId,
+      ajiltnuud: task.ajiltnuud
+    });
+
     // Add assigned user
     if (task.hariutsagchId && task.hariutsagchId !== creatorId) {
       membersToNotify.add(task.hariutsagchId);
+      console.log("[Task Creation] Added hariutsagchId to notify:", task.hariutsagchId);
     }
 
     // Add task members from ajiltnuud array
@@ -84,13 +91,19 @@ export const createTask = async (req: any, res: Response, next: any) => {
       task.ajiltnuud.forEach((id: string) => {
         if (id !== creatorId) {
           membersToNotify.add(id);
+          console.log("[Task Creation] Added ajiltnuud member to notify:", id);
+        } else {
+          console.log("[Task Creation] Skipped creator from notifications:", id);
         }
       });
     }
 
+    console.log("[Task Creation] Total members to notify:", membersToNotify.size, Array.from(membersToNotify));
+
     // Create notifications for all members
     for (const memberId of membersToNotify) {
       try {
+        console.log("[Task Creation] Creating notification for user:", memberId);
         const notification = await medegdelUusgekh({
           ajiltniiId: memberId,
           baiguullagiinId: task.baiguullagiinId,
@@ -103,11 +116,21 @@ export const createTask = async (req: any, res: Response, next: any) => {
           object: task,
           ajiltnuud: task.ajiltnuud || [] // Store task members for filtering
         });
+        console.log("[Task Creation] ✅ Notification created:", {
+          notificationId: notification._id,
+          userId: memberId,
+          room: `user_${memberId}`
+        });
         emitToRoom(`user_${memberId}`, "new_notification", notification);
+        console.log("[Task Creation] 📤 Emitted notification to room:", `user_${memberId}`);
       } catch (notifError) {
         // Don't fail the task creation if notification creation fails
-        console.error("[Task] Failed to create notification for user:", memberId, notifError);
+        console.error("[Task Creation] ❌ Failed to create notification for user:", memberId, notifError);
       }
+    }
+
+    if (membersToNotify.size === 0) {
+      console.warn("[Task Creation] ⚠️ No members to notify (all members are the creator or no members found)");
     }
 
     // Log history
@@ -142,9 +165,16 @@ export const updateTask = async (req: any, res: Response, next: any) => {
     const updaterId = req.ajiltan?.id;
     const membersToNotify = new Set<string>();
 
+    console.log("[Task Update] Creating notifications:", {
+      updaterId: updaterId,
+      hariutsagchId: task.hariutsagchId,
+      ajiltnuud: task.ajiltnuud
+    });
+
     // Add assigned user
     if (task.hariutsagchId && task.hariutsagchId !== updaterId) {
       membersToNotify.add(task.hariutsagchId);
+      console.log("[Task Update] Added hariutsagchId to notify:", task.hariutsagchId);
     }
 
     // Add task members
@@ -152,9 +182,14 @@ export const updateTask = async (req: any, res: Response, next: any) => {
       task.ajiltnuud.forEach((id: string) => {
         if (id !== updaterId) {
           membersToNotify.add(id);
+          console.log("[Task Update] Added ajiltnuud member to notify:", id);
+        } else {
+          console.log("[Task Update] Skipped updater from notifications:", id);
         }
       });
     }
+
+    console.log("[Task Update] Total members to notify:", membersToNotify.size, Array.from(membersToNotify));
 
     // Determine notification type and message
     let turul = "taskUpdated";
@@ -174,6 +209,7 @@ export const updateTask = async (req: any, res: Response, next: any) => {
     // Create notifications for all members
     for (const memberId of membersToNotify) {
       try {
+        console.log("[Task Update] Creating notification for user:", memberId);
         const notification = await medegdelUusgekh({
           ajiltniiId: memberId,
           baiguullagiinId: task.baiguullagiinId,
@@ -186,11 +222,22 @@ export const updateTask = async (req: any, res: Response, next: any) => {
           object: task,
           ajiltnuud: task.ajiltnuud || [] // Store task members for filtering
         });
+        console.log("[Task Update] ✅ Notification created:", {
+          notificationId: notification._id,
+          userId: memberId,
+          room: `user_${memberId}`,
+          turul: turul
+        });
         emitToRoom(`user_${memberId}`, "new_notification", notification);
+        console.log("[Task Update] 📤 Emitted notification to room:", `user_${memberId}`);
       } catch (notifError) {
         // Don't fail the task update if notification creation fails
-        console.error("[Task] Failed to create notification for user:", memberId, notifError);
+        console.error("[Task Update] ❌ Failed to create notification for user:", memberId, notifError);
       }
+    }
+
+    if (membersToNotify.size === 0) {
+      console.warn("[Task Update] ⚠️ No members to notify (all members are the updater or no members found)");
     }
 
     // Log history
