@@ -152,6 +152,11 @@ export const createTask = async (req: any, res: Response, next: any) => {
 
 export const updateTask = async (req: any, res: Response, next: any) => {
   try {
+    // Get old task BEFORE update to compare changes
+    const oldTask = await taskNegAvakh(req.params.id);
+    if (!oldTask) return res.status(404).json({ success: false, message: "Даалгавар олдсонгүй" });
+
+    // Update the task
     const task = await taskZasakh(req.params.id, req.body);
     if (!task) return res.status(404).json({ success: false, message: "Даалгавар олдсонгүй" });
 
@@ -168,7 +173,9 @@ export const updateTask = async (req: any, res: Response, next: any) => {
     console.log("[Task Update] Creating notifications:", {
       updaterId: updaterId,
       hariutsagchId: task.hariutsagchId,
-      ajiltnuud: task.ajiltnuud
+      ajiltnuud: task.ajiltnuud,
+      oldStatus: oldTask.tuluv,
+      newStatus: task.tuluv
     });
 
     // Add assigned user
@@ -191,16 +198,38 @@ export const updateTask = async (req: any, res: Response, next: any) => {
 
     console.log("[Task Update] Total members to notify:", membersToNotify.size, Array.from(membersToNotify));
 
-    // Determine notification type and message
+    // Always send notifications for ANY update (manual or automatic)
+    // Determine notification type and message based on what changed
     let turul = "taskUpdated";
     let title = "Даалгавар шинэчлэгдлээ";
     let message = `${task.ner} (${task.taskId}) даалгавар шинэчлэгдлээ`;
 
-    if (req.body.tuluv === "duussan") {
-      turul = "taskCompleted";
-      title = "Даалгавар дууссан";
-      message = `${task.ner} (${task.taskId}) даалгавар амжилттай дууссан`;
-    } else if (req.body.hariutsagchId && req.body.hariutsagchId !== task.hariutsagchId) {
+    // Check if status (tuluv) changed
+    const oldStatus = oldTask.tuluv;
+    const newStatus = task.tuluv;
+    
+    if (oldStatus !== newStatus) {
+      if (newStatus === "duussan") {
+        turul = "taskCompleted";
+        title = "Даалгавар дууссан";
+        message = `${task.ner} (${task.taskId}) даалгавар амжилттай дууссан`;
+      } else if (newStatus === "khiigdej bui") {
+        turul = "taskStarted";
+        title = "Даалгавар эхэллээ";
+        message = `${task.ner} (${task.taskId}) даалгавар эхэлсэн`;
+      } else if (newStatus === "khugatsaa khetersen") {
+        turul = "taskExpired";
+        title = "Даалгавар хугацаа хэтэрсэн";
+        message = `${task.ner} (${task.taskId}) даалгаврын хугацаа хэтэрлээ`;
+      } else if (newStatus === "shine") {
+        turul = "taskReset";
+        title = "Даалгавар дахин эхлүүлсэн";
+        message = `${task.ner} (${task.taskId}) даалгавар дахин шинэ төлөвт шилжлээ`;
+      }
+    }
+    
+    // Check if assignment changed
+    if (oldTask.hariutsagchId && task.hariutsagchId !== oldTask.hariutsagchId) {
       turul = "taskAssigned";
       title = "Даалгавар хуваарилагдлаа";
       message = `${task.ner} (${task.taskId}) даалгавар танд хуваарилагдлаа`;

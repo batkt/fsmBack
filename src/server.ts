@@ -29,6 +29,7 @@ import subTaskRoutes from "./routes/subTaskRoutes";
 import baiguullagaRoute from "./routes/dbRoute";
 import medegdelRoutes from "./routes/medegdelRoutes";
 import fcmTokenRoutes from "./routes/fcmTokenRoutes";
+import taskStatusRoutes from "./routes/taskStatusRoutes";
 
 app.use(authRoutes);
 app.use(projectRoutes);
@@ -41,6 +42,7 @@ app.use(subTaskRoutes);
 app.use(baiguullagaRoute);
 app.use(medegdelRoutes);
 app.use(fcmTokenRoutes);
+app.use(taskStatusRoutes);
 
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
@@ -86,6 +88,14 @@ async function start() {
     console.log("[Startup] Initializing Firebase...");
     initializeFirebase();
     console.log("[Startup] Firebase initialization completed");
+
+    // Start task status scheduler (checks every 5 minutes)
+    const { startTaskStatusScheduler } = require("./utils/taskStatusScheduler");
+    const schedulerInterval = process.env.TASK_STATUS_CHECK_INTERVAL 
+      ? parseInt(process.env.TASK_STATUS_CHECK_INTERVAL) 
+      : 5; // Default: 5 minutes
+    startTaskStatusScheduler(schedulerInterval);
+    console.log(`[Startup] ✅ Task status scheduler started (checking every ${schedulerInterval} minutes)`);
 
     server.listen(config.PORT, () => {
       console.log(
