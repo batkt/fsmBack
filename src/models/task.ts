@@ -16,7 +16,7 @@ const taskSchema = new Schema(
     },
     tuluv: {
       type: String,
-      enum: ["shine", "khiigdej bui", "shalga", "duussan"],
+      enum: ["shine", "khiigdej bui", "duussan"],
       default: "shine"
     },
     hariutsagchId: { type: String },
