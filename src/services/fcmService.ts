@@ -18,6 +18,9 @@ export const initializeFirebase = () => {
     // Check if Firebase service account file is provided
     const serviceAccountPath = process.env.FIREBASE_SERVICE_ACCOUNT_PATH;
 
+    console.log("[FCM] Initializing Firebase...");
+    console.log("[FCM] Service account path from env:", serviceAccountPath);
+
     if (!serviceAccountPath) {
       console.warn("[FCM] ⚠️ Firebase service account not configured. Push notifications will be disabled.");
       console.warn("[FCM] Set FIREBASE_SERVICE_ACCOUNT_PATH in .env file");
@@ -25,16 +28,48 @@ export const initializeFirebase = () => {
       return;
     }
 
+    // Resolve path (handle both relative and absolute paths)
+    const path = require("path");
+    const fs = require("fs");
+    const resolvedPath = path.isAbsolute(serviceAccountPath) 
+      ? serviceAccountPath 
+      : path.resolve(process.cwd(), serviceAccountPath);
+
+    console.log("[FCM] Resolved path:", resolvedPath);
+    console.log("[FCM] File exists:", fs.existsSync(resolvedPath));
+
+    if (!fs.existsSync(resolvedPath)) {
+      console.error("[FCM] ❌ Service account file not found at:", resolvedPath);
+      console.error("[FCM] Current working directory:", process.cwd());
+      return;
+    }
+
     // Initialize with service account file
-    const serviceAccount = require(serviceAccountPath);
+    const serviceAccount = require(resolvedPath);
+    console.log("[FCM] Service account loaded, project_id:", serviceAccount.project_id);
+
+    // Check if Firebase app already exists
+    try {
+      admin.app();
+      console.log("[FCM] Firebase app already exists, deleting...");
+      admin.app().delete();
+    } catch (e) {
+      // App doesn't exist, which is fine
+    }
+
     admin.initializeApp({
       credential: admin.credential.cert(serviceAccount)
     });
 
     firebaseInitialized = true;
     console.log("[FCM] ✅ Firebase Admin SDK initialized successfully");
+    console.log("[FCM] Project ID:", serviceAccount.project_id);
   } catch (error) {
     console.error("[FCM] ❌ Failed to initialize Firebase:", error);
+    if (error instanceof Error) {
+      console.error("[FCM] Error message:", error.message);
+      console.error("[FCM] Error stack:", error.stack);
+    }
     firebaseInitialized = false;
   }
 };
