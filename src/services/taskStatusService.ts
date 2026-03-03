@@ -159,9 +159,11 @@ export const getTaskStatusByTime = (task: any): string => {
 };
 
 /**
- * Update a single task's status based on time
+ * Update a single task's status
+ * - If newStatus is provided → use that directly (manual change from frontend)
+ * - If not provided → calculate based on time (automatic)
  */
-export const updateSingleTaskStatus = async (taskId: string) => {
+export const updateSingleTaskStatus = async (taskId: string, newStatus?: string) => {
   const conn = getConn();
   const Task = getTaskModel(conn, true);
 
@@ -174,8 +176,13 @@ export const updateSingleTaskStatus = async (taskId: string) => {
     const currentStatus = task.tuluv;
     const calculatedStatus = getTaskStatusByTime(task);
 
-    if (currentStatus !== calculatedStatus) {
-      task.tuluv = calculatedStatus;
+    // Decide target status:
+    // - If frontend sent newStatus, use it
+    // - Otherwise, use time-based calculated status
+    const targetStatus = newStatus || calculatedStatus;
+
+    if (currentStatus !== targetStatus) {
+      task.tuluv = targetStatus;
       await task.save();
 
       // Emit Socket.IO events
@@ -199,19 +206,27 @@ export const updateSingleTaskStatus = async (taskId: string) => {
         });
       }
 
-      // Determine notification type and message
+      // Determine notification type and message based on target status
       let turul = "taskUpdated";
       let title = "Даалгавар шинэчлэгдлээ";
       let message = `${task.ner} (${task.taskId}) даалгавар шинэчлэгдлээ`;
 
-      if (calculatedStatus === "khiigdej bui") {
+      if (targetStatus === "khiigdej bui") {
         turul = "taskStarted";
         title = "Даалгавар эхэллээ";
-        message = `${task.ner} (${task.taskId}) даалгавар эхэлсэн цаг ирлээ`;
-      } else if (calculatedStatus === "khugatsaa khetersen") {
+        message = `${task.ner} (${task.taskId}) даалгавар эхэлсэн`;
+      } else if (targetStatus === "khugatsaa khetersen") {
         turul = "taskExpired";
         title = "Даалгавар хугацаа хэтэрсэн";
         message = `${task.ner} (${task.taskId}) даалгаврын хугацаа хэтэрлээ`;
+      } else if (targetStatus === "duussan") {
+        turul = "taskCompleted";
+        title = "Даалгавар дууссан";
+        message = `${task.ner} (${task.taskId}) даалгавар амжилттай дууссан`;
+      } else if (targetStatus === "shine") {
+        turul = "taskReset";
+        title = "Даалгавар дахин эхлүүлсэн";
+        message = `${task.ner} (${task.taskId}) даалгавар дахин шинэ төлөвт шилжлээ`;
       }
 
       // Create notifications for all members
@@ -236,12 +251,12 @@ export const updateSingleTaskStatus = async (taskId: string) => {
         }
       }
 
-      console.log(`[Task Status] ✅ Task ${task.taskId} status updated: ${currentStatus} → ${calculatedStatus}`);
+      console.log(`[Task Status] ✅ Task ${task.taskId} status updated: ${currentStatus} → ${targetStatus}`);
       
       return {
         success: true,
         oldStatus: currentStatus,
-        newStatus: calculatedStatus,
+        newStatus: targetStatus,
         task: task
       };
     }

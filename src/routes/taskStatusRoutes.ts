@@ -34,10 +34,15 @@ router.post("/task-status/update-all", authMiddleware, async (req: any, res: Res
 /**
  * Update status for a single task
  * POST /task-status/update/:taskId
+ *
+ * Frontend can send optional `tuluv` in body to force status:
+ *  - If `tuluv` is provided → use it directly (manual control)
+ *  - If not provided → backend calculates based on time
  */
 router.post("/task-status/update/:taskId", authMiddleware, async (req: any, res: Response) => {
   try {
-    const result = await updateSingleTaskStatus(req.params.taskId);
+    const { tuluv } = req.body || {};
+    const result = await updateSingleTaskStatus(req.params.taskId, tuluv);
     if (result.success) {
       res.json({
         success: true,
