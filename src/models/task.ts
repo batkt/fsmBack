@@ -16,11 +16,11 @@ const taskSchema = new Schema(
     },
     tuluv: {
       type: String,
-      enum: ["shine", "khiigdej bui", "duussan"],
+      enum: ["shine", "khiigdej bui", "duussan", "khugatsaa khetersen"],
       default: "shine"
     },
     hariutsagchId: { type: String },
-    ajiltnuud: [{ type: String }],
+    ajiltnuud: [{ type: String }],  
     ekhlekhTsag: { type: Date },
     duusakhTsag: { type: Date },
     ekhlekhMinute: { type: Number }, // Start minute (0-1439, minutes from midnight)
