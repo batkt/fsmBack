@@ -109,14 +109,17 @@ export const sendPushNotification = async (
     console.log(`[FCM] Sending push notification to ${tokenList.length} device(s) for user: ${ajiltniiId}`);
 
     // Prepare FCM message
+    // FCM requires all data values to be strings
     const messageData: Record<string, string> = notification.data ? {
       ...Object.entries(notification.data).reduce((acc, [key, value]) => {
-        acc[key] = String(value);
+        // Convert all values to strings (FCM requirement)
+        acc[key] = value !== null && value !== undefined ? String(value) : "";
         return acc;
       }, {} as Record<string, string>)
     } : {};
 
-    const message: admin.messaging.MulticastMessage = {
+    // Ensure notification object exists (required for background notifications)
+    const fcmMessage: admin.messaging.MulticastMessage = {
       notification: {
         title: notification.title,
         body: notification.body
@@ -127,7 +130,8 @@ export const sendPushNotification = async (
         payload: {
           aps: {
             sound: "default",
-            badge: 1
+            badge: 1,
+            contentAvailable: true // Enable background notifications
           }
         }
       },
@@ -135,10 +139,22 @@ export const sendPushNotification = async (
         priority: "high",
         notification: {
           sound: "default",
-          channelId: "default"
-        }
+          channelId: "default",
+          priority: "high"
+        },
+        data: messageData // Also include data in android config
       }
     };
+
+    // Log payload for debugging
+    console.log("[FCM] Payload structure:", {
+      hasNotification: !!fcmMessage.notification,
+      hasData: Object.keys(messageData).length > 0,
+      dataKeys: Object.keys(messageData),
+      notificationTitle: fcmMessage.notification?.title,
+      notificationBody: fcmMessage.notification?.body,
+      tokenCount: tokenList.length
+    });
 
     // Send to all devices
     // Use individual sends for compatibility with all Firebase Admin SDK versions
@@ -149,11 +165,11 @@ export const sendPushNotification = async (
     for (const token of tokenList) {
       try {
         const individualMessage: admin.messaging.Message = {
-          notification: message.notification!,
-          ...(Object.keys(messageData).length > 0 && { data: messageData }),
+          notification: fcmMessage.notification!,
+          data: messageData, // Always include data (even if empty)
           token: token,
-          ...(message.apns && { apns: message.apns }),
-          ...(message.android && { android: message.android })
+          ...(fcmMessage.apns && { apns: fcmMessage.apns }),
+          ...(fcmMessage.android && { android: fcmMessage.android })
         };
         await admin.messaging().send(individualMessage);
         successCount++;
@@ -233,14 +249,17 @@ export const sendPushNotificationToUsers = async (
     console.log(`[FCM] Sending push notification to ${tokenList.length} device(s) for ${ajiltniiIds.length} user(s)`);
 
     // Prepare FCM message
+    // FCM requires all data values to be strings
     const messageData: Record<string, string> = notification.data ? {
       ...Object.entries(notification.data).reduce((acc, [key, value]) => {
-        acc[key] = String(value);
+        // Convert all values to strings (FCM requirement)
+        acc[key] = value !== null && value !== undefined ? String(value) : "";
         return acc;
       }, {} as Record<string, string>)
     } : {};
 
-    const message: admin.messaging.MulticastMessage = {
+    // Ensure notification object exists (required for background notifications)
+    const fcmMessage: admin.messaging.MulticastMessage = {
       notification: {
         title: notification.title,
         body: notification.body
@@ -251,7 +270,8 @@ export const sendPushNotificationToUsers = async (
         payload: {
           aps: {
             sound: "default",
-            badge: 1
+            badge: 1,
+            contentAvailable: true // Enable background notifications
           }
         }
       },
@@ -259,10 +279,21 @@ export const sendPushNotificationToUsers = async (
         priority: "high",
         notification: {
           sound: "default",
-          channelId: "default"
-        }
+          channelId: "default",
+          priority: "high"
+        },
+        data: messageData // Also include data in android config
       }
     };
+
+    // Log payload for debugging
+    console.log("[FCM] Payload structure (multi-user):", {
+      hasNotification: !!fcmMessage.notification,
+      hasData: Object.keys(messageData).length > 0,
+      dataKeys: Object.keys(messageData),
+      userCount: ajiltniiIds.length,
+      tokenCount: tokenList.length
+    });
 
     // Send to all devices
     // Use individual sends for compatibility with all Firebase Admin SDK versions
@@ -273,11 +304,11 @@ export const sendPushNotificationToUsers = async (
     for (const token of tokenList) {
       try {
         const individualMessage: admin.messaging.Message = {
-          notification: message.notification!,
-          ...(Object.keys(messageData).length > 0 && { data: messageData }),
+          notification: fcmMessage.notification!,
+          data: messageData, // Always include data (even if empty)
           token: token,
-          ...(message.apns && { apns: message.apns }),
-          ...(message.android && { android: message.android })
+          ...(fcmMessage.apns && { apns: fcmMessage.apns }),
+          ...(fcmMessage.android && { android: fcmMessage.android })
         };
         await admin.messaging().send(individualMessage);
         successCount++;

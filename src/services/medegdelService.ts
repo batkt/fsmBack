@@ -24,9 +24,11 @@ export const medegdelUusgekh = async (data: any) => {
         body: notification.message,
         data: {
           notificationId: notification._id.toString(),
-          type: notification.turul || "medegdel",
+          turul: notification.turul || "medegdel", // Changed from 'type' to 'turul' to match frontend
           projectId: notification.projectId || "",
-          taskId: notification.taskId || ""
+          taskId: notification.taskId || "",
+          baiguullagiinId: notification.baiguullagiinId || "",
+          barilgiinId: notification.barilgiinId || ""
         }
       });
     } catch (fcmError) {
