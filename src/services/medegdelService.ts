@@ -12,7 +12,30 @@ export const medegdelJagsaalt = async (query: any) => {
 
 export const medegdelUusgekh = async (data: any) => {
   const conn = getConn();
-  return await getMedegdelModel(conn).create(data);
+  const notification = await getMedegdelModel(conn).create(data);
+
+  // Send FCM push notification (async, don't wait for it)
+  // This works even if user is not logged in - they just need to have registered FCM token
+  if (notification.ajiltniiId) {
+    try {
+      const { sendPushNotification } = require("./fcmService");
+      await sendPushNotification(notification.ajiltniiId, {
+        title: notification.title,
+        body: notification.message,
+        data: {
+          notificationId: notification._id.toString(),
+          type: notification.turul || "medegdel",
+          projectId: notification.projectId || "",
+          taskId: notification.taskId || ""
+        }
+      });
+    } catch (fcmError) {
+      // Don't fail notification creation if FCM fails
+      console.error("[Medegdel] Failed to send FCM push notification:", fcmError);
+    }
+  }
+
+  return notification;
 };
 
 export const medegdelZasakh = async (id: string, data: any) => {

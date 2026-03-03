@@ -28,6 +28,7 @@ import uilchluulegchRoutes from "./routes/uilchluulegchRoutes";
 import subTaskRoutes from "./routes/subTaskRoutes";
 import baiguullagaRoute from "./routes/dbRoute";
 import medegdelRoutes from "./routes/medegdelRoutes";
+import fcmTokenRoutes from "./routes/fcmTokenRoutes";
 
 app.use(authRoutes);
 app.use(projectRoutes);
@@ -39,12 +40,14 @@ app.use(uilchluulegchRoutes);
 app.use(subTaskRoutes);
 app.use(baiguullagaRoute);
 app.use(medegdelRoutes);
+app.use(fcmTokenRoutes);
 
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
 
 import { initSocket } from "./utils/socket";
 import { connectFSMDatabase } from "./utils/fsmConnection";
+import { initializeFirebase } from "./services/fcmService";
 
 const server = http.createServer(app);
 const socketIO = initSocket(server);
@@ -78,6 +81,9 @@ async function start() {
 
     // Connect to FSM database (fManageFsm) using config from baiguullaga collection
     await connectFSMDatabase();
+
+    // Initialize Firebase Admin SDK for push notifications
+    initializeFirebase();
 
     server.listen(config.PORT, () => {
       console.log(

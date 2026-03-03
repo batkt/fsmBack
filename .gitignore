@@ -4,3 +4,7 @@ dist
 npm-debug.log*
 yarn-error.log*
 
+# Firebase service account (contains sensitive credentials)
+*-firebase-adminsdk-*.json
+firebase-service-account.json
+
