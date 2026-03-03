@@ -1,21 +1,5 @@
 import { getConn } from "../utils/db";
-import moment from "moment";
 const getTaskModel = require("../models/task");
-
-// Mongolia timezone offset (UTC+8) in minutes
-const MONGOLIA_UTC_OFFSET = 8 * 60;
-
-// Normalize incoming date/time values to Mongolia time before saving
-const toMongoliaDate = (value: any) => {
-  if (!value) return value;
-
-  const m = moment(value);
-  if (!m.isValid()) return value;
-
-  // Treat the incoming value as Mongolia local time and convert to a Date
-  // stored in UTC with correct offset
-  return m.utcOffset(MONGOLIA_UTC_OFFSET, true).toDate();
-};
 
 export const taskJagsaalt = async (query: any) => {
   return await getTaskModel(getConn()).find(query).sort({ createdAt: -1 }).lean();
@@ -27,11 +11,8 @@ export const taskUusgekh = async (data: any) => {
   const TaskModel = getTaskModel(conn);
   const ProjectModel = getProjectModel(conn);
 
-  // Normalize times to Mongolia timezone
-  if (data.ekhlekhTsag) data.ekhlekhTsag = toMongoliaDate(data.ekhlekhTsag);
-  if (data.duusakhTsag) data.duusakhTsag = toMongoliaDate(data.duusakhTsag);
-  if (data.khugatsaaDuusakhOgnoo)
-    data.khugatsaaDuusakhOgnoo = toMongoliaDate(data.khugatsaaDuusakhOgnoo);
+  // Dates are saved as-is from frontend (no conversion)
+  // Frontend should send dates in the format it wants stored
 
   const project = await ProjectModel.findById(data.projectId);
   if (!project) throw new Error("Төсөл олдсонгүй");
@@ -88,11 +69,8 @@ export const taskZasakh = async (id: string, data: any) => {
   const getProjectModel = require("../models/project");
   const ProjectModel = getProjectModel(conn);
 
-  // Normalize times to Mongolia timezone on update as well
-  if (data.ekhlekhTsag) data.ekhlekhTsag = toMongoliaDate(data.ekhlekhTsag);
-  if (data.duusakhTsag) data.duusakhTsag = toMongoliaDate(data.duusakhTsag);
-  if (data.khugatsaaDuusakhOgnoo)
-    data.khugatsaaDuusakhOgnoo = toMongoliaDate(data.khugatsaaDuusakhOgnoo);
+  // Dates are saved as-is from frontend (no conversion)
+  // Frontend should send dates in the format it wants stored
 
   // Get the task to find its projectId
   const existingTask = await TaskModel.findById(id).lean();
