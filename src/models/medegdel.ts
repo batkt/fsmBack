@@ -35,7 +35,8 @@ const medegdelSchema = new Schema(
     adminMedegdelId: { type: String }, // For admin notifications
     tuluv: { type: Number, default: 0 }, // Status: 0 = unread, 1 = read
     dakhijKharakhguiAjiltniiIdnuud: [{ type: String }], // Employees who haven't seen
-    dakhijKharikhEsekh: { type: Boolean, default: false } // All seen
+    dakhijKharikhEsekh: { type: Boolean, default: false }, // All seen
+    ajiltnuud: [{ type: String }] // Task members (for filtering notifications by task membership)
   },
   {
     timestamps: true
@@ -47,6 +48,7 @@ medegdelSchema.index({ ajiltniiId: 1, kharsanEsekh: 1, createdAt: -1 });
 medegdelSchema.index({ baiguullagiinId: 1, barilgiinId: 1 });
 medegdelSchema.index({ projectId: 1, taskId: 1 });
 medegdelSchema.index({ turul: 1, createdAt: -1 });
+medegdelSchema.index({ ajiltnuud: 1 }); // For filtering by task membership
 
 module.exports = function a(conn: any, connectFSM = true, modelName = "medegdel") {
   if (!conn || !conn.kholbolt || !conn.kholboltFSM)

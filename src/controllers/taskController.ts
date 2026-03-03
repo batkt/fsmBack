@@ -69,21 +69,45 @@ export const createTask = async (req: any, res: Response, next: any) => {
     emitToRoom(`project_${task.projectId}`, "task_created", task);
     emitToRoom(`task_${task._id}`, "task_created", task);
 
-    // Create notification for assigned users
+    // Create notifications for all task members (assigned user + ajiltnuud, except creator)
     const { medegdelUusgekh }: any = require("../services/medegdelService");
-    if (task.hariutsagchId) {
-      const notification = await medegdelUusgekh({
-        ajiltniiId: task.hariutsagchId,
-        baiguullagiinId: task.baiguullagiinId,
-        barilgiinId: task.barilgiinId,
-        projectId: task.projectId,
-        taskId: task._id.toString(),
-        turul: "taskCreated",
-        title: "Шинэ даалгавар",
-        message: `${task.ner} (${task.taskId}) даалгавар танд хуваарилагдлаа`,
-        object: task
+    const creatorId = req.ajiltan?.id;
+    const membersToNotify = new Set<string>();
+
+    // Add assigned user
+    if (task.hariutsagchId && task.hariutsagchId !== creatorId) {
+      membersToNotify.add(task.hariutsagchId);
+    }
+
+    // Add task members from ajiltnuud array
+    if (task.ajiltnuud && Array.isArray(task.ajiltnuud)) {
+      task.ajiltnuud.forEach((id: string) => {
+        if (id !== creatorId) {
+          membersToNotify.add(id);
+        }
       });
-      emitToRoom(`user_${task.hariutsagchId}`, "new_notification", notification);
+    }
+
+    // Create notifications for all members
+    for (const memberId of membersToNotify) {
+      try {
+        const notification = await medegdelUusgekh({
+          ajiltniiId: memberId,
+          baiguullagiinId: task.baiguullagiinId,
+          barilgiinId: task.barilgiinId,
+          projectId: task.projectId,
+          taskId: task._id.toString(),
+          turul: "taskCreated",
+          title: "Шинэ даалгавар",
+          message: `${task.ner} (${task.taskId}) даалгавар танд хуваарилагдлаа`,
+          object: task,
+          ajiltnuud: task.ajiltnuud || [] // Store task members for filtering
+        });
+        emitToRoom(`user_${memberId}`, "new_notification", notification);
+      } catch (notifError) {
+        // Don't fail the task creation if notification creation fails
+        console.error("[Task] Failed to create notification for user:", memberId, notifError);
+      }
     }
 
     // Log history
@@ -113,21 +137,60 @@ export const updateTask = async (req: any, res: Response, next: any) => {
     emitToRoom(`project_${task.projectId}`, "task_updated", task);
     emitToRoom(`task_${task._id}`, "task_updated", task);
 
-    // Create notification if task was completed
-    if (req.body.tuluv === "duussan" && task.hariutsagchId) {
-      const { medegdelUusgekh }: any = require("../services/medegdelService");
-      const notification = await medegdelUusgekh({
-        ajiltniiId: task.hariutsagchId,
-        baiguullagiinId: task.baiguullagiinId,
-        barilgiinId: task.barilgiinId,
-        projectId: task.projectId,
-        taskId: task._id.toString(),
-        turul: "taskCompleted",
-        title: "Даалгавар дууссан",
-        message: `${task.ner} (${task.taskId}) даалгавар амжилттай дууссан`,
-        object: task
+    // Create notifications for task members (except updater)
+    const { medegdelUusgekh }: any = require("../services/medegdelService");
+    const updaterId = req.ajiltan?.id;
+    const membersToNotify = new Set<string>();
+
+    // Add assigned user
+    if (task.hariutsagchId && task.hariutsagchId !== updaterId) {
+      membersToNotify.add(task.hariutsagchId);
+    }
+
+    // Add task members
+    if (task.ajiltnuud && Array.isArray(task.ajiltnuud)) {
+      task.ajiltnuud.forEach((id: string) => {
+        if (id !== updaterId) {
+          membersToNotify.add(id);
+        }
       });
-      emitToRoom(`user_${task.hariutsagchId}`, "new_notification", notification);
+    }
+
+    // Determine notification type and message
+    let turul = "taskUpdated";
+    let title = "Даалгавар шинэчлэгдлээ";
+    let message = `${task.ner} (${task.taskId}) даалгавар шинэчлэгдлээ`;
+
+    if (req.body.tuluv === "duussan") {
+      turul = "taskCompleted";
+      title = "Даалгавар дууссан";
+      message = `${task.ner} (${task.taskId}) даалгавар амжилттай дууссан`;
+    } else if (req.body.hariutsagchId && req.body.hariutsagchId !== task.hariutsagchId) {
+      turul = "taskAssigned";
+      title = "Даалгавар хуваарилагдлаа";
+      message = `${task.ner} (${task.taskId}) даалгавар танд хуваарилагдлаа`;
+    }
+
+    // Create notifications for all members
+    for (const memberId of membersToNotify) {
+      try {
+        const notification = await medegdelUusgekh({
+          ajiltniiId: memberId,
+          baiguullagiinId: task.baiguullagiinId,
+          barilgiinId: task.barilgiinId,
+          projectId: task.projectId,
+          taskId: task._id.toString(),
+          turul: turul,
+          title: title,
+          message: message,
+          object: task,
+          ajiltnuud: task.ajiltnuud || [] // Store task members for filtering
+        });
+        emitToRoom(`user_${memberId}`, "new_notification", notification);
+      } catch (notifError) {
+        // Don't fail the task update if notification creation fails
+        console.error("[Task] Failed to create notification for user:", memberId, notifError);
+      }
     }
 
     // Log history

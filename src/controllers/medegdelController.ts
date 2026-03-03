@@ -26,6 +26,12 @@ export const getMedegdels = async (req: any, res: Response, next: any) => {
       query.kharsanEsekh = req.query.kharsanEsekh === "true";
     }
 
+    // Filter by task membership: only show notifications for tasks where user is in ajiltnuud
+    // This is useful when you want to see only notifications for tasks you're assigned to
+    if (req.query.onlyTaskMembers === "true" && ajiltniiId) {
+      query.ajiltnuud = ajiltniiId; // MongoDB will match if ajiltniiId is in the ajiltnuud array
+    }
+
     const medegdels = await medegdelJagsaalt(query);
     res.json({ success: true, data: medegdels });
   } catch (err) {
