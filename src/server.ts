@@ -83,7 +83,9 @@ async function start() {
     await connectFSMDatabase();
 
     // Initialize Firebase Admin SDK for push notifications
+    console.log("[Startup] Initializing Firebase...");
     initializeFirebase();
+    console.log("[Startup] Firebase initialization completed");
 
     server.listen(config.PORT, () => {
       console.log(

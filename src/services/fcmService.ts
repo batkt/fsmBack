@@ -87,7 +87,13 @@ export const sendPushNotification = async (
 ): Promise<{ success: boolean; sent: number; failed: number }> => {
   if (!firebaseInitialized) {
     console.warn("[FCM] ⚠️ Firebase not initialized, skipping push notification");
-    return { success: false, sent: 0, failed: 0 };
+    console.warn("[FCM] Check server startup logs for Firebase initialization errors");
+    // Try to initialize again (in case .env was updated)
+    console.log("[FCM] Attempting to initialize Firebase again...");
+    initializeFirebase();
+    if (!firebaseInitialized) {
+      return { success: false, sent: 0, failed: 0 };
+    }
   }
 
   try {
