@@ -26,6 +26,29 @@ const taskSchema = new Schema(
     ekhlekhMinute: { type: Number }, // Start minute (0-1439, minutes from midnight)
     duusakhMinute: { type: Number }, // End minute (0-1439, minutes from midnight)
     khugatsaaDuusakhOgnoo: { type: Date },
+    // Images provided by the assigned user (hariutsagch)
+    hariutsagchZurag: [{
+      zamNer: { type: String },
+      fileNer: { type: String },
+      khemjee: { type: Number },
+      turul: { type: String },
+      ognoo: { type: Date, default: Date.now },
+      ajiltniiId: { type: String }, // Who uploaded this image
+      tailbar: { type: String }, // Description/text for the image
+      garchig: { type: String } // Title for the image
+    }],
+    // Images provided by employees (ajiltan)
+    ajiltanZurag: [{
+      zamNer: { type: String },
+      fileNer: { type: String },
+      khemjee: { type: Number },
+      turul: { type: String },
+      ognoo: { type: Date, default: Date.now },
+      ajiltniiId: { type: String }, // Who uploaded this image
+      tailbar: { type: String }, // Description/text for the image
+      garchig: { type: String } // Title for the image
+    }],
+    // Legacy field - kept for backward compatibility (deprecated)
     zurag: [{
       zamNer: { type: String },
       fileNer: { type: String },

@@ -40,10 +40,39 @@ export const getTask = async (req: any, res: Response, next: any) => {
 export const createTask = async (req: any, res: Response, next: any) => {
   try {
     const bid = req.ajiltan?.baiguullagiinId || req.body.baiguullagiinId;
-    const data = {
+    const uploaderId = req.ajiltan?.id;
+    const isHariutsagch = req.body.hariutsagchId === uploaderId;
+    
+    // Prepare data with automatic ajiltniiId for images
+    const data: any = {
       ...req.body,
       ...(bid && { baiguullagiinId: bid })
     };
+
+    // Automatically set ajiltniiId for hariutsagchZurag images if creator is hariutsagch
+    if (data.hariutsagchZurag && Array.isArray(data.hariutsagchZurag) && isHariutsagch && uploaderId) {
+      data.hariutsagchZurag = data.hariutsagchZurag.map((img: any) => ({
+        ...img,
+        ajiltniiId: img.ajiltniiId || uploaderId,
+        ognoo: img.ogno || new Date(),
+        // Preserve tailbar and garchig if provided
+        tailbar: img.tailbar || img.text || img.description,
+        garchig: img.garchig || img.title
+      }));
+    }
+
+    // Automatically set ajiltniiId for ajiltanZurag images
+    if (data.ajiltanZurag && Array.isArray(data.ajiltanZurag) && uploaderId) {
+      data.ajiltanZurag = data.ajiltanZurag.map((img: any) => ({
+        ...img,
+        ajiltniiId: img.ajiltniiId || uploaderId,
+        ognoo: img.ogno || new Date(),
+        // Preserve tailbar and garchig if provided
+        tailbar: img.tailbar || img.text || img.description,
+        garchig: img.garchig || img.title
+      }));
+    }
+
     const task = await taskUusgekh(data);
     
     // Automatically create a chat message
@@ -308,6 +337,108 @@ export const deleteTask = async (req: any, res: Response, next: any) => {
 
     await taskUstgakh(req.params.id);
     res.json({ success: true, message: "Даалгавар амжилттай устгагдлаа" });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const uploadTaskImage = async (req: any, res: Response, next: any) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: "Файл олдсонгүй" });
+    }
+
+    const taskId = req.params.id;
+    const uploaderId = req.ajiltan?.id;
+    
+    if (!uploaderId) {
+      return res.status(400).json({ success: false, message: "Хэрэглэгчийн мэдээлэл олдсонгүй" });
+    }
+
+    // Get the task
+    const task = await taskNegAvakh(taskId);
+    if (!task) {
+      return res.status(404).json({ success: false, message: "Даалгавар олдсонгүй" });
+    }
+
+    // Get text/title/description from request body
+    const { tailbar, garchig, text, title, description } = req.body;
+    
+    // Prepare image data
+    const imageData: any = {
+      zamNer: `uploads/${req.file.filename}`,
+      fileNer: req.file.originalname,
+      khemjee: req.file.size,
+      turul: req.file.mimetype,
+      ognoo: new Date(),
+      ajiltniiId: uploaderId
+    };
+
+    // Add text/description (support multiple field names for flexibility)
+    if (tailbar || text || description) {
+      imageData.tailbar = tailbar || text || description;
+    }
+
+    // Add title (support multiple field names for flexibility)
+    if (garchig || title) {
+      imageData.garchig = garchig || title;
+    }
+
+    // Determine if uploader is hariutsagch or ajiltan
+    const isHariutsagch = task.hariutsagchId === uploaderId;
+    const isAjiltan = task.ajiltnuud && task.ajiltnuud.includes(uploaderId);
+
+    const { getConn } = require("../utils/db");
+    const getTaskModel = require("../models/task");
+    const conn = getConn();
+    const TaskModel = getTaskModel(conn, true);
+
+    let updateQuery: any = {};
+
+    if (isHariutsagch) {
+      // Add to hariutsagchZurag array
+      updateQuery.$push = { hariutsagchZurag: imageData };
+      console.log(`[Task Image Upload] Adding image to hariutsagchZurag for task ${task.taskId}`);
+    } else if (isAjiltan) {
+      // Add to ajiltanZurag array
+      updateQuery.$push = { ajiltanZurag: imageData };
+      console.log(`[Task Image Upload] Adding image to ajiltanZurag for task ${task.taskId}`);
+    } else {
+      // If user is neither hariutsagch nor in ajiltnuud, add to ajiltanZurag by default
+      // (or you could return an error - depends on your business logic)
+      updateQuery.$push = { ajiltanZurag: imageData };
+      console.log(`[Task Image Upload] User is not hariutsagch or ajiltan, adding to ajiltanZurag by default`);
+    }
+
+    // Update the task
+    const updatedTask = await TaskModel.findByIdAndUpdate(
+      taskId,
+      updateQuery,
+      { new: true }
+    ).lean();
+
+    if (!updatedTask) {
+      return res.status(404).json({ success: false, message: "Даалгавар олдсонгүй" });
+    }
+
+    // Emit Socket.IO events
+    const { emitToRoom } = require("../utils/socket");
+    emitToRoom(`project_${updatedTask.projectId}`, "task_updated", updatedTask);
+    emitToRoom(`task_${updatedTask._id}`, "task_updated", updatedTask);
+    emitToRoom(`task_${updatedTask._id}`, "task_image_uploaded", {
+      taskId: updatedTask._id,
+      image: imageData,
+      uploaderId: uploaderId,
+      type: isHariutsagch ? "hariutsagch" : "ajiltan"
+    });
+
+    res.json({
+      success: true,
+      message: "Зураг амжилттай хадгалагдлаа",
+      data: updatedTask,
+      image: imageData,
+      addedTo: isHariutsagch ? "hariutsagchZurag" : "ajiltanZurag"
+    });
   } catch (err) {
     next(err);
   }
