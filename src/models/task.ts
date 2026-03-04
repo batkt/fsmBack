@@ -26,6 +26,17 @@ const taskSchema = new Schema(
     ekhlekhMinute: { type: Number }, // Start minute (0-1439, minutes from midnight)
     duusakhMinute: { type: Number }, // End minute (0-1439, minutes from midnight)
     khugatsaaDuusakhOgnoo: { type: Date },
+    // Baraa usage for this task (what items were used and how many)
+    baraa: [{
+      baraaId: { type: String, required: true }, // Reference to baraa._id
+      ner: { type: String },                     // Snapshot of item name
+      negj: { type: String },                    // Snapshot of unit (e.g. shirheg, litr)
+      too: { type: Number, required: true },     // Quantity used for this task
+      une: { type: Number },                     // Unit price at time of usage
+      niitUne: { type: Number },                 // Calculated total price (too * une)
+      tailbar: { type: String },                 // Optional note/description
+      ognoo: { type: Date, default: Date.now }   // When this usage was recorded
+    }],
     // Images provided by the assigned user (hariutsagch)
     hariutsagchZurag: [{
       zamNer: { type: String },
