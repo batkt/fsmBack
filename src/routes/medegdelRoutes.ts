@@ -20,7 +20,8 @@ router.get("/medegdel/:id", authMiddleware, getMedegdel);
 router.post("/medegdel", authMiddleware, createMedegdel);
 router.put("/medegdel/:id", authMiddleware, updateMedegdel);
 router.put("/medegdel/:id/read", authMiddleware, markAsRead);
-router.put("/medegdel/read-all", authMiddleware, markAllAsRead);
+router.put("/medegdel/read-all", authMiddleware, markAllAsRead); // PUT /medegdel/read-all
+router.post("/medegdel/read-all", authMiddleware, markAllAsRead); // POST /medegdel/read-all (alternative)
 router.delete("/medegdel/:id", authMiddleware, deleteMedegdel);
 
 export default router;

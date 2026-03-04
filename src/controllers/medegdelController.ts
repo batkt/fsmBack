@@ -125,13 +125,20 @@ export const markAllAsRead = async (req: any, res: Response, next: any) => {
       return res.status(400).json({ success: false, message: "Ажилтны ID шаардлагатай" });
     }
 
-    const baiguullagiinId = req.ajiltan?.baiguullagiinId || req.query.baiguullagiinId;
+    const baiguullagiinId = req.ajiltan?.baiguullagiinId || req.query.baiguullagiinId || req.body.baiguullagiinId;
     const result = await medegdelBuhKharlaa(ajiltniiId, baiguullagiinId);
+    
+    // Optionally return updated notifications list
+    const updatedNotifications = await medegdelJagsaalt({
+      ajiltniiId,
+      ...(baiguullagiinId && { baiguullagiinId })
+    });
     
     res.json({
       success: true,
       message: `${result.modifiedCount} мэдэгдэл уншсан болголоо`,
-      count: result.modifiedCount
+      count: result.modifiedCount,
+      data: updatedNotifications
     });
   } catch (err) {
     next(err);
