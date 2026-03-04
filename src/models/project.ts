@@ -16,6 +16,8 @@ const projectSchema = new Schema(
     duusakhOgnoo: { type: Date },
     udirdagchId: { type: String },
     ajiltnuud: [{ type: String }],
+    // Optional: link project to a specific customer (uilchluulegch)
+    uilchluulegchId: { type: String },
     baiguullagiinId: { type: String, required: true },
     barilgiinId: { type: String, required: true },
     taskCount: { type: Number, default: 0 },
@@ -30,6 +32,7 @@ projectSchema.index({ baiguullagiinId: 1, barilgiinId: 1 });
 projectSchema.index({ baiguullagiinId: 1, tuluv: 1 });
 projectSchema.index({ udirdagchId: 1 });
 projectSchema.index({ ajiltnuud: 1 });
+projectSchema.index({ uilchluulegchId: 1 });
 
 module.exports = function a(conn: any, connectFSM = true, modelName = "project") {
   if (!conn || !conn.kholbolt || !conn.kholboltFSM)
