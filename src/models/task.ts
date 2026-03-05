@@ -26,6 +26,15 @@ const taskSchema = new Schema(
     ekhlekhMinute: { type: Number }, // Start minute (0-1439, minutes from midnight)
     duusakhMinute: { type: Number }, // End minute (0-1439, minutes from midnight)
     khugatsaaDuusakhOgnoo: { type: Date },
+    // Time tracking for each employee (ajiltan) - how much time each employee spent on this task
+    ajiltanTsag: [{
+      ajiltniiId: { type: String, required: true }, // Employee ID
+      ekhlekhTsag: { type: Date, required: true },  // When they started working
+      duusakhTsag: { type: Date },                  // When they finished (optional if still working)
+      tsagMinute: { type: Number },                 // Total time spent in minutes (calculated or manual)
+      tailbar: { type: String },                    // Optional note about what they did
+      ognoo: { type: Date, default: Date.now }      // When this time entry was recorded
+    }],
     // Baraa usage for this task (what items were used and how many)
     baraa: [{
       baraaId: { type: String, required: true }, // Reference to baraa._id

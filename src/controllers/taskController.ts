@@ -443,3 +443,87 @@ export const uploadTaskImage = async (req: any, res: Response, next: any) => {
     next(err);
   }
 };
+
+export const startTaskTime = async (req: any, res: Response, next: any) => {
+  try {
+    const taskId = req.params.id;
+    const ajiltniiId = req.ajiltan?.id;
+    
+    if (!ajiltniiId) {
+      return res.status(400).json({ success: false, message: "Ажилтны мэдээлэл олдсонгүй" });
+    }
+
+    const { startTaskTime: startTimeService } = require("../services/taskService");
+    const { tailbar } = req.body || {};
+    
+    const result = await startTimeService(taskId, ajiltniiId, tailbar);
+
+    // Emit Socket.IO event
+    const { emitToRoom } = require("../utils/socket");
+    emitToRoom(`project_${result.task.projectId}`, "task_updated", result.task);
+    emitToRoom(`task_${result.task._id}`, "task_updated", result.task);
+    emitToRoom(`task_${result.task._id}`, "task_time_started", {
+      taskId: result.task._id,
+      ajiltniiId: ajiltniiId,
+      timeEntry: result.timeEntry
+    });
+
+    res.json({
+      success: true,
+      message: result.message,
+      data: result.task,
+      timeEntry: result.timeEntry
+    });
+  } catch (err: any) {
+    if (err.message === "Даалгавар олдсонгүй") {
+      return res.status(404).json({ success: false, message: err.message });
+    }
+    if (err.message.includes("цаг тоолж эхэлсэн")) {
+      return res.status(400).json({ success: false, message: err.message });
+    }
+    next(err);
+  }
+};
+
+export const endTaskTime = async (req: any, res: Response, next: any) => {
+  try {
+    const taskId = req.params.id;
+    const ajiltniiId = req.ajiltan?.id;
+    
+    if (!ajiltniiId) {
+      return res.status(400).json({ success: false, message: "Ажилтны мэдээлэл олдсонгүй" });
+    }
+
+    const { endTaskTime: endTimeService } = require("../services/taskService");
+    const { tailbar } = req.body || {};
+    
+    const result = await endTimeService(taskId, ajiltniiId, tailbar);
+
+    // Emit Socket.IO event
+    const { emitToRoom } = require("../utils/socket");
+    emitToRoom(`project_${result.task.projectId}`, "task_updated", result.task);
+    emitToRoom(`task_${result.task._id}`, "task_updated", result.task);
+    emitToRoom(`task_${result.task._id}`, "task_time_ended", {
+      taskId: result.task._id,
+      ajiltniiId: ajiltniiId,
+      timeEntry: result.timeEntry,
+      durationMinutes: result.durationMinutes
+    });
+
+    res.json({
+      success: true,
+      message: result.message,
+      data: result.task,
+      timeEntry: result.timeEntry,
+      durationMinutes: result.durationMinutes
+    });
+  } catch (err: any) {
+    if (err.message === "Даалгавар олдсонгүй") {
+      return res.status(404).json({ success: false, message: err.message });
+    }
+    if (err.message.includes("цаг тоолж эхлээгүй")) {
+      return res.status(400).json({ success: false, message: err.message });
+    }
+    next(err);
+  }
+};

@@ -11,11 +11,7 @@ export const taskUusgekh = async (data: any) => {
   const getProjectModel = require("../models/project");
   const TaskModel = getTaskModel(conn);
   const ProjectModel = getProjectModel(conn);
-  const BaraaModel = getBaraaModel(conn); // FSM by default
-
-  // Dates are saved as-is from frontend (no conversion)
-  // Frontend should send dates in the format it wants stored
-
+  const BaraaModel = getBaraaModel(conn);
   const project = await ProjectModel.findById(data.projectId);
   if (!project) throw new Error("Төсөл олдсонгүй");
 
@@ -162,4 +158,108 @@ export const taskUstgakh = async (id: string) => {
 
 export const taskNegAvakh = async (id: string) => {
   return await getTaskModel(getConn()).findById(id).lean();
+};
+
+/**
+ * Start time tracking for an employee on a task
+ * Creates a new time entry with start time (no end time yet)
+ */
+export const startTaskTime = async (taskId: string, ajiltniiId: string, tailbar?: string) => {
+  const conn = getConn();
+  const TaskModel = getTaskModel(conn, true);
+
+  const task = await TaskModel.findById(taskId);
+  if (!task) {
+    throw new Error("Даалгавар олдсонгүй");
+  }
+
+  // Check if employee already has an active time entry (started but not ended)
+  const existingEntries = Array.isArray(task.ajiltanTsag) ? task.ajiltanTsag : [];
+  const activeEntry = existingEntries.find(
+    (entry: any) => entry.ajiltniiId === ajiltniiId && !entry.duusakhTsag
+  );
+
+  if (activeEntry) {
+    throw new Error("Энэ ажилтан аль хэдийн цаг тоолж эхэлсэн байна");
+  }
+
+  // Add new time entry with start time
+  const startTime = new Date();
+  const newTimeEntry = {
+    ajiltniiId: ajiltniiId,
+    ekhlekhTsag: startTime,
+    duusakhTsag: null,
+    tsagMinute: null,
+    tailbar: tailbar || "",
+    ognoo: startTime
+  };
+
+  const updatedTask = await TaskModel.findByIdAndUpdate(
+    taskId,
+    { $push: { ajiltanTsag: newTimeEntry } },
+    { new: true }
+  ).lean();
+
+  return {
+    success: true,
+    task: updatedTask,
+    timeEntry: newTimeEntry,
+    message: "Цаг тоолох эхэлсэн"
+  };
+};
+
+/**
+ * End time tracking for an employee on a task
+ * Finds the active entry (no duusakhTsag) and updates it with end time and calculated duration
+ */
+export const endTaskTime = async (taskId: string, ajiltniiId: string, tailbar?: string) => {
+  const conn = getConn();
+  const TaskModel = getTaskModel(conn, true);
+
+  const task = await TaskModel.findById(taskId);
+  if (!task) {
+    throw new Error("Даалгавар олдсонгүй");
+  }
+
+  const existingEntries = Array.isArray(task.ajiltanTsag) ? task.ajiltanTsag : [];
+  
+  // Find the active entry (started but not ended) for this employee
+  const activeEntryIndex = existingEntries.findIndex(
+    (entry: any) => entry.ajiltniiId === ajiltniiId && !entry.duusakhTsag
+  );
+
+  if (activeEntryIndex === -1) {
+    throw new Error("Энэ ажилтан цаг тоолж эхлээгүй байна");
+  }
+
+  const activeEntry = existingEntries[activeEntryIndex];
+  const endTime = new Date();
+  const startTime = new Date(activeEntry.ekhlekhTsag);
+  
+  // Calculate duration in minutes
+  const durationMs = endTime.getTime() - startTime.getTime();
+  const durationMinutes = Math.round(durationMs / (1000 * 60));
+
+  // Update the specific entry in the array
+  const updatedEntries = [...existingEntries];
+  updatedEntries[activeEntryIndex] = {
+    ...activeEntry,
+    duusakhTsag: endTime,
+    tsagMinute: durationMinutes,
+    tailbar: tailbar || activeEntry.tailbar || ""
+  };
+
+  const updatedTask = await TaskModel.findByIdAndUpdate(
+    taskId,
+    { $set: { ajiltanTsag: updatedEntries } },
+    { new: true }
+  ).lean();
+
+  return {
+    success: true,
+    task: updatedTask,
+    timeEntry: updatedEntries[activeEntryIndex],
+    durationMinutes: durationMinutes,
+    message: `Цаг тоолох дууссан. Нийт: ${durationMinutes} минут`
+  };
 };
