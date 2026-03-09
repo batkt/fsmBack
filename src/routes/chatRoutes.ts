@@ -33,6 +33,7 @@ router.put("/chats/read", authMiddleware, readChats);
 router.post("/chats/upload", authMiddleware, upload.single("file"), uploadFile);
 // Edit own message (update text)
 router.patch("/chats/:id", authMiddleware, editChat);
+router.put("/chats/:id", authMiddleware, editChat);
 // Soft-delete own message
 router.delete("/chats/:id", authMiddleware, deleteChat);
 

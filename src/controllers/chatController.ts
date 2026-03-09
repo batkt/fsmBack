@@ -125,10 +125,26 @@ export const deleteChat = async (req: any, res: Response, next: any) => {
     const chat = await ChatModel.findById(req.params.id).lean();
     if (!chat) return res.status(404).json({ success: false, message: "Чат олдсонгүй" });
 
-    const requesterId = req.ajiltan?.id;
-    // Only the sender or admin can delete
-    if (chat.ajiltniiId !== requesterId) {
-      return res.status(403).json({ success: false, message: "Зөвхөн өөрийн мессежийг устгах боломжтой" });
+    const requesterId = String(req.ajiltan?.id);
+    const senderId = String((chat as any).ajiltniiId);
+    
+    // Check if user is Admin or sender
+    let canPerform = requesterId === senderId;
+    
+    // If not sender, check DB for admin role (since it's not in JWT)
+    if (!canPerform) {
+       const { db }: any = require("zevbackv2");
+       const mongoose = require("mongoose");
+       const ajiltan = await db.erunkhiiKholbolt.kholbolt.collection("ajiltan").findOne({ 
+         _id: new mongoose.Types.ObjectId(requesterId) 
+       });
+       if (ajiltan && (ajiltan.erkh === 'Admin' || ajiltan.erkh === 'Manager')) {
+         canPerform = true;
+       }
+    }
+
+    if (!canPerform) {
+      return res.status(403).json({ success: false, message: "Зөвхөн өөрийн мессежийг устгах боломжтой эсвэл Админ эрхтэй байх шаардлагатай" });
     }
 
     const deleted = await chatSoftUstgakh(req.params.id);
@@ -149,6 +165,8 @@ export const deleteChat = async (req: any, res: Response, next: any) => {
 export const editChat = async (req: any, res: Response, next: any) => {
   try {
     const { medeelel } = req.body;
+    console.log(`[Chat Edit] Req ID: ${req.params.id}, New Body: ${medeelel}`);
+
     if (!medeelel || typeof medeelel !== "string" || !medeelel.trim()) {
       return res.status(400).json({ success: false, message: "medeelel (шинэ текст) заавал бөглөнө" });
     }
@@ -159,11 +177,30 @@ export const editChat = async (req: any, res: Response, next: any) => {
     const ChatModel = getChatModel(conn);
 
     const chat = await ChatModel.findById(req.params.id).lean();
-    if (!chat) return res.status(404).json({ success: false, message: "Чат олдсонгүй" });
+    if (!chat) {
+      console.log(`[Chat Edit] ❌ Chat ${req.params.id} not found`);
+      return res.status(404).json({ success: false, message: "Чат олдсонгүй" });
+    }
 
-    const requesterId = req.ajiltan?.id;
-    if ((chat as any).ajiltniiId !== requesterId) {
-      return res.status(403).json({ success: false, message: "Зөвхөн өөрийн мессежийг засах боломжтой" });
+    const requesterId = String(req.ajiltan?.id);
+    const senderId = String((chat as any).ajiltniiId);
+    
+    let canPerform = requesterId === senderId;
+
+    if (!canPerform) {
+       const { db }: any = require("zevbackv2");
+       const mongoose = require("mongoose");
+       const ajiltan = await db.erunkhiiKholbolt.kholbolt.collection("ajiltan").findOne({ 
+         _id: new mongoose.Types.ObjectId(requesterId) 
+       });
+       if (ajiltan && (ajiltan.erkh === 'Admin' || ajiltan.erkh === 'Manager')) {
+         canPerform = true;
+       }
+    }
+
+    if (!canPerform) {
+      console.log(`[Chat Edit] ❌ Forbidden: ReqUser ${requesterId} vs Sender ${senderId}`);
+      return res.status(403).json({ success: false, message: "Зөвхөн өөрийн мессежийг засах боломжтой эсвэл Админ эрхтэй байх шаардлагатай" });
     }
 
     if ((chat as any).isDeleted) {
@@ -171,6 +208,7 @@ export const editChat = async (req: any, res: Response, next: any) => {
     }
 
     const updated = await chatZasakh(req.params.id, medeelel.trim());
+    console.log(`[Chat Edit] ✅ Success for ID: ${req.params.id}`);
 
     // Broadcast update
     const room = (chat as any).taskId
@@ -180,6 +218,7 @@ export const editChat = async (req: any, res: Response, next: any) => {
 
     res.json({ success: true, data: updated });
   } catch (err) {
+    console.error(`[Chat Edit] ❌ Error:`, err);
     next(err);
   }
 };
