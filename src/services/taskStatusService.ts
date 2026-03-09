@@ -19,16 +19,44 @@ export const updateTaskStatusesByTime = async () => {
     // Find tasks that should be active (start time has passed but not completed)
     const tasksToActivate = await Task.find({
       tuluv: { $in: ["shine"] }, // Only new tasks
-      ekhlekhTsag: { $lte: now }, // Start time has passed
-      duusakhTsag: { $exists: true, $ne: null } // Has end time
+      ekhlekhTsag: { $lte: now } // Start time has passed
     }).lean();
 
     // Activate tasks
     for (const task of tasksToActivate) {
-      await Task.findByIdAndUpdate(task._id, {
+      const updateOps: any = {
         $set: { tuluv: "khiigdej bui" }
+      };
+
+      // Auto-start time for hariutsagch if they don't have an active session
+      if (task.hariutsagchId) {
+        const hasActiveSession = (task.ajiltanTsag || []).some((s: any) => 
+          s.ajiltniiId === task.hariutsagchId && !s.duusakhTsag
+        );
+        
+        if (!hasActiveSession) {
+           const startTime = new Date();
+           updateOps.$push = {
+             ajiltanTsag: {
+               ajiltniiId: task.hariutsagchId,
+               ekhlekhTsag: startTime,
+               duusakhTsag: null,
+               tsagMinute: null,
+               tailbar: "Автоматаар эхэлсэн",
+               ognoo: startTime
+             }
+           };
+        }
+      }
+
+      await Task.findByIdAndUpdate(task._id, updateOps);
+      
+      updatedTasks.push({ 
+        taskId: task._id, 
+        action: "activated", 
+        oldStatus: task.tuluv, 
+        newStatus: "khiigdej bui" 
       });
-      updatedTasks.push({ taskId: task._id, action: "activated", oldStatus: task.tuluv, newStatus: "khiigdej bui" });
       console.log(`[Task Status] ✅ Task ${task.taskId} (${task.ner}) activated - start time reached`);
     }
 

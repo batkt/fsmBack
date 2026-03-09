@@ -93,11 +93,11 @@ async function start() {
     initializeFirebase();
     console.log("[Startup] Firebase initialization completed");
 
-    // Start task status scheduler (checks every 5 minutes)
+    // Start task status scheduler (checks every minute)
     const { startTaskStatusScheduler } = require("./utils/taskStatusScheduler");
     const schedulerInterval = process.env.TASK_STATUS_CHECK_INTERVAL 
       ? parseInt(process.env.TASK_STATUS_CHECK_INTERVAL) 
-      : 5; // Default: 5 minutes
+      : 1; // Default updated to 1 minute for better responsiveness
     startTaskStatusScheduler(schedulerInterval);
     console.log(`[Startup] ✅ Task status scheduler started (checking every ${schedulerInterval} minutes)`);
 
