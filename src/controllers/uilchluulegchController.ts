@@ -66,3 +66,14 @@ export const deleteUilchluulegch = async (req: any, res: Response, next: any) =>
     next(err);
   }
 };
+
+export const refreshUilchluulegchStats = async (req: any, res: Response, next: any) => {
+  try {
+    const { kpiShineelekhUilchluulegch } = require("../services/kpiService");
+    const stats = await kpiShineelekhUilchluulegch(req.params.id);
+    res.json({ success: true, data: stats });
+  } catch (err) {
+    next(err);
+  }
+};
+

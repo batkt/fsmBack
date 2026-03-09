@@ -26,7 +26,9 @@ const uilchluulegchSchema = new Schema(
     kpiDaalgavarToo: { type: Number, default: 0 },  
     kpiDundaj: { type: Number, default: 0 },       
     kpiHuvv: { type: Number, default: 0 },         
+    kpiOrlogo: { type: Number, default: 0 },
     kpiShineelsenOgnoo: { type: Date }              
+
   },
   {
     timestamps: true

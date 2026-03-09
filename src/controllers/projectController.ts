@@ -15,6 +15,8 @@ export const getProjects = async (req: any, res: Response, next: any) => {
 
     if (req.query.tuluv) query.tuluv = req.query.tuluv;
     if (req.query.barilgiinId) query.barilgiinId = req.query.barilgiinId;
+    if (req.query.uilchluulegchId) query.uilchluulegchId = req.query.uilchluulegchId;
+
 
     // Only filter by employee if explicitly requested via query parameter
     // Don't automatically filter by authenticated user to allow broader queries

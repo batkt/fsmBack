@@ -93,3 +93,83 @@ export const kpiShineelekh = async (
     updatedUser: updatedUser || null
   };
 };
+
+/**
+ * Update KPI/Stats for a customer (uilchluulegch)
+ */
+export const kpiShineelekhUilchluulegch = async (
+  uilchluulegchId: string
+): Promise<any> => {
+  const conn               = getConn();
+  const getProjectModel    = require("../models/project");
+  const getTaskModel       = require("../models/task");
+  
+  const ProjectModel       = getProjectModel(conn, true);
+  const TaskModel          = getTaskModel(conn, true);
+  const UilchluulegchModel = getUilchluulegchModel(conn, true);
+
+  console.log(`[KPI/Client] Updating for client ${uilchluulegchId}`);
+
+  // Find projects for this client
+  const projects = await ProjectModel.find({ uilchluulegchId }).select("_id").lean();
+  const projectIds = projects.map((p: any) => p._id.toString());
+  
+  // Find tasks related to these projects (or specifically set with this uilchluulegchId)
+  const tasks = await TaskModel.find({
+    $or: [
+      { projectId: { $in: projectIds } },
+      { uilchluulegchId }
+    ]
+  }).select("uilchluulegchOnooson baraa duussanOgnoo").lean();
+
+  let kpiDaalgavarToo = 0;
+  let totalRating = 0;
+  let ratedCount = 0;
+  let totalOrlogo = 0;
+
+  tasks.forEach((task: any) => {
+    // Count all tasks
+    kpiDaalgavarToo++;
+
+    // Calculate average rating
+    if (task.uilchluulegchOnooson != null) {
+      totalRating += task.uilchluulegchOnooson;
+      ratedCount++;
+    }
+
+    // Calculate revenue from materials used
+    if (Array.isArray(task.baraa)) {
+      task.baraa.forEach((b: any) => {
+        totalOrlogo += (b.niitUne || 0);
+      });
+    }
+  });
+
+  const kpiDundaj = ratedCount > 0 ? Math.round((totalRating / ratedCount) * 10) / 10 : 0;
+  // Use as percentage (0-100)
+  const kpiHuvv = ratedCount > 0 ? Math.round((totalRating / ratedCount) * 10) : 0;
+
+  const updatedClient = await UilchluulegchModel.findByIdAndUpdate(
+    uilchluulegchId,
+    {
+      $set: {
+        kpiDaalgavarToo,
+        kpiDundaj,
+        kpiHuvv,
+        kpiOrlogo: totalOrlogo,
+        kpiShineelsenOgnoo: new Date()
+      }
+    },
+    { new: true }
+  ).lean();
+
+  console.log(`[KPI/Client] Calculated for ${uilchluulegchId}: Tasks=${kpiDaalgavarToo}, Avg=${kpiDundaj}, Revenue=${totalOrlogo}`);
+
+  return {
+    kpiDaalgavarToo,
+    kpiDundaj,
+    kpiOrlogo: totalOrlogo,
+    updatedClient: updatedClient || null
+  };
+};
+

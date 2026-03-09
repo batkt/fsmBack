@@ -1,6 +1,6 @@
 import { Response } from "express";
 import { taskNegAvakh } from "../services/taskService";
-import { kpiShineelekh } from "../services/kpiService";
+import { kpiShineelekh, kpiShineelekhUilchluulegch } from "../services/kpiService";
 import { emitToRoom } from "../utils/socket";
 
  
@@ -205,11 +205,23 @@ export const giveClientTaskPoints = async (req: any, res: Response, next: any) =
     emitToRoom(`project_${task.projectId}`, "task_updated", updatedTask);
     emitToRoom(`task_${task._id}`, "task_updated", updatedTask);
 
+    // Update client KPI
+    let clientKpi = null;
+    const finalClientId = uilchluulegchId || task.uilchluulegchId;
+    if (finalClientId) {
+      try {
+        clientKpi = await kpiShineelekhUilchluulegch(finalClientId);
+      } catch (err) {
+        console.error(`[KPI/Client] Failed to update stats for client ${finalClientId}:`, err);
+      }
+    }
+
     res.json({
       success: true,
       message: `Үйлчлүүлэгчийн оноо хадгалагдлаа (${points}/10)`,
       data: updatedTask,
-      kpi: lastKpiResult
+      kpi: lastKpiResult,
+      clientKpi: clientKpi
     });
   } catch (err) {
     next(err);

@@ -19,6 +19,8 @@ export const getTasks = async (req: any, res: Response, next: any) => {
     if (req.query.zereglel) query.zereglel = req.query.zereglel;
     if (req.query.hariutsagchId) query.hariutsagchId = req.query.hariutsagchId;
     if (req.query.barilgiinId) query.barilgiinId = req.query.barilgiinId;
+    if (req.query.uilchluulegchId) query.uilchluulegchId = req.query.uilchluulegchId;
+
 
     const tasks = await taskJagsaalt(query);
     res.json({ success: true, data: tasks });

@@ -5,7 +5,9 @@ import {
   createUilchluulegch,
   updateUilchluulegch,
   deleteUilchluulegch,
+  refreshUilchluulegchStats,
 } from "../controllers/uilchluulegchController";
+
 import { authMiddleware } from "../middlewares/auth";
 
 const router = Router();
@@ -16,5 +18,7 @@ router.get("/uilchluulegch/:id", authMiddleware, getUilchluulegch);
 router.post("/uilchluulegch", authMiddleware, createUilchluulegch);
 router.put("/uilchluulegch/:id", authMiddleware, updateUilchluulegch);
 router.delete("/uilchluulegch/:id", authMiddleware, deleteUilchluulegch);
+router.post("/uilchluulegch/:id/refresh-stats", authMiddleware, refreshUilchluulegchStats);
+
 
 export default router;
