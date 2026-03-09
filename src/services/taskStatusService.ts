@@ -191,7 +191,7 @@ export const getTaskStatusByTime = (task: any): string => {
  * - If newStatus is provided → use that directly (manual change from frontend)
  * - If not provided → calculate based on time (automatic)
  */
-export const updateSingleTaskStatus = async (taskId: string, newStatus?: string) => {
+export const updateSingleTaskStatus = async (taskId: string, newStatus?: string, ajiltanTsag?: any[]) => {
   const conn = getConn();
   const Task = getTaskModel(conn, true);
 
@@ -209,11 +209,74 @@ export const updateSingleTaskStatus = async (taskId: string, newStatus?: string)
     // - Otherwise, use time-based calculated status
     const targetStatus = newStatus || calculatedStatus;
 
-    if (currentStatus !== targetStatus) {
-      task.tuluv = targetStatus;
+    if (currentStatus !== targetStatus || ajiltanTsag) {
+      if (currentStatus !== targetStatus) {
+        task.tuluv = targetStatus;
+      }
+
+      const taskObj = task; // Mongoose Document
+
+      // Stop all active timers if moving to duussan, or merge ajiltanTsag
+      if (targetStatus === "duussan") {
+          taskObj.duussanOgnoo = new Date();
+      } else if (targetStatus !== "duussan" && targetStatus !== "khugatsaa khetersen") {
+          taskObj.duussanOgnoo = null;
+      }
+
+      if (!taskObj.ajiltanTsag) taskObj.ajiltanTsag = [];
+
+      // If mobile app sends a timer entry, merge it
+      if (ajiltanTsag && Array.isArray(ajiltanTsag)) {
+         for (const reqTsag of ajiltanTsag) {
+             const employeeId = reqTsag.ajiltniiId;
+             if (!employeeId) continue;
+             
+             // Find open session for this employee
+             const openIdx = taskObj.ajiltanTsag.findIndex((t: any) => t.ajiltniiId === employeeId && !t.duusakhTsag);
+             
+             if (reqTsag.duusakhTsag) {
+                 // Trying to close a session
+                 if (openIdx !== -1) {
+                     // Update existing open session
+                     taskObj.ajiltanTsag[openIdx].duusakhTsag = reqTsag.duusakhTsag;
+                     if (reqTsag.tsagMinute && reqTsag.tsagMinute > 0) {
+                         taskObj.ajiltanTsag[openIdx].tsagMinute = reqTsag.tsagMinute;
+                     } else {
+                         const startMs = new Date(taskObj.ajiltanTsag[openIdx].ekhlekhTsag).getTime();
+                         const endMs = new Date(reqTsag.duusakhTsag).getTime();
+                         taskObj.ajiltanTsag[openIdx].tsagMinute = Math.round((endMs - startMs) / 60000);
+                     }
+                 } else {
+                     // Just add it as a new full session
+                     taskObj.ajiltanTsag.push(reqTsag);
+                 }
+             } else {
+                 // Trying to open a session
+                 if (openIdx === -1) {
+                     taskObj.ajiltanTsag.push(reqTsag);
+                 }
+             }
+         }
+      }
+
+      // Auto close any remaining unclosed timers if status is duussan
+      if (targetStatus === "duussan") {
+         taskObj.ajiltanTsag = taskObj.ajiltanTsag.map((entry: any) => {
+            if (!entry.duusakhTsag) {
+               entry.duusakhTsag = taskObj.duussanOgnoo;
+               const durationMs = taskObj.duussanOgnoo.getTime() - new Date(entry.ekhlekhTsag).getTime();
+               entry.tsagMinute = Math.round(durationMs / (1000 * 60));
+            }
+            return entry;
+         });
+      }
+
+      task.markModified('ajiltanTsag');
       await task.save();
 
-      // Emit Socket.IO events
+      // Only emit events and notifications if the actual status changed
+      if (currentStatus !== targetStatus) {
+        // Emit Socket.IO events
       const { emitToRoom } = require("../utils/socket");
       emitToRoom(`project_${task.projectId}`, "task_updated", task);
       emitToRoom(`task_${task._id}`, "task_updated", task);
@@ -287,15 +350,24 @@ export const updateSingleTaskStatus = async (taskId: string, newStatus?: string)
         newStatus: targetStatus,
         task: task
       };
+    } else {
+      // Just timers updated but no status change
+      return {
+        success: true,
+        message: "Timers updated",
+        status: currentStatus
+      };
     }
-
-    return {
-      success: true,
-      message: "Status already correct",
-      status: currentStatus
-    };
-  } catch (error) {
-    console.error("[Task Status] ❌ Error updating task status:", error);
-    throw error;
   }
+
+  return {
+    success: true,
+    message: "Status already correct",
+    status: currentStatus
+  };
+} catch (error) {
+  console.error("[Task Status] ❌ Error updating task status:", error);
+  throw error;
+}
 };
+

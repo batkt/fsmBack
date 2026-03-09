@@ -41,8 +41,8 @@ router.post("/task-status/update-all", authMiddleware, async (req: any, res: Res
  */
 router.post("/task-status/update/:taskId", authMiddleware, async (req: any, res: Response) => {
   try {
-    const { tuluv } = req.body || {};
-    const result = await updateSingleTaskStatus(req.params.taskId, tuluv);
+    const { tuluv, ajiltanTsag } = req.body || {};
+    const result = await updateSingleTaskStatus(req.params.taskId, tuluv, ajiltanTsag);
     if (result.success) {
       res.json({
         success: true,
