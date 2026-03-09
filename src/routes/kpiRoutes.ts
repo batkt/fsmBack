@@ -4,7 +4,8 @@ import {
   giveTaskPoints,
   getTaskPoints,
   getUserKpi,
-  refreshUserKpi
+  refreshUserKpi,
+  getBaiguullagaKpis
 } from "../controllers/kpiController";
 
 const router = Router();
@@ -16,5 +17,6 @@ router.get("/tasks/:id/onoo", authMiddleware, getTaskPoints);
 // User KPI endpoints
 router.get("/users/:id/kpi", authMiddleware, getUserKpi);
 router.post("/users/:id/kpi/refresh", authMiddleware, refreshUserKpi);
+router.get("/baiguullaga/:id/kpi", authMiddleware, getBaiguullagaKpis);
 
 export default router;

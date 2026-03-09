@@ -177,3 +177,21 @@ export const refreshUserKpi = async (req: any, res: Response, next: any) => {
     next(err);
   }
 };
+
+export const getBaiguullagaKpis = async (req: any, res: Response, next: any) => {
+  try {
+    const { id: baiguullagiinId } = req.params;
+    const { getConn } = require("../utils/db");
+    const getUilchluulegchModel = require("../models/uilchluulegch");
+    const conn = getConn();
+    const AjiltanModel = getUilchluulegchModel(conn, false, "ajiltan");
+
+    const users = await AjiltanModel.find({ baiguullagiinId })
+      .select("_id kpiOnoo kpiDaalgavarToo kpiDundaj kpiHuvv kpiShineelsenOgnoo")
+      .lean();
+
+    res.json({ success: true, data: users });
+  } catch (err) {
+    next(err);
+  }
+};
