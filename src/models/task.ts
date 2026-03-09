@@ -83,7 +83,8 @@ const taskSchema = new Schema(
     onooson: { type: Number, min: 0, max: 10, default: null },
     onoosonTailbar: { type: String },          
     onoosonOgnoo: { type: Date },              
-    onoosonAdminId: { type: String }           
+    onoosonAdminId: { type: String },
+    duussanOgnoo: { type: Date }
   },
   {
     timestamps: true

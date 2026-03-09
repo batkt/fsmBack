@@ -90,6 +90,13 @@ export const taskZasakh = async (id: string, data: any) => {
   const existingTask = await TaskModel.findById(id).lean();
   if (!existingTask) return null;
 
+  // Handle duussanOgnoo
+  if (data.tuluv === "duussan" && existingTask.tuluv !== "duussan") {
+    data.duussanOgnoo = new Date();
+  } else if (data.tuluv && data.tuluv !== "duussan") {
+    data.duussanOgnoo = null;
+  }
+
   // If baraa is being updated, adjust inventory based on difference
   if (Array.isArray(data.baraa)) {
     const oldBaraa = Array.isArray(existingTask.baraa) ? existingTask.baraa : [];
