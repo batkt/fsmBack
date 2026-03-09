@@ -84,6 +84,14 @@ const taskSchema = new Schema(
     onoosonTailbar: { type: String },          
     onoosonOgnoo: { type: Date },              
     onoosonAdminId: { type: String },
+
+    uilchluulegchOnooson: { type: Number, min: 0, max: 10, default: null },
+    uilchluulegchOnoosonTailbar: { type: String },
+    uilchluulegchOnoosonOgnoo: { type: Date },
+    uilchluulegchId: { type: String },
+
+    niitOnooson: { type: Number, min: 0, max: 10, default: null },
+
     duussanOgnoo: { type: Date }
   },
   {

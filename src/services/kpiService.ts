@@ -18,14 +18,13 @@ export const kpiShineelekh = async (
       { ajiltnuud: hariutsagchId }
     ],
     baiguullagiinId,
-    onooson: { $ne: null, $exists: true }
+    niitOnooson: { $ne: null, $exists: true }
   })
-    .select("onooson")
+    .select("niitOnooson")
     .lean();
 
-
   const kpiDaalgavarToo = scoredTasks.length;
-  const kpiOnoo         = scoredTasks.reduce((sum: number, t: any) => sum + (t.onooson || 0), 0);
+  const kpiOnoo         = scoredTasks.reduce((sum: number, t: any) => sum + (t.niitOnooson || 0), 0);
   const kpiDundaj       = kpiDaalgavarToo > 0 ? Math.round((kpiOnoo / kpiDaalgavarToo) * 100) / 100 : 0;
   const kpiHuvv         = Math.round(kpiDundaj * 10); 
 

@@ -12,7 +12,7 @@ export const giveTaskPoints = async (req: any, res: Response, next: any) => {
 
      
     if (onooson === undefined || onooson === null) {
-      return res.status(400).json({ success: false, message: "onooson (оноо) заавал бөглөнө" });
+      return res.status(400).json({ success: false, message: "Оноо заавал бөглөнө" });
     }
     const points = Number(onooson);
     if (isNaN(points) || points < 0 || points > 10) {
@@ -29,7 +29,7 @@ export const giveTaskPoints = async (req: any, res: Response, next: any) => {
     if (task.tuluv !== "duussan") {
       return res.status(400).json({
         success: false,
-        message: "Оноо өгөхийн тулд даалгавар дууссан байх ёстой (tuluv = duussan)"
+        message: "Оноо өгөхийн тулд даалгавар дууссан байх ёстой"
       });
     }
 
@@ -39,14 +39,23 @@ export const giveTaskPoints = async (req: any, res: Response, next: any) => {
     const conn      = getConn();
     const TaskModel = getTaskModel(conn, true);
 
+    const onoosonVal = Math.round(points * 10) / 10;
+    const uilchluulegchOnooson = task.uilchluulegchOnooson;
+    let niitOnooson = onoosonVal;
+    
+    if (uilchluulegchOnooson != null) {
+      niitOnooson = (onoosonVal + uilchluulegchOnooson) / 2;
+    }
+
     const updatedTask = await TaskModel.findByIdAndUpdate(
       taskId,
       {
         $set: {
-          onooson:       Math.round(points * 10) / 10,  
+          onooson:       onoosonVal,  
           onoosonTailbar: onoosonTailbar || "",
           onoosonOgnoo:   new Date(),
-          onoosonAdminId: adminId
+          onoosonAdminId: adminId,
+          niitOnooson: niitOnooson
         }
       },
       { new: true }
@@ -104,6 +113,110 @@ export const giveTaskPoints = async (req: any, res: Response, next: any) => {
   }
 };
 
+export const giveClientTaskPoints = async (req: any, res: Response, next: any) => {
+  try {
+    const taskId   = req.params.id;
+    const { uilchluulegchOnooson, uilchluulegchOnoosonTailbar, uilchluulegchId } = req.body;
+
+    if (uilchluulegchOnooson === undefined || uilchluulegchOnooson === null) {
+      return res.status(400).json({ success: false, message: "Оноо заавал бөглөнө" });
+    }
+    const points = Number(uilchluulegchOnooson);
+    if (isNaN(points) || points < 0 || points > 10) {
+      return res.status(400).json({ success: false, message: "Оноо 0-10 хооронд байх ёстой" });
+    }
+
+    const task = await taskNegAvakh(taskId);
+    if (!task) {
+      return res.status(404).json({ success: false, message: "Даалгавар олдсонгүй" });
+    }
+
+    if (task.tuluv !== "duussan") {
+      return res.status(400).json({
+        success: false,
+        message: "Оноо өгөхийн тулд даалгавар дууссан байх ёстой (tuluv = duussan)"
+      });
+    }
+
+    const { getConn } = require("../utils/db");
+    const getTaskModel = require("../models/task");
+    const conn      = getConn();
+    const TaskModel = getTaskModel(conn, true);
+
+    const uilchOnoosonVal = Math.round(points * 10) / 10;
+    const adminOnooson = task.onooson;
+    let niitOnooson = uilchOnoosonVal;
+    
+    if (adminOnooson != null) {
+      niitOnooson = (adminOnooson + uilchOnoosonVal) / 2;
+    }
+
+    const updatedTask = await TaskModel.findByIdAndUpdate(
+      taskId,
+      {
+        $set: {
+          uilchluulegchOnooson:       uilchOnoosonVal,  
+          uilchluulegchOnoosonTailbar: uilchluulegchOnoosonTailbar || "",
+          uilchluulegchOnoosonOgnoo:   new Date(),
+          uilchluulegchId: uilchluulegchId,
+          niitOnooson: niitOnooson
+        }
+      },
+      { new: true }
+    ).lean();
+
+    const usersToUpdate = new Set<string>();
+    if (task.hariutsagchId) usersToUpdate.add(task.hariutsagchId);
+    if (Array.isArray(task.ajiltnuud)) {
+      task.ajiltnuud.forEach((id: string) => usersToUpdate.add(id));
+    }
+
+    let lastKpiResult = null;
+    const { getIO } = require("../utils/socket");
+    const { medegdelUusgekh }: any = require("../services/medegdelService");
+
+    for (const userId of usersToUpdate) {
+      try {
+        const kpiResult = await kpiShineelekh(userId, task.baiguullagiinId);
+        lastKpiResult = kpiResult;
+
+        const notification = await medegdelUusgekh({
+          ajiltniiId:      userId,
+          baiguullagiinId: task.baiguullagiinId,
+          barilgiinId:     task.barilgiinId,
+          projectId:       task.projectId,
+          taskId:          task._id.toString(),
+          turul:           "taskCompleted",
+          title:           "Үйлчлүүлэгчээс оноо авлаа 🎯",
+          message:         `${task.ner} даалгаварт үйлчлүүлэгчээс ${points}/10 оноо авлаа${uilchluulegchOnoosonTailbar ? ": " + uilchluulegchOnoosonTailbar : ""}`,
+          object:          updatedTask
+        });
+        emitToRoom(`user_${userId}`, "new_notification", notification);
+
+        getIO().emit("kpi_updated", {
+          userId: userId,
+          ...kpiResult
+        });
+      } catch (err) {
+        console.error(`[KPI/Notification] Failed to process updates for user ${userId}:`, err);
+      }
+    }
+
+    emitToRoom(`project_${task.projectId}`, "task_updated", updatedTask);
+    emitToRoom(`task_${task._id}`, "task_updated", updatedTask);
+
+    res.json({
+      success: true,
+      message: `Үйлчлүүлэгчийн оноо хадгалагдлаа (${points}/10)`,
+      data: updatedTask,
+      kpi: lastKpiResult
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+
  
 export const getTaskPoints = async (req: any, res: Response, next: any) => {
   try {
@@ -117,7 +230,14 @@ export const getTaskPoints = async (req: any, res: Response, next: any) => {
         onooson:         task.onooson ?? null,
         onoosonTailbar:  task.onoosonTailbar ?? "",
         onoosonOgnoo:    task.onoosonOgnoo ?? null,
-        onoosonAdminId:  task.onoosonAdminId ?? null
+        onoosonAdminId:  task.onoosonAdminId ?? null,
+
+        uilchluulegchOnooson:          task.uilchluulegchOnooson ?? null,
+        uilchluulegchOnoosonTailbar:   task.uilchluulegchOnoosonTailbar ?? "",
+        uilchluulegchOnoosonOgnoo:     task.uilchluulegchOnoosonOgnoo ?? null,
+        uilchluulegchId:               task.uilchluulegchId ?? null,
+
+        niitOnooson: task.niitOnooson ?? task.onooson ?? task.uilchluulegchOnooson ?? null
       }
     });
   } catch (err) {
