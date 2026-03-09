@@ -79,7 +79,10 @@ export const giveTaskPoints = async (req: any, res: Response, next: any) => {
           object:          updatedTask
         });
         emitToRoom(`user_${task.hariutsagchId}`, "new_notification", notification);
-        emitToRoom(`user_${task.hariutsagchId}`, "kpi_updated", {
+        
+        // Broadcast KPI update to everyone (so admins see it on the dashboard)
+        const { getIO } = require("../utils/socket");
+        getIO().emit("kpi_updated", {
           userId: task.hariutsagchId,
           ...kpiResult
         });
@@ -130,13 +133,13 @@ export const getUserKpi = async (req: any, res: Response, next: any) => {
     const { getConn } = require("../utils/db");
     const getUilchluulegchModel = require("../models/uilchluulegch");
     const conn = getConn();
-    const UilchluulegchModel = getUilchluulegchModel(conn, true);
+    const AjiltanModel = getUilchluulegchModel(conn, false, "ajiltan");
 
-    const user = await UilchluulegchModel.findById(req.params.id)
+    const user = await AjiltanModel.findById(req.params.id)
       .select("ner kpiOnoo kpiDaalgavarToo kpiDundaj kpiHuvv kpiShineelsenOgnoo")
       .lean();
 
-    if (!user) return res.status(404).json({ success: false, message: "Хэрэглэгч олдсонгүй" });
+    if (!user) return res.status(404).json({ success: false, message: "Ажилтан олдсонгүй" });
 
     res.json({ success: true, data: user });
   } catch (err) {
@@ -151,12 +154,19 @@ export const refreshUserKpi = async (req: any, res: Response, next: any) => {
     const { getConn } = require("../utils/db");
     const getUilchluulegchModel = require("../models/uilchluulegch");
     const conn = getConn();
-    const UilchluulegchModel = getUilchluulegchModel(conn, true);
+    const AjiltanModel = getUilchluulegchModel(conn, false, "ajiltan");
 
-    const user = await UilchluulegchModel.findById(userId).lean();
-    if (!user) return res.status(404).json({ success: false, message: "Хэрэглэгч олдсонгүй" });
+    const user = await AjiltanModel.findById(userId).lean();
+    if (!user) return res.status(404).json({ success: false, message: "Ажилтан олдсонгүй" });
 
     const kpiResult = await kpiShineelekh(userId, (user as any).baiguullagiinId);
+
+    // Broadcast update
+    const { getIO } = require("../utils/socket");
+    getIO().emit("kpi_updated", {
+      userId: userId,
+      ...kpiResult
+    });
 
     res.json({
       success: true,

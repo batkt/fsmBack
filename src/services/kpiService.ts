@@ -9,7 +9,7 @@ export const kpiShineelekh = async (
 ): Promise<any> => {
   const conn               = getConn();
   const TaskModel          = getTaskModel(conn, true);
-  const UilchluulegchModel = getUilchluulegchModel(conn, true);
+  const AjiltanModel       = getUilchluulegchModel(conn, false, "ajiltan");
 
   const scoredTasks = await TaskModel.find({
     hariutsagchId,
@@ -24,7 +24,7 @@ export const kpiShineelekh = async (
   const kpiDundaj       = kpiDaalgavarToo > 0 ? Math.round((kpiOnoo / kpiDaalgavarToo) * 100) / 100 : 0;
   const kpiHuvv         = Math.round(kpiDundaj * 10); 
 
-  const updatedUser = await UilchluulegchModel.findByIdAndUpdate(
+  const updatedUser = await AjiltanModel.findByIdAndUpdate(
     hariutsagchId,
     {
       $set: {
