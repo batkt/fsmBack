@@ -9,7 +9,8 @@ export const kpiShineelekh = async (
 ): Promise<any> => {
   const conn               = getConn();
   const TaskModel          = getTaskModel(conn, true);
-  const AjiltanModel       = getUilchluulegchModel(conn, false, "ajiltan");
+
+  console.log(`[KPI] Updating for user ${hariutsagchId} in company ${baiguullagiinId}`);
 
   const scoredTasks = await TaskModel.find({
     hariutsagchId,
@@ -24,8 +25,23 @@ export const kpiShineelekh = async (
   const kpiDundaj       = kpiDaalgavarToo > 0 ? Math.round((kpiOnoo / kpiDaalgavarToo) * 100) / 100 : 0;
   const kpiHuvv         = Math.round(kpiDundaj * 10); 
 
-  const updatedUser = await AjiltanModel.findByIdAndUpdate(
-    hariutsagchId,
+  console.log(`[KPI] Calculated: Points=${kpiOnoo}, Count=${kpiDaalgavarToo}, Avg=${kpiDundaj}, Pct=${kpiHuvv}`);
+
+  // Use native collection to bypass schema filtering
+  const { getCol } = require("../utils/db");
+  const ajiltanCol = getCol("ajiltan");
+
+  // Robust ID handling (try both string and ObjectId)
+  let userQuery: any = { _id: hariutsagchId };
+  try {
+     const { ObjectId } = require("mongodb");
+     if (ObjectId.isValid(hariutsagchId)) {
+        userQuery = { $or: [{ _id: hariutsagchId }, { _id: new ObjectId(hariutsagchId) }] };
+     }
+  } catch (e) {}
+
+  const result = await ajiltanCol.findOneAndUpdate(
+    userQuery,
     {
       $set: {
         kpiOnoo,
@@ -35,14 +51,17 @@ export const kpiShineelekh = async (
         kpiShineelsenOgnoo: new Date()
       }
     },
-    { new: true }
-  ).lean();
+    { returnDocument: 'after' }
+  );
+
+  const updatedUser = result.value || result; // Handle both driver versions
+  console.log(`[KPI] Update result for ${hariutsagchId}:`, updatedUser ? "Found" : "NOT FOUND");
 
   return {
     kpiOnoo,
     kpiDaalgavarToo,
     kpiDundaj,
     kpiHuvv,
-    updatedUser
+    updatedUser: updatedUser || null
   };
 };
