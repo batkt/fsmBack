@@ -111,8 +111,9 @@ export const kpiShineelekhUilchluulegch = async (
   console.log(`[KPI/Client] Updating for client ${uilchluulegchId}`);
 
   // Find projects for this client
-  const projects = await ProjectModel.find({ uilchluulegchId }).select("_id").lean();
+  const projects = await ProjectModel.find({ uilchluulegchId: uilchluulegchId.toString() }).select("_id").lean();
   const projectIds = projects.map((p: any) => p._id.toString());
+
   
   // Find tasks related to these projects (or specifically set with this uilchluulegchId)
   const tasks = await TaskModel.find({

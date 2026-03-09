@@ -77,3 +77,24 @@ export const refreshUilchluulegchStats = async (req: any, res: Response, next: a
   }
 };
 
+export const refreshAllUilchluulegchStats = async (req: any, res: Response, next: any) => {
+  try {
+    const bid = req.ajiltan?.baiguullagiinId || req.query.baiguullagiinId;
+    if (!bid) return res.status(400).json({ success: false, message: "Байгууллагын ID шаардлагатай" });
+
+    const list = await uilchluulegchJagsaalt({ baiguullagiinId: bid });
+    const { kpiShineelekhUilchluulegch } = require("../services/kpiService");
+    
+    const results = [];
+    for (const item of list) {
+      const stats = await kpiShineelekhUilchluulegch(item._id.toString());
+      results.push({ id: item._id, stats });
+    }
+
+    res.json({ success: true, count: list.length, data: results });
+  } catch (err) {
+    next(err);
+  }
+};
+
+
