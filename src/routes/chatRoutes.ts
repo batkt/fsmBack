@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getChats, createChat, deleteChat, uploadFile, readChats } from "../controllers/chatController";
+import { getChats, createChat, deleteChat, editChat, uploadFile, readChats } from "../controllers/chatController";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
@@ -31,6 +31,9 @@ router.get("/chats", authMiddleware, getChats);
 router.post("/chats", authMiddleware, createChat);
 router.put("/chats/read", authMiddleware, readChats);
 router.post("/chats/upload", authMiddleware, upload.single("file"), uploadFile);
+// Edit own message (update text)
+router.patch("/chats/:id", authMiddleware, editChat);
+// Soft-delete own message
 router.delete("/chats/:id", authMiddleware, deleteChat);
 
 export default router;

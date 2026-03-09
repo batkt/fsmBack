@@ -20,7 +20,13 @@ const uilchluulegchSchema = new Schema(
     gereeEkhlekh: { type: Date },
     gereeDuusakh: { type: Date },
     baiguullagiinId: { type: String, required: true },
-    barilgiinId: { type: String, required: true }
+    barilgiinId: { type: String, required: true },
+    
+    kpiOnoo: { type: Number, default: 0 },         
+    kpiDaalgavarToo: { type: Number, default: 0 },  
+    kpiDundaj: { type: Number, default: 0 },       
+    kpiHuvv: { type: Number, default: 0 },         
+    kpiShineelsenOgnoo: { type: Date }              
   },
   {
     timestamps: true

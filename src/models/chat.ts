@@ -18,10 +18,22 @@ const chatSchema = new Schema(
     fileZam: { type: String },
     fileNer: { type: String },
     khemjee: { type: Number },
-    fType: { type: String }, // MIME type
+    fType: { type: String }, 
     unshsan: [{ type: String }],
     baiguullagiinId: { type: String, required: true },
-    barilgiinId: { type: String, required: true }
+    barilgiinId: { type: String, required: true },
+    
+    replyTo: {
+      chatId:     { type: String },          
+      medeelel:   { type: String },          
+      ajiltniiNer: { type: String },         
+      turul:      { type: String }           
+    },
+    
+    isEdited:  { type: Boolean, default: false },
+    editedAt:  { type: Date },
+    
+    isDeleted: { type: Boolean, default: false }
   },
   {
     timestamps: true

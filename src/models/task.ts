@@ -78,7 +78,12 @@ const taskSchema = new Schema(
     }],
     baiguullagiinId: { type: String, required: true },
     barilgiinId: { type: String, required: true },
-    color: { type: String }
+    color: { type: String },
+  
+    onooson: { type: Number, min: 0, max: 10, default: null },
+    onoosonTailbar: { type: String },          
+    onoosonOgnoo: { type: Date },              
+    onoosonAdminId: { type: String }           
   },
   {
     timestamps: true

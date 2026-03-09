@@ -1,5 +1,12 @@
 import { Response } from "express";
-import { chatJagsaalt, chatUusgekh, chatUstgakh, chatUnshuulakh } from "../services/chatService";
+import {
+  chatJagsaalt,
+  chatUusgekh,
+  chatUstgakh,
+  chatSoftUstgakh,
+  chatZasakh,
+  chatUnshuulakh
+} from "../services/chatService";
 import { emitToRoom } from "../utils/socket";
 
 export const getChats = async (req: any, res: Response, next: any) => {
@@ -107,11 +114,71 @@ export const createChat = async (req: any, res: Response, next: any) => {
   }
 };
 
+/** Soft delete – message body is cleared but record stays for reply context */
 export const deleteChat = async (req: any, res: Response, next: any) => {
   try {
-    const chat = await chatUstgakh(req.params.id);
+    const { getConn } = require("../utils/db");
+    const getChatModel = require("../models/chat");
+    const conn = getConn();
+    const ChatModel = getChatModel(conn);
+
+    const chat = await ChatModel.findById(req.params.id).lean();
     if (!chat) return res.status(404).json({ success: false, message: "Чат олдсонгүй" });
-    res.json({ success: true, message: "Чат амжилттай устгагдлаа" });
+
+    const requesterId = req.ajiltan?.id;
+    // Only the sender or admin can delete
+    if (chat.ajiltniiId !== requesterId) {
+      return res.status(403).json({ success: false, message: "Зөвхөн өөрийн мессежийг устгах боломжтой" });
+    }
+
+    const deleted = await chatSoftUstgakh(req.params.id);
+
+    // Broadcast the deletion so clients can update UI
+    const room = (chat as any).taskId
+      ? `task_${(chat as any).taskId}`
+      : `project_${(chat as any).projectId}`;
+    emitToRoom(room, "message_deleted", { chatId: req.params.id, deletedBy: requesterId });
+
+    res.json({ success: true, message: "Мессеж амжилттай устгагдлаа", data: deleted });
+  } catch (err) {
+    next(err);
+  }
+};
+
+/** Edit own message text */
+export const editChat = async (req: any, res: Response, next: any) => {
+  try {
+    const { medeelel } = req.body;
+    if (!medeelel || typeof medeelel !== "string" || !medeelel.trim()) {
+      return res.status(400).json({ success: false, message: "medeelel (шинэ текст) заавал бөглөнө" });
+    }
+
+    const { getConn } = require("../utils/db");
+    const getChatModel = require("../models/chat");
+    const conn = getConn();
+    const ChatModel = getChatModel(conn);
+
+    const chat = await ChatModel.findById(req.params.id).lean();
+    if (!chat) return res.status(404).json({ success: false, message: "Чат олдсонгүй" });
+
+    const requesterId = req.ajiltan?.id;
+    if ((chat as any).ajiltniiId !== requesterId) {
+      return res.status(403).json({ success: false, message: "Зөвхөн өөрийн мессежийг засах боломжтой" });
+    }
+
+    if ((chat as any).isDeleted) {
+      return res.status(400).json({ success: false, message: "Устгагдсан мессежийг засах боломжгүй" });
+    }
+
+    const updated = await chatZasakh(req.params.id, medeelel.trim());
+
+    // Broadcast update
+    const room = (chat as any).taskId
+      ? `task_${(chat as any).taskId}`
+      : `project_${(chat as any).projectId}`;
+    emitToRoom(room, "message_edited", updated);
+
+    res.json({ success: true, data: updated });
   } catch (err) {
     next(err);
   }

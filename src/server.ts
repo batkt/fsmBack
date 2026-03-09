@@ -30,6 +30,8 @@ import baiguullagaRoute from "./routes/dbRoute";
 import medegdelRoutes from "./routes/medegdelRoutes";
 import fcmTokenRoutes from "./routes/fcmTokenRoutes";
 import taskStatusRoutes from "./routes/taskStatusRoutes";
+import kpiRoutes from "./routes/kpiRoutes";
+
 
 app.use(authRoutes);
 app.use(projectRoutes);
@@ -43,6 +45,8 @@ app.use(baiguullagaRoute);
 app.use(medegdelRoutes);
 app.use(fcmTokenRoutes);
 app.use(taskStatusRoutes);
+app.use(kpiRoutes);
+
 
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
