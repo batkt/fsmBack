@@ -125,21 +125,28 @@ export const deleteChat = async (req: any, res: Response, next: any) => {
     const chat = await ChatModel.findById(req.params.id).lean();
     if (!chat) return res.status(404).json({ success: false, message: "Чат олдсонгүй" });
 
-    const requesterId = String(req.ajiltan?.id);
-    const senderId = String((chat as any).ajiltniiId);
+    const requesterId = req.ajiltan?.id ? String(req.ajiltan.id) : null;
+    const senderId = (chat as any).ajiltniiId ? String((chat as any).ajiltniiId) : null;
     
     // Check if user is Admin or sender
-    let canPerform = requesterId === senderId;
+    let canPerform = requesterId === senderId && requesterId !== null;
     
-    // If not sender, check DB for admin role (since it's not in JWT)
-    if (!canPerform) {
-       const { db }: any = require("zevbackv2");
-       const mongoose = require("mongoose");
-       const ajiltan = await db.erunkhiiKholbolt.kholbolt.collection("ajiltan").findOne({ 
-         _id: new mongoose.Types.ObjectId(requesterId) 
-       });
-       if (ajiltan && (ajiltan.erkh === 'Admin' || ajiltan.erkh === 'Manager')) {
-         canPerform = true;
+    // If not sender, check DB for admin role
+    if (!canPerform && requesterId) {
+       try {
+         const { db }: any = require("zevbackv2");
+         const mongoose = require("mongoose");
+         
+         if (db.erunkhiiKholbolt?.kholbolt) {
+           const ajiltan = await db.erunkhiiKholbolt.kholbolt.collection("ajiltan").findOne({ 
+             _id: new mongoose.Types.ObjectId(requesterId) 
+           });
+           if (ajiltan && (ajiltan.erkh === 'Admin' || ajiltan.erkh === 'Manager')) {
+             canPerform = true;
+           }
+         }
+       } catch (dbErr) {
+         console.error("[Chat Delete] Admin check error:", dbErr);
        }
     }
 
@@ -182,19 +189,26 @@ export const editChat = async (req: any, res: Response, next: any) => {
       return res.status(404).json({ success: false, message: "Чат олдсонгүй" });
     }
 
-    const requesterId = String(req.ajiltan?.id);
-    const senderId = String((chat as any).ajiltniiId);
+    const requesterId = req.ajiltan?.id ? String(req.ajiltan.id) : null;
+    const senderId = (chat as any).ajiltniiId ? String((chat as any).ajiltniiId) : null;
     
-    let canPerform = requesterId === senderId;
+    let canPerform = requesterId === senderId && requesterId !== null;
 
-    if (!canPerform) {
-       const { db }: any = require("zevbackv2");
-       const mongoose = require("mongoose");
-       const ajiltan = await db.erunkhiiKholbolt.kholbolt.collection("ajiltan").findOne({ 
-         _id: new mongoose.Types.ObjectId(requesterId) 
-       });
-       if (ajiltan && (ajiltan.erkh === 'Admin' || ajiltan.erkh === 'Manager')) {
-         canPerform = true;
+    if (!canPerform && requesterId) {
+       try {
+         const { db }: any = require("zevbackv2");
+         const mongoose = require("mongoose");
+         
+         if (db.erunkhiiKholbolt?.kholbolt) {
+           const ajiltan = await db.erunkhiiKholbolt.kholbolt.collection("ajiltan").findOne({ 
+             _id: new mongoose.Types.ObjectId(requesterId) 
+           });
+           if (ajiltan && (ajiltan.erkh === 'Admin' || ajiltan.erkh === 'Manager')) {
+             canPerform = true;
+           }
+         }
+       } catch (dbErr) {
+         console.error("[Chat Edit] Admin check error:", dbErr);
        }
     }
 
