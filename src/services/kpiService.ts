@@ -13,12 +13,16 @@ export const kpiShineelekh = async (
   console.log(`[KPI] Updating for user ${hariutsagchId} in company ${baiguullagiinId}`);
 
   const scoredTasks = await TaskModel.find({
-    hariutsagchId,
+    $or: [
+      { hariutsagchId },
+      { ajiltnuud: hariutsagchId }
+    ],
     baiguullagiinId,
     onooson: { $ne: null, $exists: true }
   })
     .select("onooson")
     .lean();
+
 
   const kpiDaalgavarToo = scoredTasks.length;
   const kpiOnoo         = scoredTasks.reduce((sum: number, t: any) => sum + (t.onooson || 0), 0);

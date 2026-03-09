@@ -90,9 +90,20 @@ export const taskZasakh = async (id: string, data: any) => {
   const existingTask = await TaskModel.findById(id).lean();
   if (!existingTask) return null;
 
-  // Handle duussanOgnoo
+  // Handle duussanOgnoo and timers
   if (data.tuluv === "duussan" && existingTask.tuluv !== "duussan") {
     data.duussanOgnoo = new Date();
+    // Stop all active timers
+    if (Array.isArray(existingTask.ajiltanTsag)) {
+      data.ajiltanTsag = existingTask.ajiltanTsag.map((entry: any) => {
+        if (!entry.duusakhTsag) {
+          entry.duusakhTsag = data.duussanOgnoo;
+          const durationMs = data.duussanOgnoo.getTime() - new Date(entry.ekhlekhTsag).getTime();
+          entry.tsagMinute = Math.round(durationMs / (1000 * 60));
+        }
+        return entry;
+      });
+    }
   } else if (data.tuluv && data.tuluv !== "duussan") {
     data.duussanOgnoo = null;
   }

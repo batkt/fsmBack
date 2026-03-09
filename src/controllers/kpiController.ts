@@ -52,23 +52,24 @@ export const giveTaskPoints = async (req: any, res: Response, next: any) => {
       { new: true }
     ).lean();
 
-    
-    let kpiResult = null;
-    if (task.hariutsagchId) {
-      try {
-        kpiResult = await kpiShineelekh(task.hariutsagchId, task.baiguullagiinId);
-        console.log(`[KPI] Recalculated for user ${task.hariutsagchId}:`, kpiResult);
-      } catch (kpiErr) {
-        console.error("[KPI] Failed to recalculate KPI:", kpiErr);
-      }
+    const usersToUpdate = new Set<string>();
+    if (task.hariutsagchId) usersToUpdate.add(task.hariutsagchId);
+    if (Array.isArray(task.ajiltnuud)) {
+      task.ajiltnuud.forEach((id: string) => usersToUpdate.add(id));
     }
 
-    
-    if (task.hariutsagchId) {
+    let lastKpiResult = null;
+    const { getIO } = require("../utils/socket");
+    const { medegdelUusgekh }: any = require("../services/medegdelService");
+
+    for (const userId of usersToUpdate) {
       try {
-        const { medegdelUusgekh }: any = require("../services/medegdelService");
+        const kpiResult = await kpiShineelekh(userId, task.baiguullagiinId);
+        console.log(`[KPI] Recalculated for user ${userId}:`, kpiResult);
+        lastKpiResult = kpiResult;
+
         const notification = await medegdelUusgekh({
-          ajiltniiId:      task.hariutsagchId,
+          ajiltniiId:      userId,
           baiguullagiinId: task.baiguullagiinId,
           barilgiinId:     task.barilgiinId,
           projectId:       task.projectId,
@@ -78,20 +79,17 @@ export const giveTaskPoints = async (req: any, res: Response, next: any) => {
           message:         `${task.ner} даалгаварт ${points}/10 оноо авлаа${onoosonTailbar ? ": " + onoosonTailbar : ""}`,
           object:          updatedTask
         });
-        emitToRoom(`user_${task.hariutsagchId}`, "new_notification", notification);
-        
-        // Broadcast KPI update to everyone (so admins see it on the dashboard)
-        const { getIO } = require("../utils/socket");
+        emitToRoom(`user_${userId}`, "new_notification", notification);
+
         getIO().emit("kpi_updated", {
-          userId: task.hariutsagchId,
+          userId: userId,
           ...kpiResult
         });
-      } catch (notifErr) {
-        console.error("[Task Points] Failed to create notification:", notifErr);
+      } catch (err) {
+        console.error(`[KPI/Notification] Failed to process updates for user ${userId}:`, err);
       }
     }
 
-    
     emitToRoom(`project_${task.projectId}`, "task_updated", updatedTask);
     emitToRoom(`task_${task._id}`, "task_updated", updatedTask);
 
@@ -99,7 +97,7 @@ export const giveTaskPoints = async (req: any, res: Response, next: any) => {
       success: true,
       message: `Оноо амжилттай хадгалагдлаа (${points}/10)`,
       data: updatedTask,
-      kpi: kpiResult
+      kpi: lastKpiResult
     });
   } catch (err) {
     next(err);
