@@ -43,6 +43,11 @@ export const createBaraa = async (req: any, res: Response, next: any) => {
       ...(bid && { baiguullagiinId: bid })
     };
     const baraa = await baraaUusgekh(data);
+    
+    // Emit socket event for real-time refresh
+    const { emitToRoom }: any = require("../utils/socket");
+    emitToRoom("broadcast", "baraa_created", baraa);
+
     res.status(201).json({ success: true, data: baraa });
   } catch (err) {
     next(err);
@@ -53,6 +58,11 @@ export const updateBaraa = async (req: any, res: Response, next: any) => {
   try {
     const baraa = await baraaZasakh(req.params.id, req.body);
     if (!baraa) return res.status(404).json({ success: false, message: "Бараа олдсонгүй" });
+
+    // Emit socket event for real-time refresh
+    const { emitToRoom }: any = require("../utils/socket");
+    emitToRoom("broadcast", "baraa_updated", baraa);
+
     res.json({ success: true, data: baraa });
   } catch (err) {
     next(err);
@@ -63,6 +73,13 @@ export const deleteBaraa = async (req: any, res: Response, next: any) => {
   try {
     const baraa = await baraaUstgakh(req.params.id);
     if (!baraa) return res.status(404).json({ success: false, message: "Бараа олдсонгүй" });
+    
+    // Emit socket event to refresh frontend charts and tables
+    const { emitToRoom }: any = require("../utils/socket");
+    emitToRoom("broadcast", "baraa_deleted", { id: req.params.id });
+    // Also trigger task updates as usage stats depend on baraa presence
+    emitToRoom("broadcast", "task_updated", {});
+
     res.json({ success: true, message: "Бараа амжилттай устгагдлаа" });
   } catch (err) {
     next(err);
