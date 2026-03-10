@@ -22,7 +22,7 @@ const baraaSchema = new Schema(
     uldegdel: { type: Number, default: 0 },
     doodUldegdel: { type: Number, default: 0 },
     barcode: { type: String },
-    zurgiinId: { type: String },
+    // zurgiinId: { type: String },
     brand: { type: String },
     niiluulegch: { type: String },
     idevhtei: { type: Boolean, default: true },
