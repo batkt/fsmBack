@@ -19,7 +19,7 @@ const baraaSchema = new Schema(
     // une: { type: Number, default: 0 },
     // negjUne : { type: Number, default: 0 },
     // niitUrtug : { type: Number, default: 0 },
-    // uldegdel: { type: Number, default: 0 },
+    uldegdel: { type: Number, default: 0 },
     // doodUldegdel: { type: Number, default: 0 },
     // barcode: { type: String },
     // zurgiinId: { type: String },
