@@ -8,7 +8,6 @@ const baraaSchema = new Schema(
     ner: { type: String, required: true },
     turul: {
       type: String,
-      enum: ["tseverlegch", "ugaalgiin", "ariutgagch", "bagaj", "busad"],
       default: "tseverlegch"
     },
     tailbar: { type: String },
