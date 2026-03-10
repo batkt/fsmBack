@@ -5,14 +5,18 @@ import {
   createBaraa,
   updateBaraa,
   deleteBaraa,
+  getBaraaUsageStats,
 } from "../controllers/baraaController";
+
 import { authMiddleware } from "../middlewares/auth";
 
 const router = Router();
 
 // All baraa routes require Bearer token authentication (from tureesBack)
 router.get("/baraas", authMiddleware, getBaraas);
+router.get("/baraas/usage-stats", authMiddleware, getBaraaUsageStats);
 router.get("/baraas/:id", authMiddleware, getBaraa);
+
 router.post("/baraas", authMiddleware, createBaraa);
 router.put("/baraas/:id", authMiddleware, updateBaraa);
 router.delete("/baraas/:id", authMiddleware, deleteBaraa);

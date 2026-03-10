@@ -5,6 +5,7 @@ import {
   baraaZasakh,
   baraaUstgakh,
   baraaNegAvakh,
+  baraaAshiglalatStats,
 } from "../services/baraaService";
 
 export const getBaraas = async (req: any, res: Response, next: any) => {
@@ -63,6 +64,25 @@ export const deleteBaraa = async (req: any, res: Response, next: any) => {
     const baraa = await baraaUstgakh(req.params.id);
     if (!baraa) return res.status(404).json({ success: false, message: "Бараа олдсонгүй" });
     res.json({ success: true, message: "Бараа амжилттай устгагдлаа" });
+  } catch (err) {
+    next(err);
+  }
+};
+export const getBaraaUsageStats = async (req: any, res: Response, next: any) => {
+  try {
+    const bid = req.ajiltan?.baiguullagiinId || req.query.baiguullagiinId;
+    const barilgiinId = req.query.barilgiinId;
+    const { startDate, endDate } = req.query;
+    
+    if (!bid || !barilgiinId) {
+      return res.status(400).json({ success: false, message: "baiguullagiinId болон barilgiinId шаардлагатай" });
+    }
+
+    const sDate = startDate ? new Date(startDate as string) : undefined;
+    const eDate = endDate ? new Date(endDate as string) : undefined;
+
+    const stats = await baraaAshiglalatStats(bid, barilgiinId as string, sDate, eDate);
+    res.json({ success: true, data: stats });
   } catch (err) {
     next(err);
   }
