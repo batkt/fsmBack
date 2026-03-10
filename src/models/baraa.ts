@@ -10,7 +10,7 @@ const baraaSchema = new Schema(
       type: String,
       default: "tseverlegch"
     },
-    tailbar: { type: String },
+    // tailbar: { type: String },
     negj: {
       type: String,
       enum: ["shirheg", "litr", "kg", "haire", "bogts", "dana"],
