@@ -38,6 +38,9 @@ export const taskUusgekh = async (data: any) => {
   if (!data.barilgiinId && project.barilgiinId) {
     data.barilgiinId = project.barilgiinId;
   }
+  if (!data.uilchluulegchId && project.uilchluulegchId) {
+    data.uilchluulegchId = project.uilchluulegchId;
+  }
 
   const task = await TaskModel.create(data);
 

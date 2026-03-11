@@ -115,6 +115,16 @@ export const createProject = async (req: any, res: Response, next: any) => {
       }
     }
 
+
+    if (project.uilchluulegchId) {
+      try {
+        const { kpiShineelekhUilchluulegch } = require("../services/kpiService");
+        await kpiShineelekhUilchluulegch(project.uilchluulegchId);
+      } catch (err) {
+        console.error("Failed to refresh client KPI:", err);
+      }
+    }
+
     res.status(201).json({ success: true, data: project });
   } catch (err) {
     next(err);
@@ -146,6 +156,16 @@ export const updateProject = async (req: any, res: Response, next: any) => {
         uildel: "completed",
         turul: "milestone"
       });
+    }
+
+
+    if (project.uilchluulegchId) {
+      try {
+        const { kpiShineelekhUilchluulegch } = require("../services/kpiService");
+        await kpiShineelekhUilchluulegch(project.uilchluulegchId);
+      } catch (err) {
+        console.error("Failed to refresh client KPI:", err);
+      }
     }
 
     res.json({ success: true, data: project });

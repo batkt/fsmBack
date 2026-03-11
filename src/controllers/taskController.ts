@@ -19,7 +19,18 @@ export const getTasks = async (req: any, res: Response, next: any) => {
     if (req.query.zereglel) query.zereglel = req.query.zereglel;
     if (req.query.hariutsagchId) query.hariutsagchId = req.query.hariutsagchId;
     if (req.query.barilgiinId) query.barilgiinId = req.query.barilgiinId;
-    if (req.query.uilchluulegchId) query.uilchluulegchId = req.query.uilchluulegchId;
+    if (req.query.uilchluulegchId) {
+      const { getConn } = require("../utils/db");
+      const getProjectModel = require("../models/project");
+      const ProjectModel = getProjectModel(getConn(), true);
+      const projects = await ProjectModel.find({ uilchluulegchId: req.query.uilchluulegchId }).select("_id").lean();
+      const pIds = projects.map((p: any) => p._id.toString());
+      
+      query.$or = [
+        { uilchluulegchId: req.query.uilchluulegchId },
+        { projectId: { $in: pIds } }
+      ];
+    }
 
 
     const tasks = await taskJagsaalt(query);
@@ -175,6 +186,16 @@ export const createTask = async (req: any, res: Response, next: any) => {
       uildel: "created"
     });
 
+
+    if (task.uilchluulegchId) {
+      try {
+        const { kpiShineelekhUilchluulegch } = require("../services/kpiService");
+        await kpiShineelekhUilchluulegch(task.uilchluulegchId);
+      } catch (err) {
+        console.error("Failed to refresh client KPI:", err);
+      }
+    }
+
     res.status(201).json({ success: true, data: task });
   } catch (err) {
     next(err);
@@ -314,6 +335,19 @@ export const updateTask = async (req: any, res: Response, next: any) => {
       uildel: action
     });
 
+    // Refresh client KPI if status changed or client exists
+    if (task.uilchluulegchId || oldTask.uilchluulegchId) {
+      try {
+        const { kpiShineelekhUilchluulegch } = require("../services/kpiService");
+        if (task.uilchluulegchId) await kpiShineelekhUilchluulegch(task.uilchluulegchId);
+        if (oldTask.uilchluulegchId && oldTask.uilchluulegchId !== task.uilchluulegchId) {
+           await kpiShineelekhUilchluulegch(oldTask.uilchluulegchId);
+        }
+      } catch (err) {
+        console.error("Failed to refresh client KPI:", err);
+      }
+    }
+
     res.json({ success: true, data: task });
   } catch (err) {
     next(err);
@@ -338,6 +372,17 @@ export const deleteTask = async (req: any, res: Response, next: any) => {
     });
 
     await taskUstgakh(req.params.id);
+
+    // Refresh client KPI if assignment existed
+    if (existing.uilchluulegchId) {
+      try {
+        const { kpiShineelekhUilchluulegch } = require("../services/kpiService");
+        await kpiShineelekhUilchluulegch(existing.uilchluulegchId);
+      } catch (err) {
+        console.error("Failed to refresh client KPI:", err);
+      }
+    }
+
     res.json({ success: true, message: "Даалгавар амжилттай устгагдлаа" });
   } catch (err) {
     next(err);
