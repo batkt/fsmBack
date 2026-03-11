@@ -239,7 +239,7 @@ export const updateSingleTaskStatus = async (taskId: string, newStatus?: string,
                  if (openIdx !== -1) {
                      // Update existing open session
                      taskObj.ajiltanTsag[openIdx].duusakhTsag = reqTsag.duusakhTsag;
-                     if (reqTsag.tsagMinute && reqTsag.tsagMinute > 0) {
+                     if (reqTsag.tsagMinute !== undefined && reqTsag.tsagMinute !== null && reqTsag.tsagMinute >= 0) {
                          taskObj.ajiltanTsag[openIdx].tsagMinute = reqTsag.tsagMinute;
                      } else {
                          const startMs = new Date(taskObj.ajiltanTsag[openIdx].ekhlekhTsag).getTime();
@@ -276,10 +276,13 @@ export const updateSingleTaskStatus = async (taskId: string, newStatus?: string,
 
       // Only emit events and notifications if the actual status changed
       if (currentStatus !== targetStatus) {
-        // Emit Socket.IO events
+      // Emit Socket.IO events
       const { emitToRoom } = require("../utils/socket");
       emitToRoom(`project_${task.projectId}`, "task_updated", task);
       emitToRoom(`task_${task._id}`, "task_updated", task);
+      if (task.barilgiinId) {
+        emitToRoom(`barilga_${task.barilgiinId}`, "task_updated", task);
+      }
 
       // Create notifications for all task members
       const { medegdelUusgekh } = require("../services/medegdelService");

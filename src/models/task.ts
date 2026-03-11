@@ -79,6 +79,8 @@ const taskSchema = new Schema(
     baiguullagiinId: { type: String, required: true },
     barilgiinId: { type: String, required: true },
     color: { type: String },
+    bairshil: { type: String }, // Location/address
+    davkhar: { type: String }, // Floor number
   
     onooson: { type: Number, min: 0, max: 10, default: null },
     onoosonTailbar: { type: String },          
