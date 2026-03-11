@@ -67,6 +67,7 @@ export const createTask = async (req: any, res: Response, next: any) => {
       data.hariutsagchZurag = data.hariutsagchZurag.map((img: any) => ({
         ...img,
         ajiltniiId: img.ajiltniiId || uploaderId,
+        ajiltniiNer: img.ajiltniiNer || req.ajiltan?.ner,
         ognoo: img.ogno || new Date(),
         // Preserve tailbar and garchig if provided
         tailbar: img.tailbar || img.text || img.description,
@@ -79,6 +80,7 @@ export const createTask = async (req: any, res: Response, next: any) => {
       data.ajiltanZurag = data.ajiltanZurag.map((img: any) => ({
         ...img,
         ajiltniiId: img.ajiltniiId || uploaderId,
+        ajiltniiNer: img.ajiltniiNer || req.ajiltan?.ner,
         ognoo: img.ogno || new Date(),
         // Preserve tailbar and garchig if provided
         tailbar: img.tailbar || img.text || img.description,
@@ -445,7 +447,8 @@ export const uploadTaskImage = async (req: any, res: Response, next: any) => {
       khemjee: req.file.size,
       turul: req.file.mimetype,
       ognoo: new Date(),
-      ajiltniiId: uploaderId
+      ajiltniiId: uploaderId,
+      ajiltniiNer: req.ajiltan?.ner
     };
 
     // Add text/description (support multiple field names for flexibility)

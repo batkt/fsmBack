@@ -54,6 +54,7 @@ const taskSchema = new Schema(
       turul: { type: String },
       ognoo: { type: Date, default: Date.now },
       ajiltniiId: { type: String }, // Who uploaded this image
+      ajiltniiNer: { type: String }, // Name of uploader
       tailbar: { type: String }, // Description/text for the image
       garchig: { type: String } // Title for the image
     }],
@@ -65,6 +66,7 @@ const taskSchema = new Schema(
       turul: { type: String },
       ognoo: { type: Date, default: Date.now },
       ajiltniiId: { type: String }, // Who uploaded this image
+      ajiltniiNer: { type: String }, // Name of uploader
       tailbar: { type: String }, // Description/text for the image
       garchig: { type: String } // Title for the image
     }],
