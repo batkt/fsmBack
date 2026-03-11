@@ -500,11 +500,12 @@ export const uploadTaskImage = async (req: any, res: Response, next: any) => {
 
     // Emit Socket.IO events
     const { emitToRoom } = require("../utils/socket");
-    emitToRoom(`project_${updatedTask.projectId}`, "task_updated", updatedTask);
+    // Only emit task_updated on the task-specific room (for the open detail modal).
+    // Do NOT emit to project/barilga rooms — that would overwrite ajiltanTsag timer
+    // data on other clients with a stale snapshot (image upload doesn't touch timers).
     emitToRoom(`task_${updatedTask._id}`, "task_updated", updatedTask);
-    emitToRoom(`barilga_${updatedTask.barilgiinId}`, "task_updated", updatedTask);
     
-    // Also broadcast image specifically
+    // Broadcast the image specifically to project and building rooms
     const imgPayload = {
       taskId: updatedTask._id,
       image: imageData,
@@ -512,6 +513,7 @@ export const uploadTaskImage = async (req: any, res: Response, next: any) => {
       type: isHariutsagch ? "hariutsagch" : "ajiltan"
     };
     emitToRoom(`task_${updatedTask._id}`, "task_image_uploaded", imgPayload);
+    emitToRoom(`project_${updatedTask.projectId}`, "task_image_uploaded", imgPayload);
     emitToRoom(`barilga_${updatedTask.barilgiinId}`, "task_image_uploaded", imgPayload);
 
     res.json({
