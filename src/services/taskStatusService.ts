@@ -203,80 +203,83 @@ export const updateSingleTaskStatus = async (taskId: string, newStatus?: string,
 
     const currentStatus = task.tuluv;
     const calculatedStatus = getTaskStatusByTime(task);
-
-    // Decide target status:
-    // - If frontend sent newStatus, use it
-    // - Otherwise, use time-based calculated status
     const targetStatus = newStatus || calculatedStatus;
 
-    if (currentStatus !== targetStatus || ajiltanTsag) {
+    // Check if we have real changes to apply
+    if (currentStatus !== targetStatus || (ajiltanTsag && ajiltanTsag.length > 0)) {
       if (currentStatus !== targetStatus) {
         task.tuluv = targetStatus;
       }
 
-      const taskObj = task; // Mongoose Document
-
-      // Stop all active timers if moving to duussan, or merge ajiltanTsag
+      const taskObj = task; 
+      
+      // Handle completion timestamp
       if (targetStatus === "duussan") {
-          taskObj.duussanOgnoo = new Date();
+          taskObj.duussanOgnoo = taskObj.duussanOgnoo || new Date();
       } else if (targetStatus !== "duussan" && targetStatus !== "khugatsaa khetersen") {
           taskObj.duussanOgnoo = null;
       }
 
       if (!taskObj.ajiltanTsag) taskObj.ajiltanTsag = [];
 
-      // If mobile app sends a timer entry, merge it
+      // Merge incoming logs from mobile app
       if (ajiltanTsag && Array.isArray(ajiltanTsag)) {
          for (const reqTsag of ajiltanTsag) {
              const employeeId = reqTsag.ajiltniiId;
              if (!employeeId) continue;
              
-             // Find open session for this employee
+             // Defensive: skip 0-duration entries (app often sends these when finishing if start is lost)
+             const rStart = new Date(reqTsag.ekhlekhTsag);
+             const rEnd   = reqTsag.duusakhTsag ? new Date(reqTsag.duusakhTsag) : null;
+             if (rEnd && rEnd.getTime() <= rStart.getTime()) {
+                console.log(`[Task Status] ⚠️ Skipping 0-duration session for ${employeeId}`);
+                continue;
+             }
+
              const openIdx = taskObj.ajiltanTsag.findIndex((t: any) => t.ajiltniiId === employeeId && !t.duusakhTsag);
              
              if (reqTsag.duusakhTsag) {
-                 // Trying to close a session
                  if (openIdx !== -1) {
-                     // Update existing open session
+                     // Close existing open session in DB
                      taskObj.ajiltanTsag[openIdx].duusakhTsag = reqTsag.duusakhTsag;
-                     if (reqTsag.tsagMinute !== undefined && reqTsag.tsagMinute !== null && reqTsag.tsagMinute >= 0) {
-                         taskObj.ajiltanTsag[openIdx].tsagMinute = reqTsag.tsagMinute;
-                     } else {
+                     if (reqTsag.tsagMinute) taskObj.ajiltanTsag[openIdx].tsagMinute = reqTsag.tsagMinute;
+                     else {
                          const startMs = new Date(taskObj.ajiltanTsag[openIdx].ekhlekhTsag).getTime();
-                         const endMs = new Date(reqTsag.duusakhTsag).getTime();
-                         taskObj.ajiltanTsag[openIdx].tsagMinute = Math.round((endMs - startMs) / 60000);
+                         taskObj.ajiltanTsag[openIdx].tsagMinute = Math.max(0, Math.round((rEnd!.getTime() - startMs) / 60000));
                      }
                  } else {
-                     // Just add it as a new full session
-                     taskObj.ajiltanTsag.push(reqTsag);
+                     // Only add as new if we don't have a very recent matching session (prevents duplicates)
+                     const hasDuplicate = taskObj.ajiltanTsag.some((t: any) => 
+                        t.ajiltniiId === employeeId && t.duusakhTsag && 
+                        Math.abs(new Date(t.duusakhTsag).getTime() - rStart.getTime()) < 30000
+                     );
+                     if (!hasDuplicate) taskObj.ajiltanTsag.push(reqTsag);
                  }
              } else {
-                 // Trying to open a session
-                 if (openIdx === -1) {
-                     taskObj.ajiltanTsag.push(reqTsag);
-                 }
+                 if (openIdx === -1) taskObj.ajiltanTsag.push(reqTsag);
              }
          }
       }
 
-      // Auto close any remaining unclosed timers if status is duussan
+      // Final pass: ensure all sessions are closed if task is finished
       if (targetStatus === "duussan") {
-         taskObj.ajiltanTsag = taskObj.ajiltanTsag.map((entry: any) => {
-            if (!entry.duusakhTsag) {
-               entry.duusakhTsag = taskObj.duussanOgnoo;
-               const durationMs = taskObj.duussanOgnoo.getTime() - new Date(entry.ekhlekhTsag).getTime();
-               entry.tsagMinute = Math.round(durationMs / (1000 * 60));
-            }
-            return entry;
-         });
+          const finalEnd = taskObj.duussanOgnoo || new Date();
+          taskObj.ajiltanTsag = taskObj.ajiltanTsag.map((entry: any) => {
+             if (!entry.duusakhTsag) {
+                entry.duusakhTsag = finalEnd;
+                const start = new Date(entry.ekhlekhTsag);
+                if (!isNaN(start.getTime())) {
+                    entry.tsagMinute = Math.max(0, Math.round((finalEnd.getTime() - start.getTime()) / 60000));
+                }
+             }
+             return entry;
+          });
       }
 
-      task.markModified('ajiltanTsag');
+      task.markModified("ajiltanTsag");
       await task.save();
 
-      // Only emit events and notifications if the actual status changed
-      if (currentStatus !== targetStatus) {
-      // Emit Socket.IO events
+      // Broadcast changes via Socket.IO
       const { emitToRoom } = require("../utils/socket");
       emitToRoom(`project_${task.projectId}`, "task_updated", task);
       emitToRoom(`task_${task._id}`, "task_updated", task);
@@ -284,69 +287,55 @@ export const updateSingleTaskStatus = async (taskId: string, newStatus?: string,
         emitToRoom(`barilga_${task.barilgiinId}`, "task_updated", task);
       }
 
-      // Create notifications for all task members
-      const { medegdelUusgekh } = require("../services/medegdelService");
-      const membersToNotify = new Set<string>();
+      // Logic for notifications (only on status change)
+      if (currentStatus !== targetStatus) {
+          const { medegdelUusgekh } = require("../services/medegdelService");
+          const membersToNotify = new Set<string>();
+          if (task.hariutsagchId) membersToNotify.add(task.hariutsagchId);
+          if (task.ajiltnuud && Array.isArray(task.ajiltnuud)) {
+            task.ajiltnuud.forEach((id: string) => membersToNotify.add(id));
+          }
 
-      // Add assigned user
-      if (task.hariutsagchId) {
-        membersToNotify.add(task.hariutsagchId);
+          let turul = "taskUpdated";
+          let title = "Даалгавар шинэчлэгдлээ";
+          let message = `${task.ner} (${task.taskId}) даалгавар шинэчлэгдлээ`;
+
+          if (targetStatus === "khiigdej bui") {
+            turul = "taskStarted";
+            title = "Даалгавар эхэллээ";
+            message = `${task.ner} (${task.taskId}) даалгавар эхэлсэн`;
+          } else if (targetStatus === "khugatsaa khetersen") {
+            turul = "taskExpired";
+            title = "Даалгавар хугацаа хэтэрсэн";
+            message = `${task.ner} (${task.taskId}) даалгаврын хугацаа хэтэрлээ`;
+          } else if (targetStatus === "duussan") {
+            turul = "taskCompleted";
+            title = "Даалгавар дууссан";
+            message = `${task.ner} (${task.taskId}) даалгавар амжилттай дууссан`;
+          }
+
+          for (const memberId of membersToNotify) {
+            try {
+              const notification = await medegdelUusgekh({
+                ajiltniiId: memberId,
+                baiguullagiinId: task.baiguullagiinId,
+                barilgiinId: task.barilgiinId,
+                projectId: task.projectId,
+                taskId: task._id.toString(),
+                turul: turul,
+                title: title,
+                message: message,
+                object: task.toObject(),
+                ajiltnuud: task.ajiltnuud || []
+              });
+              emitToRoom(`user_${memberId}`, "new_notification", notification);
+            } catch (notifError) {
+              console.error(`[Task Status] Notification error for ${memberId}:`, notifError);
+            }
+          }
+          console.log(`[Task Status] ✅ Task ${task.taskId} updated status: ${currentStatus} → ${targetStatus}`);
       }
 
-      // Add task members
-      if (task.ajiltnuud && Array.isArray(task.ajiltnuud)) {
-        task.ajiltnuud.forEach((id: string) => {
-          membersToNotify.add(id);
-        });
-      }
-
-      // Determine notification type and message based on target status
-      let turul = "taskUpdated";
-      let title = "Даалгавар шинэчлэгдлээ";
-      let message = `${task.ner} (${task.taskId}) даалгавар шинэчлэгдлээ`;
-
-      if (targetStatus === "khiigdej bui") {
-        turul = "taskStarted";
-        title = "Даалгавар эхэллээ";
-        message = `${task.ner} (${task.taskId}) даалгавар эхэлсэн`;
-      } else if (targetStatus === "khugatsaa khetersen") {
-        turul = "taskExpired";
-        title = "Даалгавар хугацаа хэтэрсэн";
-        message = `${task.ner} (${task.taskId}) даалгаврын хугацаа хэтэрлээ`;
-      } else if (targetStatus === "duussan") {
-        turul = "taskCompleted";
-        title = "Даалгавар дууссан";
-        message = `${task.ner} (${task.taskId}) даалгавар амжилттай дууссан`;
-      } else if (targetStatus === "shine") {
-        turul = "taskReset";
-        title = "Даалгавар дахин эхлүүлсэн";
-        message = `${task.ner} (${task.taskId}) даалгавар дахин шинэ төлөвт шилжлээ`;
-      }
-
-      // Create notifications for all members
-      for (const memberId of membersToNotify) {
-        try {
-          const notification = await medegdelUusgekh({
-            ajiltniiId: memberId,
-            baiguullagiinId: task.baiguullagiinId,
-            barilgiinId: task.barilgiinId,
-            projectId: task.projectId,
-            taskId: task._id.toString(),
-            turul: turul,
-            title: title,
-            message: message,
-            object: task.toObject(),
-            ajiltnuud: task.ajiltnuud || []
-          });
-          emitToRoom(`user_${memberId}`, "new_notification", notification);
-          console.log(`[Task Status] ✅ Notification sent to ${memberId} for task ${task.taskId}`);
-        } catch (notifError) {
-          console.error(`[Task Status] ❌ Failed to create notification for user ${memberId}:`, notifError);
-        }
-      }
-
-      console.log(`[Task Status] ✅ Task ${task.taskId} status updated: ${currentStatus} → ${targetStatus}`);
-      
       return {
         success: true,
         oldStatus: currentStatus,
@@ -354,23 +343,14 @@ export const updateSingleTaskStatus = async (taskId: string, newStatus?: string,
         task: task
       };
     } else {
-      // Just timers updated but no status change
       return {
         success: true,
-        message: "Timers updated",
+        message: "Status/Timers already up to date",
         status: currentStatus
       };
     }
+  } catch (error) {
+    console.error("[Task Status] ❌ Error updating task status:", error);
+    throw error;
   }
-
-  return {
-    success: true,
-    message: "Status already correct",
-    status: currentStatus
-  };
-} catch (error) {
-  console.error("[Task Status] ❌ Error updating task status:", error);
-  throw error;
-}
 };
-
