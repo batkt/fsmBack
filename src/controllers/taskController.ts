@@ -110,6 +110,7 @@ export const createTask = async (req: any, res: Response, next: any) => {
     // Emit task creation event to project and task rooms
     emitToRoom(`project_${task.projectId}`, "task_created", task);
     emitToRoom(`task_${task._id}`, "task_created", task);
+    emitToRoom(`barilga_${task.barilgiinId}`, "task_created", task);
 
     // Create notifications for all task members (assigned user + ajiltnuud, except creator)
     const { medegdelUusgekh }: any = require("../services/medegdelService");
@@ -223,6 +224,7 @@ export const updateTask = async (req: any, res: Response, next: any) => {
     const { emitToRoom }: any = require("../utils/socket");
     emitToRoom(`project_${task.projectId}`, "task_updated", task);
     emitToRoom(`task_${task._id}`, "task_updated", task);
+    emitToRoom(`barilga_${task.barilgiinId}`, "task_updated", task);
 
     // Create notifications for task members (except updater)
     const { medegdelUusgekh }: any = require("../services/medegdelService");
@@ -497,12 +499,17 @@ export const uploadTaskImage = async (req: any, res: Response, next: any) => {
     const { emitToRoom } = require("../utils/socket");
     emitToRoom(`project_${updatedTask.projectId}`, "task_updated", updatedTask);
     emitToRoom(`task_${updatedTask._id}`, "task_updated", updatedTask);
-    emitToRoom(`task_${updatedTask._id}`, "task_image_uploaded", {
+    emitToRoom(`barilga_${updatedTask.barilgiinId}`, "task_updated", updatedTask);
+    
+    // Also broadcast image specifically
+    const imgPayload = {
       taskId: updatedTask._id,
       image: imageData,
       uploaderId: uploaderId,
       type: isHariutsagch ? "hariutsagch" : "ajiltan"
-    });
+    };
+    emitToRoom(`task_${updatedTask._id}`, "task_image_uploaded", imgPayload);
+    emitToRoom(`barilga_${updatedTask.barilgiinId}`, "task_image_uploaded", imgPayload);
 
     res.json({
       success: true,
@@ -534,11 +541,15 @@ export const startTaskTime = async (req: any, res: Response, next: any) => {
     const { emitToRoom } = require("../utils/socket");
     emitToRoom(`project_${result.task.projectId}`, "task_updated", result.task);
     emitToRoom(`task_${result.task._id}`, "task_updated", result.task);
-    emitToRoom(`task_${result.task._id}`, "task_time_started", {
+    emitToRoom(`barilga_${result.task.barilgiinId}`, "task_updated", result.task);
+    
+    const timePayload = {
       taskId: result.task._id,
       ajiltniiId: ajiltniiId,
       timeEntry: result.timeEntry
-    });
+    };
+    emitToRoom(`task_${result.task._id}`, "task_time_started", timePayload);
+    emitToRoom(`barilga_${result.task.barilgiinId}`, "task_time_started", timePayload);
 
     res.json({
       success: true,
@@ -575,12 +586,16 @@ export const endTaskTime = async (req: any, res: Response, next: any) => {
     const { emitToRoom } = require("../utils/socket");
     emitToRoom(`project_${result.task.projectId}`, "task_updated", result.task);
     emitToRoom(`task_${result.task._id}`, "task_updated", result.task);
-    emitToRoom(`task_${result.task._id}`, "task_time_ended", {
+    emitToRoom(`barilga_${result.task.barilgiinId}`, "task_updated", result.task);
+    
+    const endPayload = {
       taskId: result.task._id,
       ajiltniiId: ajiltniiId,
       timeEntry: result.timeEntry,
       durationMinutes: result.durationMinutes
-    });
+    };
+    emitToRoom(`task_${result.task._id}`, "task_time_ended", endPayload);
+    emitToRoom(`barilga_${result.task.barilgiinId}`, "task_time_ended", endPayload);
 
     res.json({
       success: true,
