@@ -38,7 +38,6 @@ export const kpiShineelekh = async (
         onTimeCount++;
       }
     } else {
-      // If no strict deadline, consider it on time
       onTimeCount++;
     }
   });
@@ -46,20 +45,14 @@ export const kpiShineelekh = async (
   const kpiOnoo = qualityPoints;
   const kpiDundaj = kpiDaalgavarToo > 0 ? Math.round((qualityPoints / kpiDaalgavarToo) * 100) / 100 : 0;
 
-  // Sub-metrics
   const qualityScore = kpiDaalgavarToo > 0 ? ((qualityPoints / kpiDaalgavarToo) / 10) * 100 : 0;
   const timelinessScore = kpiDaalgavarToo > 0 ? (onTimeCount / kpiDaalgavarToo) * 100 : 0;
-
-  // Weighted KPI Formula: 70% Quality, 30% Timeliness
   const kpiHuvv = kpiDaalgavarToo > 0 ? Math.round((qualityScore * 0.70) + (timelinessScore * 0.30)) : 0;
 
   console.log(`[KPI] Calculated for ${hariutsagchId}: Tasks=${kpiDaalgavarToo}, QualityPts=${qualityPoints}, OnTime=${onTimeCount}, FinalPct=${kpiHuvv}%`);
 
-  // Use native collection to bypass schema filtering
   const { getCol } = require("../utils/db");
   const ajiltanCol = getCol("ajiltan");
-
-  // Robust ID handling (try both string and ObjectId)
   let userQuery: any = { _id: hariutsagchId };
   try {
      const { ObjectId } = require("mongodb");
@@ -94,9 +87,6 @@ export const kpiShineelekh = async (
   };
 };
 
-/**
- * Update KPI/Stats for a customer (uilchluulegch)
- */
 export const kpiShineelekhUilchluulegch = async (
   uilchluulegchId: string
 ): Promise<any> => {
@@ -108,7 +98,6 @@ export const kpiShineelekhUilchluulegch = async (
   const TaskModel          = getTaskModel(conn, true);
   const UilchluulegchModel = getUilchluulegchModel(conn, true);
 
-  // Build flexible query for ID to handle String/ObjectId mismatch
   let idMatch: any[] = [uilchluulegchId, uilchluulegchId.toString()];
   try {
     const { ObjectId } = require("mongodb");
@@ -118,22 +107,18 @@ export const kpiShineelekhUilchluulegch = async (
   } catch (e) {}
 
   console.log(`[KPI/Client] Updating for client ${uilchluulegchId}`);
-
-  // Find projects for this client
   const projects = await ProjectModel.find({ 
     uilchluulegchId: { $in: idMatch } 
   }).select("_id").lean();
   const projectIds = projects.map((p: any) => p._id);
 
   console.log(`[KPI/Client] Found ${projects.length} projects for client ${uilchluulegchId}`);
-
-  // Find tasks related to these projects (or specifically set with this uilchluulegchId)
   const tasks = await TaskModel.find({
     $or: [
       { projectId: { $in: projectIds } },
       { uilchluulegchId: { $in: idMatch } }
     ]
-  }).select("uilchluulegchOnooson baraa duussanOgnoo").lean();
+  }).select("uilchluulegchOnooson baraa duussanOgnoo tuluv").lean();
 
   console.log(`[KPI/Client] Found ${tasks.length} total tasks for client ${uilchluulegchId}`);
 
@@ -141,28 +126,28 @@ export const kpiShineelekhUilchluulegch = async (
   let totalRating = 0;
   let ratedCount = 0;
   let totalOrlogo = 0;
+  let activeTaskCount = 0;
 
   tasks.forEach((task: any) => {
-    // Count all tasks
     kpiDaalgavarToo++;
-
-    // Calculate average rating
     if (task.uilchluulegchOnooson != null) {
       totalRating += Number(task.uilchluulegchOnooson);
       ratedCount++;
     }
-
-    // Calculate revenue from materials used
     if (Array.isArray(task.baraa)) {
       task.baraa.forEach((b: any) => {
         totalOrlogo += (Number(b.niitUne) || 0);
       });
     }
+    if (task.tuluv !== 'duussan' && task.tuluv !== 'tsutslagdsan') {
+      activeTaskCount++;
+    }
   });
 
   const kpiDundaj = ratedCount > 0 ? Math.round((totalRating / ratedCount) * 10) / 10 : 0;
-  // Use as percentage (0-100)
   const kpiHuvv = ratedCount > 0 ? Math.round((totalRating / ratedCount) * 10) : 0;
+  
+  const clientTuluv = activeTaskCount > 0 ? 'idevhtei' : 'idevhgui';
 
   const updatedClient = await UilchluulegchModel.findByIdAndUpdate(
     uilchluulegchId,
@@ -172,18 +157,20 @@ export const kpiShineelekhUilchluulegch = async (
         kpiDundaj,
         kpiHuvv,
         kpiOrlogo: totalOrlogo,
+        tuluv: clientTuluv,
         kpiShineelsenOgnoo: new Date()
       }
     },
     { new: true }
   ).lean();
 
-  console.log(`[KPI/Client] Calculated for ${uilchluulegchId}: Tasks=${kpiDaalgavarToo}, Avg=${kpiDundaj}, Revenue=${totalOrlogo}`);
+  console.log(`[KPI/Client] Calculated for ${uilchluulegchId}: Tasks=${kpiDaalgavarToo}, Avg=${kpiDundaj}, Revenue=${totalOrlogo}, Tuluv=${clientTuluv}`);
 
   return {
     kpiDaalgavarToo,
     kpiDundaj,
     kpiOrlogo: totalOrlogo,
+    tuluv: clientTuluv,
     updatedClient: updatedClient || null
   };
 };
