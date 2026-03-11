@@ -116,6 +116,16 @@ export const initSocket = (server: HttpServer) => {
       }
     });
 
+    socket.on("join_barilga", (data: { barilgiinId: string }) => {
+      try {
+        const room = `barilga_${data.barilgiinId}`;
+        socket.join(room);
+        console.log(`[Socket.IO] Joined barilga room: ${room}`);
+      } catch (error) {
+        console.error("[Socket.IO] Error in join_barilga:", error);
+      }
+    });
+
     socket.on("leave_room", (roomData: { projectId: string; taskId?: string }) => {
       try {
         const room = roomData.taskId ? `task_${roomData.taskId}` : `project_${roomData.projectId}`;

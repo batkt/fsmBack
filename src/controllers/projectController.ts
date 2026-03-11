@@ -158,11 +158,17 @@ export const updateProject = async (req: any, res: Response, next: any) => {
       });
     }
 
-
+    // Refresh client KPI if assignment exists
     if (project.uilchluulegchId) {
       try {
         const { kpiShineelekhUilchluulegch } = require("../services/kpiService");
-        await kpiShineelekhUilchluulegch(project.uilchluulegchId);
+        const stats = await kpiShineelekhUilchluulegch(project.uilchluulegchId);
+        
+        const { emitToRoom } = require("../utils/socket");
+        emitToRoom(`barilga_${project.barilgiinId}`, "client_kpi_updated", {
+          uilchluulegchId: project.uilchluulegchId,
+          ...stats
+        });
       } catch (err) {
         console.error("Failed to refresh client KPI:", err);
       }

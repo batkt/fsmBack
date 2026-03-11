@@ -108,20 +108,34 @@ export const kpiShineelekhUilchluulegch = async (
   const TaskModel          = getTaskModel(conn, true);
   const UilchluulegchModel = getUilchluulegchModel(conn, true);
 
+  // Build flexible query for ID to handle String/ObjectId mismatch
+  let idMatch: any[] = [uilchluulegchId, uilchluulegchId.toString()];
+  try {
+    const { ObjectId } = require("mongodb");
+    if (ObjectId.isValid(uilchluulegchId)) {
+      idMatch.push(new ObjectId(uilchluulegchId));
+    }
+  } catch (e) {}
+
   console.log(`[KPI/Client] Updating for client ${uilchluulegchId}`);
 
   // Find projects for this client
-  const projects = await ProjectModel.find({ uilchluulegchId: uilchluulegchId.toString() }).select("_id").lean();
-  const projectIds = projects.map((p: any) => p._id.toString());
+  const projects = await ProjectModel.find({ 
+    uilchluulegchId: { $in: idMatch } 
+  }).select("_id").lean();
+  const projectIds = projects.map((p: any) => p._id);
 
-  
+  console.log(`[KPI/Client] Found ${projects.length} projects for client ${uilchluulegchId}`);
+
   // Find tasks related to these projects (or specifically set with this uilchluulegchId)
   const tasks = await TaskModel.find({
     $or: [
       { projectId: { $in: projectIds } },
-      { uilchluulegchId }
+      { uilchluulegchId: { $in: idMatch } }
     ]
   }).select("uilchluulegchOnooson baraa duussanOgnoo").lean();
+
+  console.log(`[KPI/Client] Found ${tasks.length} total tasks for client ${uilchluulegchId}`);
 
   let kpiDaalgavarToo = 0;
   let totalRating = 0;
@@ -134,14 +148,14 @@ export const kpiShineelekhUilchluulegch = async (
 
     // Calculate average rating
     if (task.uilchluulegchOnooson != null) {
-      totalRating += task.uilchluulegchOnooson;
+      totalRating += Number(task.uilchluulegchOnooson);
       ratedCount++;
     }
 
     // Calculate revenue from materials used
     if (Array.isArray(task.baraa)) {
       task.baraa.forEach((b: any) => {
-        totalOrlogo += (b.niitUne || 0);
+        totalOrlogo += (Number(b.niitUne) || 0);
       });
     }
   });

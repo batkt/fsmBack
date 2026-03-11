@@ -187,10 +187,17 @@ export const createTask = async (req: any, res: Response, next: any) => {
     });
 
 
+    // Refresh client KPI if assignment exists
     if (task.uilchluulegchId) {
       try {
         const { kpiShineelekhUilchluulegch } = require("../services/kpiService");
-        await kpiShineelekhUilchluulegch(task.uilchluulegchId);
+        const stats = await kpiShineelekhUilchluulegch(task.uilchluulegchId);
+        
+        const { emitToRoom } = require("../utils/socket");
+        emitToRoom(`barilga_${task.barilgiinId}`, "client_kpi_updated", {
+          uilchluulegchId: task.uilchluulegchId,
+          ...stats
+        });
       } catch (err) {
         console.error("Failed to refresh client KPI:", err);
       }
@@ -339,9 +346,21 @@ export const updateTask = async (req: any, res: Response, next: any) => {
     if (task.uilchluulegchId || oldTask.uilchluulegchId) {
       try {
         const { kpiShineelekhUilchluulegch } = require("../services/kpiService");
-        if (task.uilchluulegchId) await kpiShineelekhUilchluulegch(task.uilchluulegchId);
+        const { emitToRoom } = require("../utils/socket");
+
+        if (task.uilchluulegchId) {
+          const stats = await kpiShineelekhUilchluulegch(task.uilchluulegchId);
+          emitToRoom(`barilga_${task.barilgiinId}`, "client_kpi_updated", {
+            uilchluulegchId: task.uilchluulegchId,
+            ...stats
+          });
+        }
         if (oldTask.uilchluulegchId && oldTask.uilchluulegchId !== task.uilchluulegchId) {
-           await kpiShineelekhUilchluulegch(oldTask.uilchluulegchId);
+           const stats = await kpiShineelekhUilchluulegch(oldTask.uilchluulegchId);
+           emitToRoom(`barilga_${task.barilgiinId}`, "client_kpi_updated", {
+             uilchluulegchId: oldTask.uilchluulegchId,
+             ...stats
+           });
         }
       } catch (err) {
         console.error("Failed to refresh client KPI:", err);
@@ -377,7 +396,13 @@ export const deleteTask = async (req: any, res: Response, next: any) => {
     if (existing.uilchluulegchId) {
       try {
         const { kpiShineelekhUilchluulegch } = require("../services/kpiService");
-        await kpiShineelekhUilchluulegch(existing.uilchluulegchId);
+        const stats = await kpiShineelekhUilchluulegch(existing.uilchluulegchId);
+        
+        const { emitToRoom } = require("../utils/socket");
+        emitToRoom(`barilga_${existing.barilgiinId}`, "client_kpi_updated", {
+          uilchluulegchId: existing.uilchluulegchId,
+          ...stats
+        });
       } catch (err) {
         console.error("Failed to refresh client KPI:", err);
       }

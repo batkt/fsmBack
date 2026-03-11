@@ -134,7 +134,7 @@ export const giveClientTaskPoints = async (req: any, res: Response, next: any) =
     if (task.tuluv !== "duussan") {
       return res.status(400).json({
         success: false,
-        message: "Оноо өгөхийн тулд даалгавар дууссан байх ёстой (tuluv = duussan)"
+        message: "Оноо өгөхийн тулд даалгавар дууссан байх ёстой"
       });
     }
 
@@ -211,6 +211,14 @@ export const giveClientTaskPoints = async (req: any, res: Response, next: any) =
     if (finalClientId) {
       try {
         clientKpi = await kpiShineelekhUilchluulegch(finalClientId);
+        
+        // Emit to barilga room
+        if (task.barilgiinId) {
+          emitToRoom(`barilga_${task.barilgiinId}`, "client_kpi_updated", {
+            uilchluulegchId: finalClientId,
+            ...clientKpi
+          });
+        }
       } catch (err) {
         console.error(`[KPI/Client] Failed to update stats for client ${finalClientId}:`, err);
       }
