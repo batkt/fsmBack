@@ -323,19 +323,38 @@ export const getBaiguullagaKpis = async (req: any, res: Response, next: any) => 
     const { ObjectId } = require("mongodb");
     const ajiltanCol = getCol("ajiltan");
 
-    let query: any = { baiguullagiinId };
+    let idQuery: any[] = [baiguullagiinId, baiguullagiinId.toString()];
     try {
       if (ObjectId.isValid(baiguullagiinId)) {
-        query = { 
-          $or: [
-            { baiguullagiinId: baiguullagiinId }, 
-            { baiguullagiinId: new ObjectId(baiguullagiinId) }
-          ] 
-        };
+        idQuery.push(new ObjectId(baiguullagiinId));
       }
     } catch (e) {}
 
+    const query = { 
+      $or: [
+        { baiguullagiinId: { $in: idQuery } },
+        { baiguullagaId: { $in: idQuery } },
+        { baiguullaga: { $in: idQuery } },
+        { "baiguullaga.id": { $in: idQuery } }
+      ]
+    };
+
     const users = await ajiltanCol.find(query).toArray();
+    
+    // Debug info if empty
+    if (users.length === 0) {
+      const totalWorkers = await ajiltanCol.countDocuments({});
+      return res.json({ 
+        success: true, 
+        data: [], 
+        debug: { 
+          queriedId: baiguullagiinId, 
+          idQuery: idQuery.map(q => q.toString()), 
+          totalWorkersInDB: totalWorkers 
+        } 
+      });
+    }
+
     res.json({ success: true, data: users });
   } catch (err) {
     next(err);
@@ -349,17 +368,21 @@ export const refreshBaiguullagaKpis = async (req: any, res: Response, next: any)
     const { ObjectId } = require("mongodb");
     const ajiltanCol = getCol("ajiltan");
 
-    let query: any = { baiguullagiinId };
+    let idQuery: any[] = [baiguullagiinId, baiguullagiinId.toString()];
     try {
       if (ObjectId.isValid(baiguullagiinId)) {
-        query = { 
-          $or: [
-            { baiguullagiinId: baiguullagiinId }, 
-            { baiguullagiinId: new ObjectId(baiguullagiinId) }
-          ] 
-        };
+        idQuery.push(new ObjectId(baiguullagiinId));
       }
     } catch (e) {}
+
+    const query = { 
+      $or: [
+        { baiguullagiinId: { $in: idQuery } },
+        { baiguullagaId: { $in: idQuery } },
+        { baiguullaga: { $in: idQuery } },
+        { "baiguullaga.id": { $in: idQuery } }
+      ]
+    };
 
     const users = await ajiltanCol.find(query).toArray();
     
