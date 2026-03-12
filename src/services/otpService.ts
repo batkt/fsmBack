@@ -20,8 +20,23 @@ const generateOTP = (): string => {
  */
 export const requestOTP = async (utas: string, purpose: string = "forgot_password", baiguullagiinId?: string): Promise<{ otp: string; expiresAt: Date }> => {
   const conn = getConn();
+  
+  // Log connection info for debugging
+  console.log(`[OTP] Connection check:`, {
+    hasKholbolt: !!conn.kholbolt,
+    hasKholboltFSM: !!conn.kholboltFSM,
+    kholboltName: conn.kholbolt?.name,
+    kholboltFSMName: conn.kholboltFSM?.name,
+    kholboltDbName: conn.kholbolt?.db?.databaseName,
+    kholboltFSMDbName: conn.kholboltFSM?.db?.databaseName
+  });
+  
   // OTP is stored in FSM database (kholboltFSM)
   const OtpModel = getOtpModel(conn, true);
+  
+  // Log which database the model is using
+  const modelDb = OtpModel.db?.databaseName || OtpModel.db?.name || 'unknown';
+  console.log(`[OTP] OTP Model is using database: ${modelDb}`);
   
   // Format phone number
   const formattedPhone = formatPhoneNumber(utas);
