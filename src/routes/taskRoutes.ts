@@ -10,6 +10,7 @@ import {
   endTaskTime,
 } from "../controllers/taskController";
 import { authMiddleware } from "../middlewares/auth";
+import { validateFSMAccess } from "../middlewares/fsmAccess";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
@@ -37,11 +38,12 @@ const upload = multer({ storage });
 // All task routes require Bearer token authentication (from tureesBack)
 router.get("/tasks", authMiddleware, getTasks);
 router.get("/tasks/:id", authMiddleware, getTask);
-router.post("/tasks", authMiddleware, createTask);
-router.put("/tasks/:id", authMiddleware, updateTask);
-router.delete("/tasks/:id", authMiddleware, deleteTask);
-router.post("/tasks/:id/upload-image", authMiddleware, upload.single("file"), uploadTaskImage);
-router.post("/tasks/:id/start-time", authMiddleware, startTaskTime);
-router.post("/tasks/:id/end-time", authMiddleware, endTaskTime);
+// Create/Update/Delete require FSM access validation
+router.post("/tasks", authMiddleware, validateFSMAccess, createTask);
+router.put("/tasks/:id", authMiddleware, validateFSMAccess, updateTask);
+router.delete("/tasks/:id", authMiddleware, validateFSMAccess, deleteTask);
+router.post("/tasks/:id/upload-image", authMiddleware, validateFSMAccess, upload.single("file"), uploadTaskImage);
+router.post("/tasks/:id/start-time", authMiddleware, validateFSMAccess, startTaskTime);
+router.post("/tasks/:id/end-time", authMiddleware, validateFSMAccess, endTaskTime);
 
 export default router;

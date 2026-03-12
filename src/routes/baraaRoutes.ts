@@ -9,6 +9,7 @@ import {
 } from "../controllers/baraaController";
 
 import { authMiddleware } from "../middlewares/auth";
+import { validateFSMAccess } from "../middlewares/fsmAccess";
 
 const router = Router();
 
@@ -17,8 +18,9 @@ router.get("/baraas", authMiddleware, getBaraas);
 router.get("/baraas/usage-stats", authMiddleware, getBaraaUsageStats);
 router.get("/baraas/:id", authMiddleware, getBaraa);
 
-router.post("/baraas", authMiddleware, createBaraa);
-router.put("/baraas/:id", authMiddleware, updateBaraa);
-router.delete("/baraas/:id", authMiddleware, deleteBaraa);
+// Create/Update/Delete require FSM access validation
+router.post("/baraas", authMiddleware, validateFSMAccess, createBaraa);
+router.put("/baraas/:id", authMiddleware, validateFSMAccess, updateBaraa);
+router.delete("/baraas/:id", authMiddleware, validateFSMAccess, deleteBaraa);
 
 export default router;

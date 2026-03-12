@@ -7,14 +7,16 @@ import {
   deleteSubTask,
 } from "../controllers/subTaskController";
 import { authMiddleware } from "../middlewares/auth";
+import { validateFSMAccess } from "../middlewares/fsmAccess";
 
 const router = Router();
 
 // All subtask routes require Bearer token authentication (from tureesBack)
 router.get("/subtasks", authMiddleware, getSubTasks);
 router.get("/subtasks/:id", authMiddleware, getSubTask);
-router.post("/subtasks", authMiddleware, createSubTask);
-router.put("/subtasks/:id", authMiddleware, updateSubTask);
-router.delete("/subtasks/:id", authMiddleware, deleteSubTask);
+// Create/Update/Delete require FSM access validation
+router.post("/subtasks", authMiddleware, validateFSMAccess, createSubTask);
+router.put("/subtasks/:id", authMiddleware, validateFSMAccess, updateSubTask);
+router.delete("/subtasks/:id", authMiddleware, validateFSMAccess, deleteSubTask);
 
 export default router;

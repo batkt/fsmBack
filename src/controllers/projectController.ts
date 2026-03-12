@@ -46,7 +46,7 @@ export const getProject = async (req: any, res: Response, next: any) => {
 
 export const createProject = async (req: any, res: Response, next: any) => {
   try {
-    const bid = req.ajiltan?.baiguullagiinId || req.body.baiguullagiinId;
+    const bid = req.ajiltan?.baiguullagiinId || req.body.baiguullagiinId || req.validatedBaiguullagiinId;
     const data = {
       ...req.body,
       ...(bid && { baiguullagiinId: bid })

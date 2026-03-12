@@ -52,7 +52,7 @@ export const getTask = async (req: any, res: Response, next: any) => {
 
 export const createTask = async (req: any, res: Response, next: any) => {
   try {
-    const bid = req.ajiltan?.baiguullagiinId || req.body.baiguullagiinId;
+    const bid = req.ajiltan?.baiguullagiinId || req.body.baiguullagiinId || req.validatedBaiguullagiinId;
     const uploaderId = req.ajiltan?.id;
     const isHariutsagch = req.body.hariutsagchId === uploaderId;
     

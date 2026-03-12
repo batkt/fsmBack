@@ -25,16 +25,18 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 import { authMiddleware } from "../middlewares/auth";
+import { validateFSMAccess } from "../middlewares/fsmAccess";
 
 // All chat routes require Bearer token authentication (from tureesBack)
 router.get("/chats", authMiddleware, getChats);
-router.post("/chats", authMiddleware, createChat);
-router.put("/chats/read", authMiddleware, readChats);
-router.post("/chats/upload", authMiddleware, upload.single("file"), uploadFile);
+// Create/Update/Delete require FSM access validation
+router.post("/chats", authMiddleware, validateFSMAccess, createChat);
+router.put("/chats/read", authMiddleware, validateFSMAccess, readChats);
+router.post("/chats/upload", authMiddleware, validateFSMAccess, upload.single("file"), uploadFile);
 // Edit own message (update text)
-router.patch("/chats/:id", authMiddleware, editChat);
-router.put("/chats/:id", authMiddleware, editChat);
+router.patch("/chats/:id", authMiddleware, validateFSMAccess, editChat);
+router.put("/chats/:id", authMiddleware, validateFSMAccess, editChat);
 // Soft-delete own message
-router.delete("/chats/:id", authMiddleware, deleteChat);
+router.delete("/chats/:id", authMiddleware, validateFSMAccess, deleteChat);
 
 export default router;
