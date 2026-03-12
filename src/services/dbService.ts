@@ -21,15 +21,16 @@ export const baiguullagaBurtgekh = async (data: any) => {
   }
 
   const baaziinMedeelelCol = mainConn.collection("baaziinMedeelel");
+  const dbName = data.baaziinNer || data.baaz;
 
-  // Allow multiple records for the same Org ID as requested
+  // Ensure all fields are correctly captured from the input data
   await baaziinMedeelelCol.insertOne({
-    baaz: baaziinNer,
-    baaziinNer: baaziinNer,
-    cloudMongoDBEsekh: !!cloudMongoDBEsekh,
-    clusterUrl,
-    password,
-    userName,
+    baaz: dbName,
+    baaziinNer: dbName,
+    cloudMongoDBEsekh: !!data.cloudMongoDBEsekh,
+    clusterUrl: data.clusterUrl || null,
+    password: data.password || null,
+    userName: data.userName || null,
     baiguullagiinId: bId,
     fsmEsekh: true,
     createdAt: new Date(),
