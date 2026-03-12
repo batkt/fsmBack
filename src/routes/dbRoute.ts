@@ -4,8 +4,7 @@ import { authMiddleware } from "../middlewares/auth";
 
 const router = Router();
 
-// Database configuration routes require Bearer token authentication (from tureesBack)
-router.post("/baiguullagaBurtgekh", authMiddleware, createBaiguullaga);
-router.get("/baiguullaguud", authMiddleware, getBaiguullaguud);
+router.post("/baiguullagaBurtgekh", createBaiguullaga);
+router.get("/baiguullaguud", getBaiguullaguud);
 
 export default router;
