@@ -18,8 +18,22 @@ export const ensureFsmConn = (conn: any) => {
 // Helper to get per-organization FSM connection from request
 // Prefers connection injected by authMiddleware
 export const getFsmConnFromReq = (req: any) => {
+  const { db }: any = require("zevbackv2");
+  
+  // 1. Try connection already attached by middleware
   let baseConn = req.tukhainBaaziinKholbolt || req.body?.tukhainBaaziinKholbolt;
   
+  // 2. If missing, try to lookup by organization ID in registry
+  if (!baseConn) {
+    const orgId = req.ajiltan?.baiguullagiinId || req.body?.baiguullagiinId || req.query?.baiguullagiinId;
+    if (orgId && db.kholboltuud && db.kholboltuud[orgId]) {
+      baseConn = db.kholboltuud[orgId];
+      // Cache it on the request for subsequent calls
+      req.tukhainBaaziinKholbolt = baseConn;
+    }
+  }
+
+  // 3. Fallback to main database
   if (!baseConn) {
     baseConn = getConn();
   }

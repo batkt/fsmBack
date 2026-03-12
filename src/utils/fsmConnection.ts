@@ -35,26 +35,42 @@ export async function loadAllFsmConnections(): Promise<void> {
 
     for (const config of configs) {
       try {
-        const { baiguullagiinId, baaz, cloudMongoDBEsekh, clusterUrl, password, userName } = config;
+        const orgId = config.baiguullagiinId;
+        const internalId = config._id.toString();
+        const shortName = config.dotoodNer;
+        const dbName = config.baaziinNer || config.baaz;
         
-        if (!baiguullagiinId || !baaz) {
-          console.warn(`[FSM] ⚠️ Skipping invalid config: ${JSON.stringify(config)}`);
+        const { cloudMongoDBEsekh, clusterUrl, password, userName } = config;
+        
+        if (!dbName) {
+          console.warn(`[FSM] ⚠️ Skipping config with no database name: ${JSON.stringify(config)}`);
           continue;
         }
 
         // Register the connection in zevbackv2's registry (db.kholboltuud)
+        // We use the most reliable key for the primary registration
+        const primaryKey = orgId || internalId;
+        
         await db.kholboltNemyeFSM(
-          baiguullagiinId,
-          baaz,
+          primaryKey,
+          dbName,
           cloudMongoDBEsekh,
           clusterUrl,
           password,
           userName
         );
+
+        // If we have alternative identifiers, map them to the same connection object
+        if (db.kholboltuud && db.kholboltuud[primaryKey]) {
+          const connObj = db.kholboltuud[primaryKey];
+          if (orgId && !db.kholboltuud[orgId]) db.kholboltuud[orgId] = connObj;
+          if (internalId && !db.kholboltuud[internalId]) db.kholboltuud[internalId] = connObj;
+          if (shortName && !db.kholboltuud[shortName]) db.kholboltuud[shortName] = connObj;
+        }
         
-        console.log(`[FSM] ✅ Loaded connection for ${baaz} (Org: ${baiguullagiinId})`);
+        console.log(`[FSM] ✅ Registered ${dbName} for OrgKeys: [${primaryKey}, ${shortName || ''}]. readyState: ${db.kholboltuud[primaryKey]?.kholbolt?.readyState}`);
       } catch (err) {
-        console.error(`[FSM] ❌ Failed to load connection for ${config.baaz}:`, err);
+        console.error(`[FSM] ❌ Failed to load connection for ${config.baaziinNer || config.baaz}:`, err);
       }
     }
 
