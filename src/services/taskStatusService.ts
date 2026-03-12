@@ -1,4 +1,3 @@
-import { getConn } from "../utils/db";
 import { ensureFsmConn } from "../utils/fsmConn";
 
 const getTaskModel = require("../models/task");
@@ -9,8 +8,8 @@ const getTaskModel = require("../models/task");
  * - When khugatsaaDuusakhOgnoo passes → change to "khugatsaa khetersen" (expired)
  * - Only updates tasks that are not already "duussan" (completed)
  */
-export const updateTaskStatusesByTime = async (conn?: any) => {
-  const baseConn = ensureFsmConn(conn || getConn());
+export const updateTaskStatusesByTime = async (conn: any) => {
+  const baseConn = ensureFsmConn(conn);
   const Task = getTaskModel(baseConn, true); // Use FSM database
 
   const now = new Date();
@@ -115,8 +114,8 @@ export const getTaskStatusByTime = (task: any): string => {
  * - If newStatus is provided → use that directly (manual change from frontend)
  * - If not provided → calculate based on time (automatic)
  */
-export const updateSingleTaskStatus = async (taskId: string, newStatus?: string, ajiltanTsag?: any[], conn?: any) => {
-  const baseConn = ensureFsmConn(conn || getConn());
+export const updateSingleTaskStatus = async (taskId: string, newStatus: string | undefined, ajiltanTsag: any[] | undefined, conn: any) => {
+  const baseConn = ensureFsmConn(conn);
   const Task = getTaskModel(baseConn, true);
 
   try {

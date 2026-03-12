@@ -7,9 +7,9 @@ const getUilchluulegchModel = require("../models/uilchluulegch");
 export const kpiShineelekh = async (
   hariutsagchId: string,
   baiguullagiinId: string,
-  conn?: any
+  conn: any
 ): Promise<any> => {
-  const baseConn = ensureFsmConn(conn || getConn());
+  const baseConn = ensureFsmConn(conn);
   const TaskModel          = getTaskModel(baseConn, true);
 
   console.log(`[KPI] Updating for user ${hariutsagchId} in company ${baiguullagiinId}`);
@@ -90,9 +90,9 @@ export const kpiShineelekh = async (
 
 export const kpiShineelekhUilchluulegch = async (
   uilchluulegchId: string,
-  conn?: any
+  conn: any
 ): Promise<any> => {
-  const baseConn = conn || getConn();
+  const baseConn = ensureFsmConn(conn);
   const getProjectModel    = require("../models/project");
   const getTaskModel       = require("../models/task");
   

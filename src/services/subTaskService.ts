@@ -1,28 +1,27 @@
-import { getConn } from "../utils/db";
 import { ensureFsmConn } from "../utils/fsmConn";
 const getSubTaskModel = require("../models/subTask");
 
-export const subTaskJagsaalt = async (query: any, conn?: any) => {
-  const baseConn = ensureFsmConn(conn || getConn());
+export const subTaskJagsaalt = async (query: any, conn: any) => {
+  const baseConn = ensureFsmConn(conn);
   return await getSubTaskModel(baseConn, true).find(query).sort({ createdAt: 1 }).lean();
 };
 
-export const subTaskUusgekh = async (data: any, conn?: any) => {
-  const baseConn = ensureFsmConn(conn || getConn());
+export const subTaskUusgekh = async (data: any, conn: any) => {
+  const baseConn = ensureFsmConn(conn);
   return await getSubTaskModel(baseConn, true).create(data);
 };
 
-export const subTaskZasakh = async (id: string, data: any, conn?: any) => {
-  const baseConn = ensureFsmConn(conn || getConn());
+export const subTaskZasakh = async (id: string, data: any, conn: any) => {
+  const baseConn = ensureFsmConn(conn);
   return await getSubTaskModel(baseConn, true).findByIdAndUpdate(id, data, { new: true }).lean();
 };
 
-export const subTaskUstgakh = async (id: string, conn?: any) => {
-  const baseConn = ensureFsmConn(conn || getConn());
+export const subTaskUstgakh = async (id: string, conn: any) => {
+  const baseConn = ensureFsmConn(conn);
   return await getSubTaskModel(baseConn, true).findByIdAndDelete(id);
 };
 
-export const subTaskNegAvakh = async (id: string, conn?: any) => {
-  const baseConn = ensureFsmConn(conn || getConn());
+export const subTaskNegAvakh = async (id: string, conn: any) => {
+  const baseConn = ensureFsmConn(conn);
   return await getSubTaskModel(baseConn, true).findById(id).lean();
 };

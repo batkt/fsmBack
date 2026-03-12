@@ -1,23 +1,21 @@
-import { getConn } from "../utils/db";
 import { ensureFsmConn } from "../utils/fsmConn";
 const getProjectModel = require("../models/project");
 const getTaskModel = require("../models/task");
 
-// All functions accept optional conn for per-org FSM DB.
-// If conn is not provided, fall back to global getConn() (main DB).
+// All functions require explicit conn for per-org FSM DB.
 
-export const projectJagsaalt = async (query: any, conn?: any) => {
-  const baseConn = ensureFsmConn(conn || getConn());
+export const projectJagsaalt = async (query: any, conn: any) => {
+  const baseConn = ensureFsmConn(conn);
   return await getProjectModel(baseConn, true).find(query).sort({ createdAt: -1 }).lean();
 };
 
-export const projectUusgekh = async (data: any, conn?: any) => {
-  const baseConn = ensureFsmConn(conn || getConn());
+export const projectUusgekh = async (data: any, conn: any) => {
+  const baseConn = ensureFsmConn(conn);
   return await getProjectModel(baseConn, true).create(data);
 };
 
-export const projectZasakh = async (id: string, data: any, conn?: any) => {
-  const baseConn = ensureFsmConn(conn || getConn());
+export const projectZasakh = async (id: string, data: any, conn: any) => {
+  const baseConn = ensureFsmConn(conn);
   const ProjectModel = getProjectModel(baseConn, true);
   const result = await ProjectModel.findByIdAndUpdate(id, data, { new: true }).lean();
   
@@ -29,12 +27,12 @@ export const projectZasakh = async (id: string, data: any, conn?: any) => {
   return result;
 };
 
-export const projectUstgakh = async (id: string, conn?: any) => {
-  const baseConn = ensureFsmConn(conn || getConn());
+export const projectUstgakh = async (id: string, conn: any) => {
+  const baseConn = ensureFsmConn(conn);
   return await getProjectModel(baseConn, true).findByIdAndDelete(id);
 };
 
-export const projectNegAvakh = async (id: string, conn?: any) => {
-  const baseConn = ensureFsmConn(conn || getConn());
+export const projectNegAvakh = async (id: string, conn: any) => {
+  const baseConn = ensureFsmConn(conn);
   return await getProjectModel(baseConn, true).findById(id).lean();
 };

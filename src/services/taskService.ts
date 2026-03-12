@@ -1,19 +1,17 @@
-import { getConn } from "../utils/db";
 import { ensureFsmConn } from "../utils/fsmConn";
 const getTaskModel = require("../models/task");
 const getBaraaModel = require("../models/baraa");
 const getProjectModel = require("../models/project");
 
-// All functions accept optional conn for per-org FSM DB.
-// If conn is not provided, fall back to global getConn() (main DB).
+// All functions require explicit conn for per-org FSM DB.
 
-export const taskJagsaalt = async (query: any, conn?: any) => {
-  const baseConn = ensureFsmConn(conn || getConn());
+export const taskJagsaalt = async (query: any, conn: any) => {
+  const baseConn = ensureFsmConn(conn);
   return await getTaskModel(baseConn, true).find(query).sort({ createdAt: -1 }).lean();
 };
 
-export const taskUusgekh = async (data: any, conn?: any) => {
-  const baseConn = ensureFsmConn(conn || getConn());
+export const taskUusgekh = async (data: any, conn: any) => {
+  const baseConn = ensureFsmConn(conn);
   const TaskModel = getTaskModel(baseConn, true);
   const ProjectModel = getProjectModel(baseConn, true);
   const BaraaModel = getBaraaModel(baseConn, true);
@@ -84,8 +82,8 @@ export const taskUusgekh = async (data: any, conn?: any) => {
   return task;
 };
 
-export const taskZasakh = async (id: string, data: any, conn?: any) => {
-  const baseConn = ensureFsmConn(conn || getConn());
+export const taskZasakh = async (id: string, data: any, conn: any) => {
+  const baseConn = ensureFsmConn(conn);
   const TaskModel = getTaskModel(baseConn, true);
   const ProjectModel = getProjectModel(baseConn, true);
   const BaraaModel = getBaraaModel(baseConn, true);
@@ -177,13 +175,13 @@ export const taskZasakh = async (id: string, data: any, conn?: any) => {
   return updatedTask;
 };
 
-export const taskUstgakh = async (id: string, conn?: any) => {
-  const baseConn = ensureFsmConn(conn || getConn());
+export const taskUstgakh = async (id: string, conn: any) => {
+  const baseConn = ensureFsmConn(conn);
   return await getTaskModel(baseConn, true).findByIdAndDelete(id);
 };
 
-export const taskNegAvakh = async (id: string, conn?: any) => {
-  const baseConn = ensureFsmConn(conn || getConn());
+export const taskNegAvakh = async (id: string, conn: any) => {
+  const baseConn = ensureFsmConn(conn);
   return await getTaskModel(baseConn, true).findById(id).lean();
 };
 
@@ -191,8 +189,8 @@ export const taskNegAvakh = async (id: string, conn?: any) => {
  * Start time tracking for an employee on a task
  * Creates a new time entry with start time (no end time yet)
  */
-export const startTaskTime = async (taskId: string, ajiltniiId: string, tailbar?: string, conn?: any) => {
-  const baseConn = ensureFsmConn(conn || getConn());
+export const startTaskTime = async (taskId: string, ajiltniiId: string, tailbar: string | undefined, conn: any) => {
+  const baseConn = ensureFsmConn(conn);
   const TaskModel = getTaskModel(baseConn, true);
 
   const task = await TaskModel.findById(taskId);
@@ -239,8 +237,8 @@ export const startTaskTime = async (taskId: string, ajiltniiId: string, tailbar?
  * End time tracking for an employee on a task
  * Finds the active entry (no duusakhTsag) and updates it with end time and calculated duration
  */
-export const endTaskTime = async (taskId: string, ajiltniiId: string, tailbar?: string, conn?: any) => {
-  const baseConn = ensureFsmConn(conn || getConn());
+export const endTaskTime = async (taskId: string, ajiltniiId: string, tailbar: string | undefined, conn: any) => {
+  const baseConn = ensureFsmConn(conn);
   const TaskModel = getTaskModel(baseConn, true);
 
   const task = await TaskModel.findById(taskId);
