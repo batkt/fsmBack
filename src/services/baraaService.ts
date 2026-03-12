@@ -1,5 +1,5 @@
 import { getConn } from "../utils/db";
-const getBaraaModel = require("../models\baraa");
+const getBaraaModel = require("../models/baraa");
 const getTaskModel = require("../models/task");
 
 // All functions accept optional conn for per-org FSM DB.
