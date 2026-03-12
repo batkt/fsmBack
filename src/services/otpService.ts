@@ -62,7 +62,7 @@ export const requestOTP = async (utas: string, purpose: string = "forgot_passwor
     attempts: 0
   });
   
-  // Send SMS
+  // Send SMS with transliterated Mongolian text
   const message = `Tany nuuts ug sergeekh code: ${otp}. 10 minutiin dotor kuchintei.`;
   await sendSMS({
     to: formattedPhone,

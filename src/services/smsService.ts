@@ -100,14 +100,9 @@ export const sendSMS = async (options: SMSOptions): Promise<boolean> => {
     // Format phone number for CallPro API (remove + prefix, use local format)
     const phoneForCallPro = formatPhoneForCallPro(to);
     
-    // Build CallPro API URL
-    let url = `${msgServer}/send` +
-      `?key=${key}` +
-      `&from=${dugaar}` +
-      `&to=${phoneForCallPro}` +
-      `&text=${encodeURIComponent(message)}`;
-    
-    url = encodeURI(url);
+    // Build CallPro API URL - encode only the message parameter
+    const encodedMessage = encodeURIComponent(message);
+    const url = `${msgServer}/send?key=${key}&from=${dugaar}&to=${phoneForCallPro}&text=${encodedMessage}`;
 
     console.log(`[SMS] Sending SMS via CallPro to ${phoneForCallPro} (original: ${to})`);
 
