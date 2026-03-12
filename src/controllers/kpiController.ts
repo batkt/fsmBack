@@ -320,8 +320,41 @@ export const getBaiguullagaKpis = async (req: any, res: Response, next: any) => 
   try {
     const { id: baiguullagiinId } = req.params;
     const { getCol } = require("../utils/db");
+    const { ObjectId } = require("mongodb");
     const ajiltanCol = getCol("ajiltan");
-    const users = await ajiltanCol.find({ baiguullagiinId }).toArray();
+
+    let idQuery: any[] = [baiguullagiinId, baiguullagiinId.toString()];
+    try {
+      if (ObjectId.isValid(baiguullagiinId)) {
+        idQuery.push(new ObjectId(baiguullagiinId));
+      }
+    } catch (e) {}
+
+    const query = { 
+      $or: [
+        { baiguullagiinId: { $in: idQuery } },
+        { baiguullagaId: { $in: idQuery } },
+        { baiguullaga: { $in: idQuery } },
+        { "baiguullaga.id": { $in: idQuery } }
+      ]
+    };
+
+    const users = await ajiltanCol.find(query).toArray();
+    
+    // Debug info if empty
+    if (users.length === 0) {
+      const totalWorkers = await ajiltanCol.countDocuments({});
+      return res.json({ 
+        success: true, 
+        data: [], 
+        debug: { 
+          queriedId: baiguullagiinId, 
+          idQuery: idQuery.map(q => q.toString()), 
+          totalWorkersInDB: totalWorkers 
+        } 
+      });
+    }
+
     res.json({ success: true, data: users });
   } catch (err) {
     next(err);
@@ -332,9 +365,26 @@ export const refreshBaiguullagaKpis = async (req: any, res: Response, next: any)
   try {
     const { id: baiguullagiinId } = req.params;
     const { getCol } = require("../utils/db");
+    const { ObjectId } = require("mongodb");
     const ajiltanCol = getCol("ajiltan");
 
-    const users = await ajiltanCol.find({ baiguullagiinId }).toArray();
+    let idQuery: any[] = [baiguullagiinId, baiguullagiinId.toString()];
+    try {
+      if (ObjectId.isValid(baiguullagiinId)) {
+        idQuery.push(new ObjectId(baiguullagiinId));
+      }
+    } catch (e) {}
+
+    const query = { 
+      $or: [
+        { baiguullagiinId: { $in: idQuery } },
+        { baiguullagaId: { $in: idQuery } },
+        { baiguullaga: { $in: idQuery } },
+        { "baiguullaga.id": { $in: idQuery } }
+      ]
+    };
+
+    const users = await ajiltanCol.find(query).toArray();
     
     const results = [];
     for (const user of users) {
