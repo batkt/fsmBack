@@ -13,9 +13,9 @@ export const registerFcmToken = async (data: {
   deviceId?: string;
   appVersion?: string;
   baiguullagiinId?: string;
-}) => {
-  const conn = getConn();
-  const FcmToken = getFcmTokenModel(conn, false); // Use main DB (turees)
+}, conn?: any) => {
+  const baseConn = conn || getConn();
+  const FcmToken = getFcmTokenModel(baseConn, false); // Use main DB (turees)
 
   // Check if token already exists
   const existing = await FcmToken.findOne({ token: data.token });
@@ -43,9 +43,9 @@ export const registerFcmToken = async (data: {
 /**
  * Get all active FCM tokens for a user
  */
-export const getUserFcmTokens = async (ajiltniiId: string) => {
-  const conn = getConn();
-  const FcmToken = getFcmTokenModel(conn, false);
+export const getUserFcmTokens = async (ajiltniiId: string, conn?: any) => {
+  const baseConn = conn || getConn();
+  const FcmToken = getFcmTokenModel(baseConn, false);
   return await FcmToken.find({
     ajiltniiId: ajiltniiId,
     isActive: true
@@ -55,9 +55,9 @@ export const getUserFcmTokens = async (ajiltniiId: string) => {
 /**
  * Get FCM tokens for multiple users
  */
-export const getUsersFcmTokens = async (ajiltniiIds: string[]) => {
-  const conn = getConn();
-  const FcmToken = getFcmTokenModel(conn, false);
+export const getUsersFcmTokens = async (ajiltniiIds: string[], conn?: any) => {
+  const baseConn = conn || getConn();
+  const FcmToken = getFcmTokenModel(baseConn, false);
   return await FcmToken.find({
     ajiltniiId: { $in: ajiltniiIds },
     isActive: true
@@ -67,9 +67,9 @@ export const getUsersFcmTokens = async (ajiltniiIds: string[]) => {
 /**
  * Deactivate FCM token (when user logs out or uninstalls app)
  */
-export const deactivateFcmToken = async (token: string) => {
-  const conn = getConn();
-  const FcmToken = getFcmTokenModel(conn, false);
+export const deactivateFcmToken = async (token: string, conn?: any) => {
+  const baseConn = conn || getConn();
+  const FcmToken = getFcmTokenModel(baseConn, false);
   return await FcmToken.findOneAndUpdate(
     { token: token },
     { isActive: false },
@@ -80,8 +80,8 @@ export const deactivateFcmToken = async (token: string) => {
 /**
  * Remove FCM token completely
  */
-export const removeFcmToken = async (token: string) => {
-  const conn = getConn();
-  const FcmToken = getFcmTokenModel(conn, false);
+export const removeFcmToken = async (token: string, conn?: any) => {
+  const baseConn = conn || getConn();
+  const FcmToken = getFcmTokenModel(baseConn, false);
   return await FcmToken.findOneAndDelete({ token: token });
 };

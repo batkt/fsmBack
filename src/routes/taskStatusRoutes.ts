@@ -16,7 +16,7 @@ const router = Router();
  */
 router.post("/task-status/update-all", authMiddleware, async (req: any, res: Response) => {
   try {
-    const result = await updateTaskStatusesByTime();
+    const result = await updateTaskStatusesByTime(req.body.tukhainBaaziinKholbolt);
     res.json({
       success: true,
       message: `Updated ${result.updated} task(s)`,
@@ -42,7 +42,7 @@ router.post("/task-status/update-all", authMiddleware, async (req: any, res: Res
 router.post("/task-status/update/:taskId", authMiddleware, async (req: any, res: Response) => {
   try {
     const { tuluv, ajiltanTsag } = req.body || {};
-    const result = await updateSingleTaskStatus(req.params.taskId, tuluv, ajiltanTsag);
+    const result = await updateSingleTaskStatus(req.params.taskId, tuluv, ajiltanTsag, req.body.tukhainBaaziinKholbolt);
     if (result.success) {
       res.json({
         success: true,
@@ -71,7 +71,7 @@ router.get("/task-status/calculate/:taskId", authMiddleware, async (req: any, re
   try {
     const { getConn } = require("../utils/db");
     const getTaskModel = require("../models/task");
-    const conn = getConn();
+    const conn = req.body.tukhainBaaziinKholbolt || getConn();
     const Task = getTaskModel(conn, true);
 
     const task = await Task.findById(req.params.taskId).lean();

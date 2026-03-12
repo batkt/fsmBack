@@ -40,8 +40,10 @@ baraaSchema.index({ ner: "text" });
 baraaSchema.index({ barcode: 1 });
 
 module.exports = function a(conn: any, connectFSM = true, modelName = "baraa") {
-  if (!conn || !conn.kholbolt || !conn.kholboltFSM)
+  if (!conn || !conn.kholbolt)
     throw new Error("Холболтын мэдээлэл заавал бөглөх шаардлагатай!");
-  conn = connectFSM && !!conn.kholboltFSM ? conn.kholboltFSM : conn.kholbolt;
-  return conn.model(modelName, baraaSchema);
+  
+  const fsmConn = connectFSM && conn.kholboltFSM ? conn.kholboltFSM : conn.kholbolt;
+
+  return fsmConn.model(modelName, baraaSchema);
 };

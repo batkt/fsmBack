@@ -8,9 +8,9 @@ const getTaskModel = require("../models/task");
  * - When khugatsaaDuusakhOgnoo passes → change to "khugatsaa khetersen" (expired)
  * - Only updates tasks that are not already "duussan" (completed)
  */
-export const updateTaskStatusesByTime = async () => {
-  const conn = getConn();
-  const Task = getTaskModel(conn, true); // Use FSM database
+export const updateTaskStatusesByTime = async (conn?: any) => {
+  const baseConn = conn || getConn();
+  const Task = getTaskModel(baseConn, true); // Use FSM database
 
   const now = new Date();
   const updatedTasks: any[] = [];
@@ -62,7 +62,7 @@ export const updateTaskStatusesByTime = async () => {
                 message: `${task.ner} (${task.taskId}) даалгаврын хугацаа хэтэрлээ`,
                 object: task,
                 ajiltnuud: task.ajiltnuud || []
-              });
+              }, baseConn);
               emitToRoom(`user_${memberId}`, "new_notification", notification);
             } catch (notifError) {
               console.error(`[Task Status] ❌ Failed to create notification for user ${memberId}:`, notifError);
@@ -114,9 +114,9 @@ export const getTaskStatusByTime = (task: any): string => {
  * - If newStatus is provided → use that directly (manual change from frontend)
  * - If not provided → calculate based on time (automatic)
  */
-export const updateSingleTaskStatus = async (taskId: string, newStatus?: string, ajiltanTsag?: any[]) => {
-  const conn = getConn();
-  const Task = getTaskModel(conn, true);
+export const updateSingleTaskStatus = async (taskId: string, newStatus?: string, ajiltanTsag?: any[], conn?: any) => {
+  const baseConn = conn || getConn();
+  const Task = getTaskModel(baseConn, true);
 
   try {
     const task = await Task.findById(taskId);
@@ -250,7 +250,7 @@ export const updateSingleTaskStatus = async (taskId: string, newStatus?: string,
                 message: message,
                 object: task.toObject(),
                 ajiltnuud: task.ajiltnuud || []
-              });
+              }, baseConn);
               emitToRoom(`user_${memberId}`, "new_notification", notification);
             } catch (notifError) {
               console.error(`[Task Status] Notification error for ${memberId}:`, notifError);

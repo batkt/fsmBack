@@ -1,20 +1,27 @@
 import { getConn } from "../utils/db";
 const getChatModel = require("../models/chat");
 
-export const chatJagsaalt = async (query: any) => {
-  return await getChatModel(getConn()).find(query).sort({ createdAt: 1 }).lean();
+// All functions accept optional conn for per-org FSM DB.
+// If conn is not provided, fall back to global getConn() (main DB).
+
+export const chatJagsaalt = async (query: any, conn?: any) => {
+  const baseConn = conn || getConn();
+  return await getChatModel(baseConn, true).find(query).sort({ createdAt: 1 }).lean();
 };
 
-export const chatUusgekh = async (data: any) => {
-  return await getChatModel(getConn()).create(data);
+export const chatUusgekh = async (data: any, conn?: any) => {
+  const baseConn = conn || getConn();
+  return await getChatModel(baseConn, true).create(data);
 };
 
 
-export const chatUstgakh = async (id: string) => {
-  return await getChatModel(getConn()).findByIdAndDelete(id);
+export const chatUstgakh = async (id: string, conn?: any) => {
+  const baseConn = conn || getConn();
+  return await getChatModel(baseConn, true).findByIdAndDelete(id);
 };
-export const chatSoftUstgakh = async (id: string) => {
-  return await getChatModel(getConn()).findByIdAndUpdate(
+export const chatSoftUstgakh = async (id: string, conn?: any) => {
+  const baseConn = conn || getConn();
+  return await getChatModel(baseConn, true).findByIdAndUpdate(
     id,
     { $set: { isDeleted: true, medeelel: "" } },
     { new: true }
@@ -22,16 +29,18 @@ export const chatSoftUstgakh = async (id: string) => {
 };
 
 
-export const chatZasakh = async (id: string, newMedeelel: string) => {
-  return await getChatModel(getConn()).findByIdAndUpdate(
+export const chatZasakh = async (id: string, newMedeelel: string, conn?: any) => {
+  const baseConn = conn || getConn();
+  return await getChatModel(baseConn, true).findByIdAndUpdate(
     id,
     { $set: { medeelel: newMedeelel, isEdited: true, editedAt: new Date() } },
     { new: true }
   ).lean();
 };
 
-export const chatUnshuulakh = async (chatIds: string[], ajiltniiId: string) => {
-  return await getChatModel(getConn()).updateMany(
+export const chatUnshuulakh = async (chatIds: string[], ajiltniiId: string, conn?: any) => {
+  const baseConn = conn || getConn();
+  return await getChatModel(baseConn, true).updateMany(
     { _id: { $in: chatIds } },
     { $addToSet: { unshsan: ajiltniiId } }
   );

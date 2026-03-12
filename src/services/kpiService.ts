@@ -5,10 +5,11 @@ const getUilchluulegchModel = require("../models/uilchluulegch");
  
 export const kpiShineelekh = async (
   hariutsagchId: string,
-  baiguullagiinId: string
+  baiguullagiinId: string,
+  conn?: any
 ): Promise<any> => {
-  const conn               = getConn();
-  const TaskModel          = getTaskModel(conn, true);
+  const baseConn = conn || getConn();
+  const TaskModel          = getTaskModel(baseConn, true);
 
   console.log(`[KPI] Updating for user ${hariutsagchId} in company ${baiguullagiinId}`);
 
@@ -88,15 +89,16 @@ export const kpiShineelekh = async (
 };
 
 export const kpiShineelekhUilchluulegch = async (
-  uilchluulegchId: string
+  uilchluulegchId: string,
+  conn?: any
 ): Promise<any> => {
-  const conn               = getConn();
+  const baseConn = conn || getConn();
   const getProjectModel    = require("../models/project");
   const getTaskModel       = require("../models/task");
   
-  const ProjectModel       = getProjectModel(conn, true);
-  const TaskModel          = getTaskModel(conn, true);
-  const UilchluulegchModel = getUilchluulegchModel(conn, true);
+  const ProjectModel       = getProjectModel(baseConn, true);
+  const TaskModel          = getTaskModel(baseConn, true);
+  const UilchluulegchModel = getUilchluulegchModel(baseConn, true);
 
   let idMatch: any[] = [uilchluulegchId, uilchluulegchId.toString()];
   try {

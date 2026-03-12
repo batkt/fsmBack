@@ -42,7 +42,7 @@ export const getProjects = async (req: any, res: Response, next: any) => {
       ];
     }
 
-    const projects = await projectJagsaalt(query);
+    const projects = await projectJagsaalt(query, req.body.tukhainBaaziinKholbolt);
     res.json({ success: true, data: projects });
   } catch (err) {
     next(err);
@@ -51,7 +51,7 @@ export const getProjects = async (req: any, res: Response, next: any) => {
 
 export const getProject = async (req: any, res: Response, next: any) => {
   try {
-    const project = await projectNegAvakh(req.params.id);
+    const project = await projectNegAvakh(req.params.id, req.body.tukhainBaaziinKholbolt);
     if (!project) return res.status(404).json({ success: false, message: "Төсөл олдсонгүй" });
     
     // Check if project's baiguullagiinId has FSM access
@@ -73,7 +73,7 @@ export const createProject = async (req: any, res: Response, next: any) => {
       ...req.body,
       ...(bid && { baiguullagiinId: bid })
     };
-    const project = await projectUusgekh(data);
+    const project = await projectUusgekh(data, req.body.tukhainBaaziinKholbolt);
 
     // Automatically create a chat message
     const { chatUusgekh }: any = require("../services/chatService");
@@ -87,7 +87,7 @@ export const createProject = async (req: any, res: Response, next: any) => {
       turul: "text",
       baiguullagiinId: project.baiguullagiinId,
       barilgiinId: project.barilgiinId
-    });
+    }, req.body.tukhainBaaziinKholbolt);
 
     emitToRoom(`project_${project._id}`, "new_message", initialMessage);
     
@@ -112,7 +112,7 @@ export const createProject = async (req: any, res: Response, next: any) => {
         title: "Шинэ төсөл",
         message: `${project.ner} төсөл үүсгэгдлээ`,
         object: project
-      });
+      }, req.body.tukhainBaaziinKholbolt);
       notifications.push(notif);
       emitToRoom(`user_${project.udirdagchId}`, "new_notification", notif);
     }
@@ -130,7 +130,7 @@ export const createProject = async (req: any, res: Response, next: any) => {
             title: "Шинэ төсөл",
             message: `${project.ner} төсөлд танд хандалт олгогдлоо`,
             object: project
-          });
+          }, req.body.tukhainBaaziinKholbolt);
           notifications.push(notif);
           emitToRoom(`user_${ajiltniiId}`, "new_notification", notif);
         }
@@ -141,7 +141,7 @@ export const createProject = async (req: any, res: Response, next: any) => {
     if (project.uilchluulegchId) {
       try {
         const { kpiShineelekhUilchluulegch } = require("../services/kpiService");
-        await kpiShineelekhUilchluulegch(project.uilchluulegchId);
+        await kpiShineelekhUilchluulegch(project.uilchluulegchId, req.body.tukhainBaaziinKholbolt);
       } catch (err) {
         console.error("Failed to refresh client KPI:", err);
       }
@@ -155,7 +155,7 @@ export const createProject = async (req: any, res: Response, next: any) => {
 
 export const updateProject = async (req: any, res: Response, next: any) => {
   try {
-    const project = await projectZasakh(req.params.id, req.body);
+    const project = await projectZasakh(req.params.id, req.body, req.body.tukhainBaaziinKholbolt);
     if (!project) return res.status(404).json({ success: false, message: "Төсөл олдсонгүй" });
 
     // Emit project update event
@@ -177,14 +177,14 @@ export const updateProject = async (req: any, res: Response, next: any) => {
         ajiltniiNer: req.ajiltan?.ner,
         uildel: "completed",
         turul: "milestone"
-      });
+      }, req.body.tukhainBaaziinKholbolt);
     }
 
     // Refresh client KPI if assignment exists
     if (project.uilchluulegchId) {
       try {
         const { kpiShineelekhUilchluulegch } = require("../services/kpiService");
-        const stats = await kpiShineelekhUilchluulegch(project.uilchluulegchId);
+        const stats = await kpiShineelekhUilchluulegch(project.uilchluulegchId, req.body.tukhainBaaziinKholbolt);
         
         const { emitToRoom } = require("../utils/socket");
         emitToRoom(`barilga_${project.barilgiinId}`, "client_kpi_updated", {
@@ -204,9 +204,11 @@ export const updateProject = async (req: any, res: Response, next: any) => {
 
 export const deleteProject = async (req: any, res: Response, next: any) => {
   try {
-    const { getConn } = require("../utils/db");
     const getTaskModel = require("../models/task");
-    const TaskModel = getTaskModel(getConn(), true);
+    
+    const { getConn } = require("../utils/db");
+    const conn = req.body.tukhainBaaziinKholbolt || getConn();
+    const TaskModel = getTaskModel(conn, true);
 
     // Find tasks before deleting project to know which workers' KPIs to refresh
     const tasks = await TaskModel.find({ projectId: req.params.id }).select("hariutsagchId ajiltnuud").lean();
@@ -219,7 +221,7 @@ export const deleteProject = async (req: any, res: Response, next: any) => {
       }
     });
 
-    const project = await projectUstgakh(req.params.id);
+    const project = await projectUstgakh(req.params.id, req.body.tukhainBaaziinKholbolt);
     if (!project) return res.status(404).json({ success: false, message: "Төсөл олдсонгүй" });
 
     // Delete tasks of this project since project is deleted
@@ -231,7 +233,7 @@ export const deleteProject = async (req: any, res: Response, next: any) => {
     // Refresh client KPI
     if (project.uilchluulegchId) {
       try {
-        const stats = await kpiShineelekhUilchluulegch(project.uilchluulegchId);
+        const stats = await kpiShineelekhUilchluulegch(project.uilchluulegchId, req.body.tukhainBaaziinKholbolt);
         emitToRoom(`barilga_${project.barilgiinId}`, "client_kpi_updated", {
           uilchluulegchId: project.uilchluulegchId,
           ...stats
@@ -244,7 +246,7 @@ export const deleteProject = async (req: any, res: Response, next: any) => {
     // Refresh worker KPIs
     for (const workerId of workersToUpdate) {
       try {
-        const stats = await kpiShineelekh(workerId, project.baiguullagiinId);
+        const stats = await kpiShineelekh(workerId, project.baiguullagiinId, req.body.tukhainBaaziinKholbolt);
         emitToRoom(`baiguullaga_${project.baiguullagiinId}`, "kpi_updated", {
           userId: workerId,
           ...stats

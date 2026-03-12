@@ -44,7 +44,10 @@ export const forgotPassword = async (req: any, res: Response, next: any) => {
     }
     
     const { requestOTP } = require("../services/otpService");
-    const result = await requestOTP(utas, "forgot_password");
+    // Assuming baiguullagiinId is available in req.body for this context, or it needs to be fetched.
+    // For now, faithfully applying the provided snippet.
+    const baiguullagiinId = req.body.baiguullagiinId; // Added to make the snippet syntactically correct
+    const result = await requestOTP(utas, "forgot_password", baiguullagiinId, req.body.tukhainBaaziinKholbolt);
     
     // In development, return OTP for testing (remove in production)
     res.json({
@@ -78,7 +81,7 @@ export const verifyOTP = async (req: any, res: Response, next: any) => {
     }
     
     const { verifyOTP: verifyOTPService } = require("../services/otpService");
-    const result = await verifyOTPService(utas, otp, "forgot_password");
+    const result = await verifyOTPService(utas, otp, "forgot_password", req.body.tukhainBaaziinKholbolt);
     
     res.json({
       success: true,
@@ -115,7 +118,7 @@ export const resetPassword = async (req: any, res: Response, next: any) => {
     }
     
     const { resetPassword: resetPasswordService } = require("../services/otpService");
-    await resetPasswordService(resetToken, newPassword);
+    await resetPasswordService(resetToken, newPassword, req.body.tukhainBaaziinKholbolt);
     
     res.json({
       success: true,

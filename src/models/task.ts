@@ -109,8 +109,10 @@ taskSchema.index({ hariutsagchId: 1, tuluv: 1 });
 taskSchema.index({ zereglel: 1 });
 
 module.exports = function a(conn: any, connectFSM = true, modelName = "task") {
-  if (!conn || !conn.kholbolt || !conn.kholboltFSM)
+  if (!conn || !conn.kholbolt)
     throw new Error("Холболтын мэдээлэл заавал бөглөх шаардлагатай!");
-  conn = connectFSM && !!conn.kholboltFSM ? conn.kholboltFSM : conn.kholbolt;
-  return conn.model(modelName, taskSchema);
+  
+  const fsmConn = connectFSM && conn.kholboltFSM ? conn.kholboltFSM : conn.kholbolt;
+
+  return fsmConn.model(modelName, taskSchema);
 };

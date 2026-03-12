@@ -16,7 +16,7 @@ export const getUilchluulegchs = async (req: any, res: Response, next: any) => {
     if (req.query.tuluv) query.tuluv = req.query.tuluv;
     if (req.query.barilgiinId) query.barilgiinId = req.query.barilgiinId;
 
-    const list = await uilchluulegchJagsaalt(query);
+    const list = await uilchluulegchJagsaalt(query, req.body.tukhainBaaziinKholbolt);
     res.json({ success: true, data: list });
   } catch (err) {
     next(err);
@@ -25,7 +25,7 @@ export const getUilchluulegchs = async (req: any, res: Response, next: any) => {
 
 export const getUilchluulegch = async (req: any, res: Response, next: any) => {
   try {
-    const item = await uilchluulegchNegAvakh(req.params.id);
+    const item = await uilchluulegchNegAvakh(req.params.id, req.body.tukhainBaaziinKholbolt);
     if (!item) return res.status(404).json({ success: false, message: "Үйлчлүүлэгч олдсонгүй" });
     res.json({ success: true, data: item });
   } catch (err) {
@@ -40,7 +40,7 @@ export const createUilchluulegch = async (req: any, res: Response, next: any) =>
       ...req.body,
       ...(bid && { baiguullagiinId: bid })
     };
-    const item = await uilchluulegchUusgekh(data);
+    const item = await uilchluulegchUusgekh(data, req.body.tukhainBaaziinKholbolt);
     res.status(201).json({ success: true, data: item });
   } catch (err) {
     next(err);
@@ -49,7 +49,7 @@ export const createUilchluulegch = async (req: any, res: Response, next: any) =>
 
 export const updateUilchluulegch = async (req: any, res: Response, next: any) => {
   try {
-    const item = await uilchluulegchZasakh(req.params.id, req.body);
+    const item = await uilchluulegchZasakh(req.params.id, req.body, req.body.tukhainBaaziinKholbolt);
     if (!item) return res.status(404).json({ success: false, message: "Үйлчлүүлэгч олдсонгүй" });
     res.json({ success: true, data: item });
   } catch (err) {
@@ -59,7 +59,7 @@ export const updateUilchluulegch = async (req: any, res: Response, next: any) =>
 
 export const deleteUilchluulegch = async (req: any, res: Response, next: any) => {
   try {
-    const item = await uilchluulegchUstgakh(req.params.id);
+    const item = await uilchluulegchUstgakh(req.params.id, req.body.tukhainBaaziinKholbolt);
     if (!item) return res.status(404).json({ success: false, message: "Үйлчлүүлэгч олдсонгүй" });
     res.json({ success: true, message: "Үйлчлүүлэгч амжилттай устгагдлаа" });
   } catch (err) {
@@ -70,7 +70,7 @@ export const deleteUilchluulegch = async (req: any, res: Response, next: any) =>
 export const refreshUilchluulegchStats = async (req: any, res: Response, next: any) => {
   try {
     const { kpiShineelekhUilchluulegch } = require("../services/kpiService");
-    const stats = await kpiShineelekhUilchluulegch(req.params.id);
+    const stats = await kpiShineelekhUilchluulegch(req.params.id, req.body.tukhainBaaziinKholbolt);
     res.json({ success: true, data: stats });
   } catch (err) {
     next(err);
@@ -82,12 +82,12 @@ export const refreshAllUilchluulegchStats = async (req: any, res: Response, next
     const bid = req.ajiltan?.baiguullagiinId || req.query.baiguullagiinId;
     if (!bid) return res.status(400).json({ success: false, message: "Байгууллагын ID шаардлагатай" });
 
-    const list = await uilchluulegchJagsaalt({ baiguullagiinId: bid });
+    const list = await uilchluulegchJagsaalt({ baiguullagiinId: bid }, req.body.tukhainBaaziinKholbolt);
     const { kpiShineelekhUilchluulegch } = require("../services/kpiService");
     
     const results = [];
     for (const item of list) {
-      const stats = await kpiShineelekhUilchluulegch(item._id.toString());
+      const stats = await kpiShineelekhUilchluulegch(item._id.toString(), req.body.tukhainBaaziinKholbolt);
       results.push({ id: item._id, stats });
     }
 

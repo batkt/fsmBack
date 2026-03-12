@@ -2,17 +2,17 @@ import { getConn } from "../utils/db";
 
 const getMedegdelModel = require("../models/medegdel");
 
-export const medegdelJagsaalt = async (query: any) => {
-  const conn = getConn();
-  return await getMedegdelModel(conn)
+export const medegdelJagsaalt = async (query: any, conn?: any) => {
+  const baseConn = conn || getConn();
+  return await getMedegdelModel(baseConn, true)
     .find(query)
     .sort({ createdAt: -1 })
     .lean();
 };
 
-export const medegdelUusgekh = async (data: any) => {
-  const conn = getConn();
-  const notification = await getMedegdelModel(conn).create(data);
+export const medegdelUusgekh = async (data: any, conn?: any) => {
+  const baseConn = conn || getConn();
+  const notification = await getMedegdelModel(baseConn, true).create(data);
 
   // Send FCM push notification (async, don't wait for it)
   // This works even if user is not logged in - they just need to have registered FCM token
@@ -40,55 +40,55 @@ export const medegdelUusgekh = async (data: any) => {
   return notification;
 };
 
-export const medegdelZasakh = async (id: string, data: any) => {
-  const conn = getConn();
-  return await getMedegdelModel(conn)
+export const medegdelZasakh = async (id: string, data: any, conn?: any) => {
+  const baseConn = conn || getConn();
+  return await getMedegdelModel(baseConn, true)
     .findByIdAndUpdate(id, data, { new: true })
     .lean();
 };
 
-export const medegdelKharlaa = async (id: string, ajiltniiId: string) => {
-  const conn = getConn();
+export const medegdelKharlaa = async (id: string, ajiltniiId: string, conn?: any) => {
+  const baseConn = conn || getConn();
   // Mark as read
-  await getMedegdelModel(conn).findByIdAndUpdate(id, {
+  await getMedegdelModel(baseConn, true).findByIdAndUpdate(id, {
     $set: { kharsanEsekh: true, tuluv: 1 }
   });
   
   // Remove from "not seen" list if exists
-  await getMedegdelModel(conn).findByIdAndUpdate(id, {
+  await getMedegdelModel(baseConn, true).findByIdAndUpdate(id, {
     $pull: { dakhijKharakhguiAjiltniiIdnuud: ajiltniiId }
   });
   
-  return await getMedegdelModel(conn).findById(id).lean();
+  return await getMedegdelModel(baseConn, true).findById(id).lean();
 };
 
-export const medegdelNegAvakh = async (id: string) => {
-  const conn = getConn();
-  return await getMedegdelModel(conn).findById(id).lean();
+export const medegdelNegAvakh = async (id: string, conn?: any) => {
+  const baseConn = conn || getConn();
+  return await getMedegdelModel(baseConn, true).findById(id).lean();
 };
 
-export const medegdelUstgakh = async (id: string) => {
-  const conn = getConn();
-  return await getMedegdelModel(conn).findByIdAndDelete(id);
+export const medegdelUstgakh = async (id: string, conn?: any) => {
+  const baseConn = conn || getConn();
+  return await getMedegdelModel(baseConn, true).findByIdAndDelete(id);
 };
 
 // Mark all notifications as read for a user
-export const medegdelBuhKharlaa = async (ajiltniiId: string, baiguullagiinId?: string) => {
-  const conn = getConn();
+export const medegdelBuhKharlaa = async (ajiltniiId: string, baiguullagiinId?: string, conn?: any) => {
+  const baseConn = conn || getConn();
   const query: any = { ajiltniiId, kharsanEsekh: false };
   if (baiguullagiinId) query.baiguullagiinId = baiguullagiinId;
   
-  return await getMedegdelModel(conn).updateMany(query, {
+  return await getMedegdelModel(baseConn, true).updateMany(query, {
     $set: { kharsanEsekh: true, tuluv: 1 },
     $pull: { dakhijKharakhguiAjiltniiIdnuud: ajiltniiId }
   });
 };
 
 // Get unread count for a user
-export const medegdelUnreadCount = async (ajiltniiId: string, baiguullagiinId?: string) => {
-  const conn = getConn();
+export const medegdelUnreadCount = async (ajiltniiId: string, baiguullagiinId?: string, conn?: any) => {
+  const baseConn = conn || getConn();
   const query: any = { ajiltniiId, kharsanEsekh: false };
   if (baiguullagiinId) query.baiguullagiinId = baiguullagiinId;
   
-  return await getMedegdelModel(conn).countDocuments(query);
+  return await getMedegdelModel(baseConn, true).countDocuments(query);
 };

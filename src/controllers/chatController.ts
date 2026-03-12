@@ -28,7 +28,7 @@ export const getChats = async (req: any, res: Response, next: any) => {
       ];
     }
 
-    const chats = await chatJagsaalt(query);
+    const chats = await chatJagsaalt(query, req.body.tukhainBaaziinKholbolt);
     res.json({ success: true, data: chats });
   } catch (err) {
     next(err);
@@ -43,7 +43,7 @@ export const createChat = async (req: any, res: Response, next: any) => {
       ajiltniiNer: req.ajiltan?.ner || req.body.ajiltniiNer,
       baiguullagiinId: req.ajiltan?.baiguullagiinId || req.body.baiguullagiinId,
     };
-    const chat = await chatUusgekh(data);
+    const chat = await chatUusgekh(data, req.body.tukhainBaaziinKholbolt);
 
     const room = chat.taskId ? `task_${chat.taskId}` : `project_${chat.projectId}`;
     emitToRoom(room, "new_message", chat);
@@ -56,7 +56,7 @@ export const createChat = async (req: any, res: Response, next: any) => {
 
     try {
       // Get project to find members
-      const project = await projectNegAvakh(chat.projectId);
+      const project = await projectNegAvakh(chat.projectId, req.body.tukhainBaaziinKholbolt);
       if (project) {
         const membersToNotify = new Set<string>();
 
@@ -76,7 +76,7 @@ export const createChat = async (req: any, res: Response, next: any) => {
 
         // If task chat, also notify task assigned user
         if (chat.taskId) {
-          const task = await taskNegAvakh(chat.taskId);
+          const task = await taskNegAvakh(chat.taskId, req.body.tukhainBaaziinKholbolt);
           if (task && task.hariutsagchId && task.hariutsagchId !== senderId) {
             membersToNotify.add(task.hariutsagchId);
           }
@@ -98,7 +98,7 @@ export const createChat = async (req: any, res: Response, next: any) => {
             title: chat.taskId ? "Даалгаврын мессеж" : "Төслийн мессеж",
             message: `${chat.ajiltniiNer || "Хэрэглэгч"}: ${messagePreview}`,
             object: chat
-          });
+          }, req.body.tukhainBaaziinKholbolt);
 
           emitToRoom(`user_${memberId}`, "new_notification", notification);
         }
@@ -119,7 +119,7 @@ export const deleteChat = async (req: any, res: Response, next: any) => {
   try {
     const { getConn } = require("../utils/db");
     const getChatModel = require("../models/chat");
-    const conn = getConn();
+    const conn = req.body.tukhainBaaziinKholbolt || getConn();
     const ChatModel = getChatModel(conn);
 
     const chat = await ChatModel.findById(req.params.id).lean();
@@ -154,7 +154,7 @@ export const deleteChat = async (req: any, res: Response, next: any) => {
       return res.status(403).json({ success: false, message: "Зөвхөн өөрийн мессежийг устгах боломжтой эсвэл Админ эрхтэй байх шаардлагатай" });
     }
 
-    const deleted = await chatSoftUstgakh(req.params.id);
+    const deleted = await chatSoftUstgakh(req.params.id, req.body.tukhainBaaziinKholbolt);
 
     // Broadcast the deletion so clients can update UI
     const room = (chat as any).taskId
@@ -180,7 +180,7 @@ export const editChat = async (req: any, res: Response, next: any) => {
 
     const { getConn } = require("../utils/db");
     const getChatModel = require("../models/chat");
-    const conn = getConn();
+    const conn = req.body.tukhainBaaziinKholbolt || getConn();
     const ChatModel = getChatModel(conn);
 
     const chat = await ChatModel.findById(req.params.id).lean();
@@ -221,7 +221,7 @@ export const editChat = async (req: any, res: Response, next: any) => {
       return res.status(400).json({ success: false, message: "Устгагдсан мессежийг засах боломжгүй" });
     }
 
-    const updated = await chatZasakh(req.params.id, medeelel.trim());
+    const updated = await chatZasakh(req.params.id, medeelel.trim(), req.body.tukhainBaaziinKholbolt);
     console.log(`[Chat Edit] ✅ Success for ID: ${req.params.id}`);
 
     // Broadcast update
@@ -266,7 +266,7 @@ export const uploadFile = async (req: any, res: Response, next: any) => {
       medeelel: req.body.medeelel || req.file.originalname // Use provided message or default to file name
     };
 
-    const chat = await chatUusgekh(data);
+    const chat = await chatUusgekh(data, req.body.tukhainBaaziinKholbolt);
 
     const room = chat.taskId ? `task_${chat.taskId}` : `project_${chat.projectId}`;
     emitToRoom(room, "new_message", chat);
@@ -279,7 +279,7 @@ export const uploadFile = async (req: any, res: Response, next: any) => {
 
     try {
       // Get project to find members
-      const project = await projectNegAvakh(chat.projectId);
+      const project = await projectNegAvakh(chat.projectId, req.body.tukhainBaaziinKholbolt);
       if (project) {
         const membersToNotify = new Set<string>();
 
@@ -299,7 +299,7 @@ export const uploadFile = async (req: any, res: Response, next: any) => {
 
         // If task chat, also notify task assigned user
         if (chat.taskId) {
-          const task = await taskNegAvakh(chat.taskId);
+          const task = await taskNegAvakh(chat.taskId, req.body.tukhainBaaziinKholbolt);
           if (task && task.hariutsagchId && task.hariutsagchId !== senderId) {
             membersToNotify.add(task.hariutsagchId);
           }
@@ -321,7 +321,7 @@ export const uploadFile = async (req: any, res: Response, next: any) => {
             message: `${chat.ajiltniiNer || "Хэрэглэгч"}: ${messageText}`,
             zurag: chat.turul === "zurag" ? chat.fileZam : undefined,
             object: chat
-          });
+          }, req.body.tukhainBaaziinKholbolt);
 
           emitToRoom(`user_${memberId}`, "new_notification", notification);
         }
@@ -351,7 +351,7 @@ export const readChats = async (req: any, res: Response, next: any) => {
 
     // Update in DB
     const { chatUnshuulakh } = require("../services/chatService");
-    await chatUnshuulakh(chatIds, ajiltniiId);
+    await chatUnshuulakh(chatIds, ajiltniiId, req.body.tukhainBaaziinKholbolt);
 
     // Broadcast over WS
     if (projectId || taskId) {

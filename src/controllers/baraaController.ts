@@ -18,7 +18,7 @@ export const getBaraas = async (req: any, res: Response, next: any) => {
     if (req.query.barilgiinId) query.barilgiinId = req.query.barilgiinId;
     if (req.query.idevhtei !== undefined) query.idevhtei = req.query.idevhtei === "true";
 
-    const baraas = await baraaJagsaalt(query);
+    const baraas = await baraaJagsaalt(query, req.body.tukhainBaaziinKholbolt);
     res.json({ success: true, data: baraas });
   } catch (err) {
     next(err);
@@ -27,7 +27,7 @@ export const getBaraas = async (req: any, res: Response, next: any) => {
 
 export const getBaraa = async (req: any, res: Response, next: any) => {
   try {
-    const baraa = await baraaNegAvakh(req.params.id);
+    const baraa = await baraaNegAvakh(req.params.id, req.body.tukhainBaaziinKholbolt);
     if (!baraa) return res.status(404).json({ success: false, message: "Бараа олдсонгүй" });
     res.json({ success: true, data: baraa });
   } catch (err) {
@@ -42,7 +42,7 @@ export const createBaraa = async (req: any, res: Response, next: any) => {
       ...req.body,
       ...(bid && { baiguullagiinId: bid })
     };
-    const baraa = await baraaUusgekh(data);
+    const baraa = await baraaUusgekh(data, req.body.tukhainBaaziinKholbolt);
     
     // Emit socket event for real-time refresh
     const { emitToRoom }: any = require("../utils/socket");
@@ -56,7 +56,7 @@ export const createBaraa = async (req: any, res: Response, next: any) => {
 
 export const updateBaraa = async (req: any, res: Response, next: any) => {
   try {
-    const baraa = await baraaZasakh(req.params.id, req.body);
+    const baraa = await baraaZasakh(req.params.id, req.body, req.body.tukhainBaaziinKholbolt);
     if (!baraa) return res.status(404).json({ success: false, message: "Бараа олдсонгүй" });
 
     // Emit socket event for real-time refresh
@@ -71,7 +71,7 @@ export const updateBaraa = async (req: any, res: Response, next: any) => {
 
 export const deleteBaraa = async (req: any, res: Response, next: any) => {
   try {
-    const baraa = await baraaUstgakh(req.params.id);
+    const baraa = await baraaUstgakh(req.params.id, req.body.tukhainBaaziinKholbolt);
     if (!baraa) return res.status(404).json({ success: false, message: "Бараа олдсонгүй" });
     
     // Emit socket event to refresh frontend charts and tables
@@ -98,7 +98,7 @@ export const getBaraaUsageStats = async (req: any, res: Response, next: any) => 
     const sDate = startDate ? new Date(startDate as string) : undefined;
     const eDate = endDate ? new Date(endDate as string) : undefined;
 
-    const stats = await baraaAshiglalatStats(bid, barilgiinId as string, sDate, eDate);
+    const stats = await baraaAshiglalatStats(bid, barilgiinId as string, sDate, eDate, req.body.tukhainBaaziinKholbolt);
     res.json({ success: true, data: stats });
   } catch (err) {
     next(err);

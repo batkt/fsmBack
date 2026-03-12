@@ -45,8 +45,10 @@ chatSchema.index({ baiguullagiinId: 1, barilgiinId: 1 });
 chatSchema.index({ ajiltniiId: 1 });
 
 module.exports = function a(conn: any, connectFSM = true, modelName = "chat") {
-  if (!conn || !conn.kholbolt || !conn.kholboltFSM)
+  if (!conn || !conn.kholbolt)
     throw new Error("Холболтын мэдээлэл заавал бөглөх шаардлагатай!");
-  conn = connectFSM && !!conn.kholboltFSM ? conn.kholboltFSM : conn.kholbolt;
-  return conn.model(modelName, chatSchema);
+  
+  const fsmConn = connectFSM && conn.kholboltFSM ? conn.kholboltFSM : conn.kholbolt;
+
+  return fsmConn.model(modelName, chatSchema);
 };

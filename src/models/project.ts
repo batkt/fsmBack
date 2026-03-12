@@ -35,8 +35,11 @@ projectSchema.index({ ajiltnuud: 1 });
 projectSchema.index({ uilchluulegchId: 1 });
 
 module.exports = function a(conn: any, connectFSM = true, modelName = "project") {
-  if (!conn || !conn.kholbolt || !conn.kholboltFSM)
+  if (!conn || !conn.kholbolt)
     throw new Error("Холболтын мэдээлэл заавал бөглөх шаардлагатай!");
-  conn = connectFSM && !!conn.kholboltFSM ? conn.kholboltFSM : conn.kholbolt;
-  return conn.model(modelName, projectSchema);
+  
+  // For FSM we prefer kholboltFSM (per-org FSM DB) but fall back to kholbolt
+  const fsmConn = connectFSM && conn.kholboltFSM ? conn.kholboltFSM : conn.kholbolt;
+
+  return fsmConn.model(modelName, projectSchema);
 };

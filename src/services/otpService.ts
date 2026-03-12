@@ -18,10 +18,10 @@ const generateOTP = (): string => {
  * @param purpose Purpose of OTP (default: "forgot_password")
  * @returns OTP code (for development/testing - remove in production)
  */
-export const requestOTP = async (utas: string, purpose: string = "forgot_password", baiguullagiinId?: string): Promise<{ otp: string; expiresAt: Date }> => {
-  const conn = getConn();
+export const requestOTP = async (utas: string, purpose: string = "forgot_password", baiguullagiinId?: string, conn?: any): Promise<{ otp: string; expiresAt: Date }> => {
+  const baseConn = conn || getConn();
   // OTP is stored in FSM database (kholboltFSM)
-  const OtpModel = getOtpModel(conn, true);
+  const OtpModel = getOtpModel(baseConn, true);
   
   // Format phone number
   const formattedPhone = formatPhoneNumber(utas);
@@ -108,9 +108,9 @@ export const requestOTP = async (utas: string, purpose: string = "forgot_passwor
  * @param purpose Purpose of OTP (default: "forgot_password")
  * @returns Verification token (for password reset)
  */
-export const verifyOTP = async (utas: string, otp: string, purpose: string = "forgot_password"): Promise<{ verified: boolean; resetToken: string }> => {
-  const conn = getConn();
-  const OtpModel = getOtpModel(conn, true);
+export const verifyOTP = async (utas: string, otp: string, purpose: string = "forgot_password", conn?: any): Promise<{ verified: boolean; resetToken: string }> => {
+  const baseConn = conn || getConn();
+  const OtpModel = getOtpModel(baseConn, true);
   
   // Format phone number
   const formattedPhone = formatPhoneNumber(utas);
@@ -178,8 +178,9 @@ export const verifyOTP = async (utas: string, otp: string, purpose: string = "fo
  * @param resetToken JWT token from verifyOTP
  * @param newPassword New password to set
  */
-export const resetPassword = async (resetToken: string, newPassword: string): Promise<void> => {
+export const resetPassword = async (resetToken: string, newPassword: string, conn?: any): Promise<void> => {
   const jwt = require("jsonwebtoken");
+  // ... (omitted bcrypt/config for brevity in replacement but usually included in actual tool call)
   const bcrypt = require("bcrypt");
   const { config } = require("../config");
   
@@ -198,8 +199,8 @@ export const resetPassword = async (resetToken: string, newPassword: string): Pr
   const { ajiltniiId } = decoded;
   
   // Check if OTP was verified
-  const conn = getConn();
-  const OtpModel = getOtpModel(conn, true);
+  const baseConn = conn || getConn();
+  const OtpModel = getOtpModel(baseConn, true);
   const otpRecord = await OtpModel.findOne({
     ajiltniiId,
     verified: true,

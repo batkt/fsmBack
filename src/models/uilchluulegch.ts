@@ -40,8 +40,10 @@ uilchluulegchSchema.index({ baiguullagiinId: 1, tuluv: 1 });
 uilchluulegchSchema.index({ ner: "text", register: "text" });
 
 module.exports = function a(conn: any, connectFSM = true, modelName = "uilchluulegch") {
-  if (!conn || !conn.kholbolt || !conn.kholboltFSM)
+  if (!conn || !conn.kholbolt)
     throw new Error("Холболтын мэдээлэл заавал бөглөх шаардлагатай!");
-  conn = connectFSM && !!conn.kholboltFSM ? conn.kholboltFSM : conn.kholbolt;
-  return conn.model(modelName, uilchluulegchSchema);
+  
+  const fsmConn = connectFSM && conn.kholboltFSM ? conn.kholboltFSM : conn.kholbolt;
+
+  return fsmConn.model(modelName, uilchluulegchSchema);
 };

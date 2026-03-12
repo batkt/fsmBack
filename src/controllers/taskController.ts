@@ -37,7 +37,8 @@ export const getTasks = async (req: any, res: Response, next: any) => {
     if (req.query.uilchluulegchId) {
       const { getConn } = require("../utils/db");
       const getProjectModel = require("../models/project");
-      const ProjectModel = getProjectModel(getConn(), true);
+      const conn = req.body.tukhainBaaziinKholbolt || getConn();
+      const ProjectModel = getProjectModel(conn, true);
       const projects = await ProjectModel.find({ uilchluulegchId: req.query.uilchluulegchId }).select("_id").lean();
       const pIds = projects.map((p: any) => p._id.toString());
       
@@ -48,7 +49,7 @@ export const getTasks = async (req: any, res: Response, next: any) => {
     }
 
 
-    const tasks = await taskJagsaalt(query);
+    const tasks = await taskJagsaalt(query, req.body.tukhainBaaziinKholbolt);
     res.json({ success: true, data: tasks });
   } catch (err) {
     next(err);
@@ -57,7 +58,7 @@ export const getTasks = async (req: any, res: Response, next: any) => {
 
 export const getTask = async (req: any, res: Response, next: any) => {
   try {
-    const task = await taskNegAvakh(req.params.id);
+    const task = await taskNegAvakh(req.params.id, req.body.tukhainBaaziinKholbolt);
     if (!task) return res.status(404).json({ success: false, message: "Даалгавар олдсонгүй" });
     
     // Check if task's baiguullagiinId has FSM access
@@ -110,7 +111,7 @@ export const createTask = async (req: any, res: Response, next: any) => {
       }));
     }
 
-    const task = await taskUusgekh(data);
+    const task = await taskUusgekh(data, req.body.tukhainBaaziinKholbolt);
     
     // Automatically create a chat message
     const { chatUusgekh }: any = require("../services/chatService");
@@ -125,7 +126,7 @@ export const createTask = async (req: any, res: Response, next: any) => {
       turul: "text",
       baiguullagiinId: task.baiguullagiinId,
       barilgiinId: task.barilgiinId
-    });
+    }, req.body.tukhainBaaziinKholbolt);
 
     // Notify project room and task room
     emitToRoom(`project_${task.projectId}`, "new_message", initialMessage);
@@ -182,7 +183,7 @@ export const createTask = async (req: any, res: Response, next: any) => {
           message: `${task.ner} (${task.taskId}) даалгавар танд хуваарилагдлаа`,
           object: task,
           ajiltnuud: task.ajiltnuud || [] // Store task members for filtering
-        });
+        }, req.body.tukhainBaaziinKholbolt);
         console.log("[Task Creation] ✅ Notification created:", {
           notificationId: notification._id,
           userId: memberId,
@@ -209,14 +210,14 @@ export const createTask = async (req: any, res: Response, next: any) => {
       ajiltniiId: req.ajiltan?.id,
       ajiltniiNer: req.ajiltan?.ner,
       uildel: "created"
-    });
+    }, req.body.tukhainBaaziinKholbolt);
 
 
     // Refresh client KPI if assignment exists
     if (task.uilchluulegchId) {
       try {
         const { kpiShineelekhUilchluulegch } = require("../services/kpiService");
-        const stats = await kpiShineelekhUilchluulegch(task.uilchluulegchId);
+        const stats = await kpiShineelekhUilchluulegch(task.uilchluulegchId, req.body.tukhainBaaziinKholbolt);
         
         const { emitToRoom } = require("../utils/socket");
         emitToRoom(`barilga_${task.barilgiinId}`, "client_kpi_updated", {
@@ -237,11 +238,11 @@ export const createTask = async (req: any, res: Response, next: any) => {
 export const updateTask = async (req: any, res: Response, next: any) => {
   try {
     // Get old task BEFORE update to compare changes
-    const oldTask = await taskNegAvakh(req.params.id);
+    const oldTask = await taskNegAvakh(req.params.id, req.body.tukhainBaaziinKholbolt);
     if (!oldTask) return res.status(404).json({ success: false, message: "Даалгавар олдсонгүй" });
 
     // Update the task
-    const task = await taskZasakh(req.params.id, req.body);
+    const task = await taskZasakh(req.params.id, req.body, req.body.tukhainBaaziinKholbolt);
     if (!task) return res.status(404).json({ success: false, message: "Даалгавар олдсонгүй" });
 
     // Emit task update event
@@ -335,7 +336,7 @@ export const updateTask = async (req: any, res: Response, next: any) => {
           message: message,
           object: task,
           ajiltnuud: task.ajiltnuud || [] // Store task members for filtering
-        });
+        }, req.body.tukhainBaaziinKholbolt);
         console.log("[Task Update] ✅ Notification created:", {
           notificationId: notification._id,
           userId: memberId,
@@ -350,10 +351,6 @@ export const updateTask = async (req: any, res: Response, next: any) => {
       }
     }
 
-    if (membersToNotify.size === 0) {
-      console.warn("[Task Update] ⚠️ No members to notify (all members are the updater or no members found)");
-    }
-
     // Log history
     let action = "updated";
     if (req.body.tuluv === "duussan") action = "completed";
@@ -366,7 +363,7 @@ export const updateTask = async (req: any, res: Response, next: any) => {
       ajiltniiId: req.ajiltan?.id,
       ajiltniiNer: req.ajiltan?.ner,
       uildel: action
-    });
+    }, req.body.tukhainBaaziinKholbolt);
 
     // Refresh client KPI if status changed or client exists
     if (task.uilchluulegchId || oldTask.uilchluulegchId) {
@@ -375,14 +372,14 @@ export const updateTask = async (req: any, res: Response, next: any) => {
         const { emitToRoom } = require("../utils/socket");
 
         if (task.uilchluulegchId) {
-          const stats = await kpiShineelekhUilchluulegch(task.uilchluulegchId);
+          const stats = await kpiShineelekhUilchluulegch(task.uilchluulegchId, req.body.tukhainBaaziinKholbolt);
           emitToRoom(`barilga_${task.barilgiinId}`, "client_kpi_updated", {
             uilchluulegchId: task.uilchluulegchId,
             ...stats
           });
         }
         if (oldTask.uilchluulegchId && oldTask.uilchluulegchId !== task.uilchluulegchId) {
-           const stats = await kpiShineelekhUilchluulegch(oldTask.uilchluulegchId);
+           const stats = await kpiShineelekhUilchluulegch(oldTask.uilchluulegchId, req.body.tukhainBaaziinKholbolt);
            emitToRoom(`barilga_${task.barilgiinId}`, "client_kpi_updated", {
              uilchluulegchId: oldTask.uilchluulegchId,
              ...stats
@@ -402,7 +399,7 @@ export const updateTask = async (req: any, res: Response, next: any) => {
 export const deleteTask = async (req: any, res: Response, next: any) => {
   try {
     // Save to history before deleting
-    const existing = await taskNegAvakh(req.params.id);
+    const existing = await taskNegAvakh(req.params.id, req.body.tukhainBaaziinKholbolt);
     if (!existing) return res.status(404).json({ success: false, message: "Даалгавар олдсонгүй" });
 
     const { _id: delTaskId, ...delTaskData } = existing;
@@ -414,9 +411,9 @@ export const deleteTask = async (req: any, res: Response, next: any) => {
       ajiltniiId: req.ajiltan?.id,
       ajiltniiNer: req.ajiltan?.ner,
       uildel: "deleted"
-    });
+    }, req.body.tukhainBaaziinKholbolt);
 
-    await taskUstgakh(req.params.id);
+    await taskUstgakh(req.params.id, req.body.tukhainBaaziinKholbolt);
 
     // Refresh worker KPIs
     const workersToUpdate = new Set<string>();
@@ -430,7 +427,7 @@ export const deleteTask = async (req: any, res: Response, next: any) => {
 
     for (const workerId of workersToUpdate) {
       try {
-        const stats = await kpiShineelekh(workerId, existing.baiguullagiinId);
+        const stats = await kpiShineelekh(workerId, existing.baiguullagiinId, req.body.tukhainBaaziinKholbolt);
         emitToRoom(`baiguullaga_${existing.baiguullagiinId}`, "kpi_updated", {
           userId: workerId,
           ...stats
@@ -443,7 +440,7 @@ export const deleteTask = async (req: any, res: Response, next: any) => {
     // Refresh client KPI if assignment existed
     if (existing.uilchluulegchId) {
       try {
-        const stats = await kpiShineelekhUilchluulegch(existing.uilchluulegchId);
+        const stats = await kpiShineelekhUilchluulegch(existing.uilchluulegchId, req.body.tukhainBaaziinKholbolt);
         emitToRoom(`barilga_${existing.barilgiinId}`, "client_kpi_updated", {
           uilchluulegchId: existing.uilchluulegchId,
           ...stats
@@ -473,7 +470,7 @@ export const uploadTaskImage = async (req: any, res: Response, next: any) => {
     }
 
     // Get the task
-    const task = await taskNegAvakh(taskId);
+    const task = await taskNegAvakh(taskId, req.body.tukhainBaaziinKholbolt);
     if (!task) {
       return res.status(404).json({ success: false, message: "Даалгавар олдсонгүй" });
     }
@@ -508,7 +505,7 @@ export const uploadTaskImage = async (req: any, res: Response, next: any) => {
 
     const { getConn } = require("../utils/db");
     const getTaskModel = require("../models/task");
-    const conn = getConn();
+    const conn = req.body.tukhainBaaziinKholbolt || getConn();
     const TaskModel = getTaskModel(conn, true);
 
     let updateQuery: any = {};
@@ -581,7 +578,7 @@ export const startTaskTime = async (req: any, res: Response, next: any) => {
     const { startTaskTime: startTimeService } = require("../services/taskService");
     const { tailbar } = req.body || {};
     
-    const result = await startTimeService(taskId, ajiltniiId, tailbar);
+    const result = await startTimeService(taskId, ajiltniiId, tailbar, req.body.tukhainBaaziinKholbolt);
 
     // Emit Socket.IO event
     const { emitToRoom } = require("../utils/socket");
@@ -626,7 +623,7 @@ export const endTaskTime = async (req: any, res: Response, next: any) => {
     const { endTaskTime: endTimeService } = require("../services/taskService");
     const { tailbar } = req.body || {};
     
-    const result = await endTimeService(taskId, ajiltniiId, tailbar);
+    const result = await endTimeService(taskId, ajiltniiId, tailbar, req.body.tukhainBaaziinKholbolt);
 
     // Emit Socket.IO event
     const { emitToRoom } = require("../utils/socket");
