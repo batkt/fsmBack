@@ -5,8 +5,11 @@ export const createBaiguullaga = async (req: any, res: Response, next: any) => {
   try {
     const result = await baiguullagaBurtgekh(req.body);
     res.json({ success: true, ...result });
-  } catch (err) {
-    next(err);
+  } catch (err: any) {
+    // Return error in consistent format
+    const errorMessage = err.message || "Алдаа гарлаа";
+    const statusCode = err.message?.includes("timeout") || err.message?.includes("холболт") ? 500 : 400;
+    return res.status(statusCode).json({ success: false, message: errorMessage });
   }
 };
 
