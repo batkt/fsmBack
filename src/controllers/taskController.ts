@@ -396,13 +396,32 @@ export const deleteTask = async (req: any, res: Response, next: any) => {
 
     await taskUstgakh(req.params.id);
 
+    // Refresh worker KPIs
+    const workersToUpdate = new Set<string>();
+    if (existing.hariutsagchId) workersToUpdate.add(existing.hariutsagchId);
+    if (existing.ajiltnuud && Array.isArray(existing.ajiltnuud)) {
+      existing.ajiltnuud.forEach((id: string) => workersToUpdate.add(id));
+    }
+
+    const { kpiShineelekh, kpiShineelekhUilchluulegch } = require("../services/kpiService");
+    const { emitToRoom } = require("../utils/socket");
+
+    for (const workerId of workersToUpdate) {
+      try {
+        const stats = await kpiShineelekh(workerId, existing.baiguullagiinId);
+        emitToRoom(`baiguullaga_${existing.baiguullagiinId}`, "kpi_updated", {
+          userId: workerId,
+          ...stats
+        });
+      } catch (err) {
+        console.error(`Failed to refresh worker KPI for ${workerId}:`, err);
+      }
+    }
+
     // Refresh client KPI if assignment existed
     if (existing.uilchluulegchId) {
       try {
-        const { kpiShineelekhUilchluulegch } = require("../services/kpiService");
         const stats = await kpiShineelekhUilchluulegch(existing.uilchluulegchId);
-        
-        const { emitToRoom } = require("../utils/socket");
         emitToRoom(`barilga_${existing.barilgiinId}`, "client_kpi_updated", {
           uilchluulegchId: existing.uilchluulegchId,
           ...stats

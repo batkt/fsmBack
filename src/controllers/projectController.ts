@@ -182,8 +182,56 @@ export const updateProject = async (req: any, res: Response, next: any) => {
 
 export const deleteProject = async (req: any, res: Response, next: any) => {
   try {
+    const { getConn } = require("../utils/db");
+    const getTaskModel = require("../models/task");
+    const TaskModel = getTaskModel(getConn(), true);
+
+    // Find tasks before deleting project to know which workers' KPIs to refresh
+    const tasks = await TaskModel.find({ projectId: req.params.id }).select("hariutsagchId ajiltnuud").lean();
+    
+    const workersToUpdate = new Set<string>();
+    tasks.forEach((t: any) => {
+      if (t.hariutsagchId) workersToUpdate.add(t.hariutsagchId);
+      if (t.ajiltnuud && Array.isArray(t.ajiltnuud)) {
+        t.ajiltnuud.forEach((id: string) => workersToUpdate.add(id));
+      }
+    });
+
     const project = await projectUstgakh(req.params.id);
     if (!project) return res.status(404).json({ success: false, message: "Төсөл олдсонгүй" });
+
+    // Delete tasks of this project since project is deleted
+    await TaskModel.deleteMany({ projectId: req.params.id });
+
+    const { kpiShineelekh, kpiShineelekhUilchluulegch } = require("../services/kpiService");
+    const { emitToRoom } = require("../utils/socket");
+
+    // Refresh client KPI
+    if (project.uilchluulegchId) {
+      try {
+        const stats = await kpiShineelekhUilchluulegch(project.uilchluulegchId);
+        emitToRoom(`barilga_${project.barilgiinId}`, "client_kpi_updated", {
+          uilchluulegchId: project.uilchluulegchId,
+          ...stats
+        });
+      } catch (err) {
+        console.error("Failed to refresh client KPI:", err);
+      }
+    }
+
+    // Refresh worker KPIs
+    for (const workerId of workersToUpdate) {
+      try {
+        const stats = await kpiShineelekh(workerId, project.baiguullagiinId);
+        emitToRoom(`baiguullaga_${project.baiguullagiinId}`, "kpi_updated", {
+          userId: workerId,
+          ...stats
+        });
+      } catch (err) {
+        console.error(`Failed to refresh worker KPI for ${workerId}:`, err);
+      }
+    }
+
     res.json({ success: true, message: "Төсөл амжилттай устгагдлаа" });
   } catch (err) {
     next(err);
