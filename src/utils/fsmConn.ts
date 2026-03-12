@@ -1,11 +1,19 @@
+import { getConn } from "./db";
+
 // Helper to get per-organization FSM connection from request
-// Uses tukhainBaaziinKholbolt provided by zevbackv2 token middleware
+// Prefers connection injected by authMiddleware
 export const getFsmConnFromReq = (req: any) => {
-  let baseConn = req.body?.tukhainBaaziinKholbolt;
-  if (baseConn && baseConn.kholbolt && !baseConn.kholboltFSM) {
-    // For FSM we treat kholboltFSM as the same as tukhainBaaziinKholbolt.kholbolt
+  let baseConn = req.tukhainBaaziinKholbolt || req.body?.tukhainBaaziinKholbolt;
+  
+  if (!baseConn) {
+    return getConn();
+  }
+
+  // Ensure compatibility with models that expect .kholboltFSM property
+  if (baseConn.kholbolt && !baseConn.kholboltFSM) {
     baseConn.kholboltFSM = baseConn.kholbolt;
   }
+  
   return baseConn;
 };
 

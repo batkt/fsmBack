@@ -6,6 +6,7 @@ import {
   subTaskUstgakh,
   subTaskNegAvakh,
 } from "../services/subTaskService";
+import { getFsmConnFromReq } from "../utils/fsmConn";
 
 export const getSubTasks = async (req: any, res: Response, next: any) => {
   try {
@@ -16,7 +17,7 @@ export const getSubTasks = async (req: any, res: Response, next: any) => {
     if (req.query.taskId) query.taskId = req.query.taskId;
     if (req.query.projectId) query.projectId = req.query.projectId;
 
-    const list = await subTaskJagsaalt(query, req.body.tukhainBaaziinKholbolt);
+    const list = await subTaskJagsaalt(query, getFsmConnFromReq(req));
     res.json({ success: true, data: list });
   } catch (err) {
     next(err);
@@ -25,7 +26,7 @@ export const getSubTasks = async (req: any, res: Response, next: any) => {
 
 export const getSubTask = async (req: any, res: Response, next: any) => {
   try {
-    const item = await subTaskNegAvakh(req.params.id, req.body.tukhainBaaziinKholbolt);
+    const item = await subTaskNegAvakh(req.params.id, getFsmConnFromReq(req));
     if (!item) return res.status(404).json({ success: false, message: "Дэд даалгавар олдсонгүй" });
     res.json({ success: true, data: item });
   } catch (err) {
@@ -40,7 +41,7 @@ export const createSubTask = async (req: any, res: Response, next: any) => {
       ...req.body,
       ...(bid && { baiguullagiinId: bid })
     };
-    const item = await subTaskUusgekh(data, req.body.tukhainBaaziinKholbolt);
+    const item = await subTaskUusgekh(data, getFsmConnFromReq(req));
     res.status(201).json({ success: true, data: item });
   } catch (err) {
     next(err);
@@ -49,7 +50,7 @@ export const createSubTask = async (req: any, res: Response, next: any) => {
 
 export const updateSubTask = async (req: any, res: Response, next: any) => {
   try {
-    const item = await subTaskZasakh(req.params.id, req.body, req.body.tukhainBaaziinKholbolt);
+    const item = await subTaskZasakh(req.params.id, req.body, getFsmConnFromReq(req));
     if (!item) return res.status(404).json({ success: false, message: "Дэд даалгавар олдсонгүй" });
     res.json({ success: true, data: item });
   } catch (err) {
@@ -59,7 +60,7 @@ export const updateSubTask = async (req: any, res: Response, next: any) => {
 
 export const deleteSubTask = async (req: any, res: Response, next: any) => {
   try {
-    await subTaskUstgakh(req.params.id, req.body.tukhainBaaziinKholbolt);
+    await subTaskUstgakh(req.params.id, getFsmConnFromReq(req));
     res.json({ success: true, message: "Дэд даалгавар амжилттай устгагдлаа" });
   } catch (err) {
     next(err);

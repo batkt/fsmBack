@@ -10,6 +10,7 @@ import {
   medegdelUnreadCount,
 } from "../services/medegdelService";
 import { emitToRoom } from "../utils/socket";
+import { getFsmConnFromReq } from "../utils/fsmConn";
 
 export const getMedegdels = async (req: any, res: Response, next: any) => {
   try {
@@ -32,7 +33,7 @@ export const getMedegdels = async (req: any, res: Response, next: any) => {
       query.ajiltnuud = ajiltniiId; // MongoDB will match if ajiltniiId is in the ajiltnuud array
     }
 
-    const medegdels = await medegdelJagsaalt(query, req.body.tukhainBaaziinKholbolt);
+    const medegdels = await medegdelJagsaalt(query, getFsmConnFromReq(req));
     res.json({ success: true, data: medegdels });
   } catch (err) {
     next(err);
@@ -48,7 +49,7 @@ export const createMedegdel = async (req: any, res: Response, next: any) => {
       ajiltniiId: req.body.ajiltniiId || req.ajiltan?.id,
     };
 
-    const medegdel = await medegdelUusgekh(data, req.body.tukhainBaaziinKholbolt);
+    const medegdel = await medegdelUusgekh(data, getFsmConnFromReq(req));
 
     // Emit real-time notification via Socket.IO
     if (medegdel.ajiltniiId) {
@@ -69,7 +70,7 @@ export const createMedegdel = async (req: any, res: Response, next: any) => {
 
 export const updateMedegdel = async (req: any, res: Response, next: any) => {
   try {
-    const medegdel = await medegdelZasakh(req.params.id, req.body, req.body.tukhainBaaziinKholbolt);
+    const medegdel = await medegdelZasakh(req.params.id, req.body, getFsmConnFromReq(req));
     if (!medegdel) {
       return res.status(404).json({ success: false, message: "Мэдэгдэл олдсонгүй" });
     }
@@ -86,7 +87,7 @@ export const markAsRead = async (req: any, res: Response, next: any) => {
       return res.status(400).json({ success: false, message: "Ажилтны ID шаардлагатай" });
     }
 
-    const medegdel = await medegdelKharlaa(req.params.id, ajiltniiId, req.body.tukhainBaaziinKholbolt);
+    const medegdel = await medegdelKharlaa(req.params.id, ajiltniiId, getFsmConnFromReq(req));
     if (!medegdel) {
       return res.status(404).json({ success: false, message: "Мэдэгдэл олдсонгүй" });
     }
@@ -99,7 +100,7 @@ export const markAsRead = async (req: any, res: Response, next: any) => {
 
 export const getMedegdel = async (req: any, res: Response, next: any) => {
   try {
-    const medegdel = await medegdelNegAvakh(req.params.id, req.body.tukhainBaaziinKholbolt);
+    const medegdel = await medegdelNegAvakh(req.params.id, getFsmConnFromReq(req));
     if (!medegdel) {
       return res.status(404).json({ success: false, message: "Мэдэгдэл олдсонгүй" });
     }
@@ -111,7 +112,7 @@ export const getMedegdel = async (req: any, res: Response, next: any) => {
 
 export const deleteMedegdel = async (req: any, res: Response, next: any) => {
   try {
-    await medegdelUstgakh(req.params.id, req.body.tukhainBaaziinKholbolt);
+    await medegdelUstgakh(req.params.id, getFsmConnFromReq(req));
     res.json({ success: true, message: "Мэдэгдэл устгагдлаа" });
   } catch (err) {
     next(err);
@@ -126,13 +127,13 @@ export const markAllAsRead = async (req: any, res: Response, next: any) => {
     }
 
     const baiguullagiinId = req.ajiltan?.baiguullagiinId || req.query.baiguullagiinId || req.body.baiguullagiinId;
-    const result = await medegdelBuhKharlaa(ajiltniiId, baiguullagiinId, req.body.tukhainBaaziinKholbolt);
+    const result = await medegdelBuhKharlaa(ajiltniiId, baiguullagiinId, getFsmConnFromReq(req));
     
     // Optionally return updated notifications list
     const updatedNotifications = await medegdelJagsaalt({
       ajiltniiId,
       ...(baiguullagiinId && { baiguullagiinId })
-    }, req.body.tukhainBaaziinKholbolt);
+    }, getFsmConnFromReq(req));
     
     res.json({
       success: true,
@@ -153,7 +154,7 @@ export const getUnreadCount = async (req: any, res: Response, next: any) => {
     }
 
     const baiguullagiinId = req.ajiltan?.baiguullagiinId || req.query.baiguullagiinId;
-    const count = await medegdelUnreadCount(ajiltniiId, baiguullagiinId, req.body.tukhainBaaziinKholbolt);
+    const count = await medegdelUnreadCount(ajiltniiId, baiguullagiinId, getFsmConnFromReq(req));
     
     res.json({ success: true, count });
   } catch (err) {

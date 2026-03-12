@@ -1,4 +1,4 @@
-import { getConn } from "../utils/db";
+import { getConn, getErunkhiiCol } from "../utils/db";
 const getTaskModel          = require("../models/task");
 const getUilchluulegchModel = require("../models/uilchluulegch");
 
@@ -52,8 +52,7 @@ export const kpiShineelekh = async (
 
   console.log(`[KPI] Calculated for ${hariutsagchId}: Tasks=${kpiDaalgavarToo}, QualityPts=${qualityPoints}, OnTime=${onTimeCount}, FinalPct=${kpiHuvv}%`);
 
-  const { getCol } = require("../utils/db");
-  const ajiltanCol = getCol("ajiltan");
+  const ajiltanCol = getErunkhiiCol("ajiltan");
   let userQuery: any = { _id: hariutsagchId };
   try {
      const { ObjectId } = require("mongodb");

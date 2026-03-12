@@ -6,6 +6,7 @@ import {
   projectUstgakh,
   projectNegAvakh,
 } from "../services/projectService";
+import { getFsmConnFromReq } from "../utils/fsmConn";
 
 export const getProjects = async (req: any, res: Response, next: any) => {
   try {
@@ -42,7 +43,7 @@ export const getProjects = async (req: any, res: Response, next: any) => {
       ];
     }
 
-    const projects = await projectJagsaalt(query, req.body.tukhainBaaziinKholbolt);
+    const projects = await projectJagsaalt(query, getFsmConnFromReq(req));
     res.json({ success: true, data: projects });
   } catch (err) {
     next(err);
@@ -51,7 +52,7 @@ export const getProjects = async (req: any, res: Response, next: any) => {
 
 export const getProject = async (req: any, res: Response, next: any) => {
   try {
-    const project = await projectNegAvakh(req.params.id, req.body.tukhainBaaziinKholbolt);
+    const project = await projectNegAvakh(req.params.id, getFsmConnFromReq(req));
     if (!project) return res.status(404).json({ success: false, message: "Төсөл олдсонгүй" });
     
     // Check if project's baiguullagiinId has FSM access
@@ -73,7 +74,7 @@ export const createProject = async (req: any, res: Response, next: any) => {
       ...req.body,
       ...(bid && { baiguullagiinId: bid })
     };
-    const project = await projectUusgekh(data, req.body.tukhainBaaziinKholbolt);
+    const project = await projectUusgekh(data, getFsmConnFromReq(req));
 
     // Automatically create a chat message
     const { chatUusgekh }: any = require("../services/chatService");
@@ -87,7 +88,7 @@ export const createProject = async (req: any, res: Response, next: any) => {
       turul: "text",
       baiguullagiinId: project.baiguullagiinId,
       barilgiinId: project.barilgiinId
-    }, req.body.tukhainBaaziinKholbolt);
+    }, getFsmConnFromReq(req));
 
     emitToRoom(`project_${project._id}`, "new_message", initialMessage);
     
@@ -112,7 +113,7 @@ export const createProject = async (req: any, res: Response, next: any) => {
         title: "Шинэ төсөл",
         message: `${project.ner} төсөл үүсгэгдлээ`,
         object: project
-      }, req.body.tukhainBaaziinKholbolt);
+      }, getFsmConnFromReq(req));
       notifications.push(notif);
       emitToRoom(`user_${project.udirdagchId}`, "new_notification", notif);
     }
@@ -130,7 +131,7 @@ export const createProject = async (req: any, res: Response, next: any) => {
             title: "Шинэ төсөл",
             message: `${project.ner} төсөлд танд хандалт олгогдлоо`,
             object: project
-          }, req.body.tukhainBaaziinKholbolt);
+          }, getFsmConnFromReq(req));
           notifications.push(notif);
           emitToRoom(`user_${ajiltniiId}`, "new_notification", notif);
         }
@@ -141,7 +142,7 @@ export const createProject = async (req: any, res: Response, next: any) => {
     if (project.uilchluulegchId) {
       try {
         const { kpiShineelekhUilchluulegch } = require("../services/kpiService");
-        await kpiShineelekhUilchluulegch(project.uilchluulegchId, req.body.tukhainBaaziinKholbolt);
+        await kpiShineelekhUilchluulegch(project.uilchluulegchId, getFsmConnFromReq(req));
       } catch (err) {
         console.error("Failed to refresh client KPI:", err);
       }
@@ -155,7 +156,7 @@ export const createProject = async (req: any, res: Response, next: any) => {
 
 export const updateProject = async (req: any, res: Response, next: any) => {
   try {
-    const project = await projectZasakh(req.params.id, req.body, req.body.tukhainBaaziinKholbolt);
+    const project = await projectZasakh(req.params.id, req.body, getFsmConnFromReq(req));
     if (!project) return res.status(404).json({ success: false, message: "Төсөл олдсонгүй" });
 
     // Emit project update event
@@ -177,14 +178,14 @@ export const updateProject = async (req: any, res: Response, next: any) => {
         ajiltniiNer: req.ajiltan?.ner,
         uildel: "completed",
         turul: "milestone"
-      }, req.body.tukhainBaaziinKholbolt);
+      }, getFsmConnFromReq(req));
     }
 
     // Refresh client KPI if assignment exists
     if (project.uilchluulegchId) {
       try {
         const { kpiShineelekhUilchluulegch } = require("../services/kpiService");
-        const stats = await kpiShineelekhUilchluulegch(project.uilchluulegchId, req.body.tukhainBaaziinKholbolt);
+        const stats = await kpiShineelekhUilchluulegch(project.uilchluulegchId, getFsmConnFromReq(req));
         
         const { emitToRoom } = require("../utils/socket");
         emitToRoom(`barilga_${project.barilgiinId}`, "client_kpi_updated", {
@@ -206,8 +207,7 @@ export const deleteProject = async (req: any, res: Response, next: any) => {
   try {
     const getTaskModel = require("../models/task");
     
-    const { getConn } = require("../utils/db");
-    const conn = req.body.tukhainBaaziinKholbolt || getConn();
+    const conn = getFsmConnFromReq(req);
     const TaskModel = getTaskModel(conn, true);
 
     // Find tasks before deleting project to know which workers' KPIs to refresh
@@ -221,7 +221,7 @@ export const deleteProject = async (req: any, res: Response, next: any) => {
       }
     });
 
-    const project = await projectUstgakh(req.params.id, req.body.tukhainBaaziinKholbolt);
+    const project = await projectUstgakh(req.params.id, getFsmConnFromReq(req));
     if (!project) return res.status(404).json({ success: false, message: "Төсөл олдсонгүй" });
 
     // Delete tasks of this project since project is deleted
@@ -233,7 +233,7 @@ export const deleteProject = async (req: any, res: Response, next: any) => {
     // Refresh client KPI
     if (project.uilchluulegchId) {
       try {
-        const stats = await kpiShineelekhUilchluulegch(project.uilchluulegchId, req.body.tukhainBaaziinKholbolt);
+        const stats = await kpiShineelekhUilchluulegch(project.uilchluulegchId, getFsmConnFromReq(req));
         emitToRoom(`barilga_${project.barilgiinId}`, "client_kpi_updated", {
           uilchluulegchId: project.uilchluulegchId,
           ...stats
@@ -246,7 +246,7 @@ export const deleteProject = async (req: any, res: Response, next: any) => {
     // Refresh worker KPIs
     for (const workerId of workersToUpdate) {
       try {
-        const stats = await kpiShineelekh(workerId, project.baiguullagiinId, req.body.tukhainBaaziinKholbolt);
+        const stats = await kpiShineelekh(workerId, project.baiguullagiinId, getFsmConnFromReq(req));
         emitToRoom(`baiguullaga_${project.baiguullagiinId}`, "kpi_updated", {
           userId: workerId,
           ...stats

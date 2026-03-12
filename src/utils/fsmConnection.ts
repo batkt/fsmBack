@@ -12,119 +12,61 @@ const { db }: any = require("zevbackv2");
  * This function queries baaziinMedeelel from the main DB to get FSM connection config,
  * then connects to the separate fManageFsm database.
  */
-export async function connectFSMDatabase(): Promise<void> {
+/**
+ * Loads all registered FSM tenant connections from the main database at startup.
+ * Queries baaziinMedeelel collection and registers each one using zevbackv2.
+ */
+export async function loadAllFsmConnections(): Promise<void> {
   try {
-    // Check if zevbackv2 already has FSM connections set up
-    if (db.erunkhiiKholbolt?.kholboltFSM) {
-      console.log("[FSM Connection] kholboltFSM already exists, skipping setup");
-      return;
-    }
-
-    // Get the main connection (turees database) to query baiguullaga collection
-    // baiguullaga and ajiltan are stored in the main turees database, not FSM
     const mainConn = db.erunkhiiKholbolt?.kholbolt;
     if (!mainConn) {
-      throw new Error("Main database connection not available");
-    }
-
-    // Check if zevbackv2 has any FSM connections stored elsewhere
-    console.log("[FSM Connection] Checking zevbackv2 FSM connections...");
-    console.log("[FSM Connection] db.erunkhiiKholbolt keys:", Object.keys(db.erunkhiiKholbolt || {}));
-
-    // Query baaziinMedeelel collection from main turees database for FSM database config
-    // The FSM config is stored in baaziinMedeelel, not baiguullaga
-    const baaziinMedeelelCol = mainConn.collection("baaziinMedeelel");
-    
-    // Try multiple query patterns to find FSM config
-    let fsmConfig = await baaziinMedeelelCol.findOne({
-      fsmEsekh: true,
-      baaz: "fManageFsm",
-    });
-
-    // If not found, try with just fsmEsekh: true
-    if (!fsmConfig) {
-      console.log("[FSM Connection] Trying query with just fsmEsekh: true");
-      fsmConfig = await baaziinMedeelelCol.findOne({
-        fsmEsekh: true,
-      });
-    }
-
-    // If still not found, try with just baaz: "fManageFsm"
-    if (!fsmConfig) {
-      console.log("[FSM Connection] Trying query with just baaz: 'fManageFsm'");
-      fsmConfig = await baaziinMedeelelCol.findOne({
-        baaz: "fManageFsm",
-      });
-    }
-
-    // If still not found, try with baaz containing "fManage"
-    if (!fsmConfig) {
-      console.log("[FSM Connection] Trying query with baaz containing 'fManage'");
-      fsmConfig = await baaziinMedeelelCol.findOne({
-        baaz: { $regex: /fManage/i },
-      });
-    }
-
-    if (!fsmConfig) {
-      console.warn(
-        "[FSM Connection] No FSM database config found in baaziinMedeelel collection. " +
-          "Using main database connection as fallback for kholboltFSM.",
-      );
-      // Set kholboltFSM to main connection as fallback so models don't crash
-      if (db.erunkhiiKholbolt) {
-        db.erunkhiiKholbolt.kholboltFSM = db.erunkhiiKholbolt.kholbolt;
-        console.log("[FSM Connection] kholboltFSM set to main connection as fallback");
-      }
+      console.error("[FSM] ❌ Main database connection not available for loading tenants");
       return;
     }
 
-    console.log("[FSM Connection] Found FSM config:", {
-      baaz: fsmConfig.baaz,
-      clusterUrl: fsmConfig.clusterUrl,
-      userName: fsmConfig.userName,
-    });
+    const baaziinMedeelelCol = mainConn.collection("baaziinMedeelel");
+    
+    // Find all configurations registered for FSM
+    const configs = await baaziinMedeelelCol.find({
+      fsmEsekh: true
+    }).toArray();
 
-    // Build MongoDB connection URI
-    const { clusterUrl, userName, password, baaz } = fsmConfig;
-    const mongoUri = `mongodb://${userName}:${password}@${clusterUrl}/${baaz}?authSource=admin`;
+    console.log(`[FSM] 🔍 Found ${configs.length} FSM configurations to load.`);
 
-    // Create a new mongoose connection for FSM database
-    const fsmConnection = mongoose.createConnection(mongoUri);
+    for (const config of configs) {
+      try {
+        const { baiguullagiinId, baaz, cloudMongoDBEsekh, clusterUrl, password, userName } = config;
+        
+        if (!baiguullagiinId || !baaz) {
+          console.warn(`[FSM] ⚠️ Skipping invalid config: ${JSON.stringify(config)}`);
+          continue;
+        }
 
-    // Wait for connection to be established
-    await new Promise<void>((resolve, reject) => {
-      fsmConnection.on("connected", () => {
-        console.log(`[FSM Connection] Connected to ${baaz} database at ${clusterUrl}`);
-        resolve();
-      });
-
-      fsmConnection.on("error", (err) => {
-        console.error(`[FSM Connection] Error connecting to ${baaz}:`, err);
-        reject(err);
-      });
-
-      // If already connected, resolve immediately
-      if (fsmConnection.readyState === 1) {
-        resolve();
+        // Register the connection in zevbackv2's registry (db.kholboltuud)
+        await db.kholboltNemyeFSM(
+          baiguullagiinId,
+          baaz,
+          cloudMongoDBEsekh,
+          clusterUrl,
+          password,
+          userName
+        );
+        
+        console.log(`[FSM] ✅ Loaded connection for ${baaz} (Org: ${baiguullagiinId})`);
+      } catch (err) {
+        console.error(`[FSM] ❌ Failed to load connection for ${config.baaz}:`, err);
       }
-    });
-
-    // Set kholboltFSM on the connection object for models to use
-    if (db.erunkhiiKholbolt) {
-      db.erunkhiiKholbolt.kholboltFSM = fsmConnection;
-      console.log("[FSM Connection] kholboltFSM set successfully");
-      
-      // Verify it's set
-      if (db.erunkhiiKholbolt.kholboltFSM) {
-        console.log("[FSM Connection] Verified: kholboltFSM is now available");
-      } else {
-        console.error("[FSM Connection] ERROR: kholboltFSM was not set properly!");
-      }
-    } else {
-      throw new Error("db.erunkhiiKholbolt not available");
     }
+
+    // Set a fallback for the global object to prevent crashes in non-tenant contexts
+    // but prioritize tenant-specific connections in controllers.
+    if (db.erunkhiiKholbolt && !db.erunkhiiKholbolt.kholboltFSM) {
+       // Optional: Set a default FSM connection if needed, otherwise leave it for explicit 404s
+       console.log("[FSM] ℹ️ Startup configuration loading completed.");
+    }
+
   } catch (error) {
-    console.error("[FSM Connection] Failed to connect to FSM database:", error);
+    console.error("[FSM] ❌ Critical error during tenant loading:", error);
     throw error;
   }
 }

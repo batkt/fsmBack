@@ -52,7 +52,7 @@ app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
 
 import { initSocket } from "./utils/socket";
-import { connectFSMDatabase } from "./utils/fsmConnection";
+import { loadAllFsmConnections } from "./utils/fsmConnection";
 import { initializeFirebase } from "./services/fcmService";
 
 const server = http.createServer(app);
@@ -85,8 +85,7 @@ async function start() {
       }
     }
 
-    // Connect to FSM database (fManageFsm) using config from baiguullaga collection
-    await connectFSMDatabase();
+    await loadAllFsmConnections();
 
     // Initialize Firebase Admin SDK for push notifications
     console.log("[Startup] Initializing Firebase...");

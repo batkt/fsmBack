@@ -2,6 +2,8 @@ import { Response } from "express";
 import { taskNegAvakh } from "../services/taskService";
 import { kpiShineelekh, kpiShineelekhUilchluulegch } from "../services/kpiService";
 import { emitToRoom } from "../utils/socket";
+import { getFsmConnFromReq } from "../utils/fsmConn";
+import { getErunkhiiCol } from "../utils/db";
 
  
 export const giveTaskPoints = async (req: any, res: Response, next: any) => {
@@ -20,7 +22,7 @@ export const giveTaskPoints = async (req: any, res: Response, next: any) => {
     }
 
     
-    const task = await taskNegAvakh(taskId, req.body.tukhainBaaziinKholbolt);
+    const task = await taskNegAvakh(taskId, getFsmConnFromReq(req));
     if (!task) {
       return res.status(404).json({ success: false, message: "Даалгавар олдсонгүй" });
     }
@@ -34,9 +36,8 @@ export const giveTaskPoints = async (req: any, res: Response, next: any) => {
     }
 
     
-    const { getConn } = require("../utils/db");
     const getTaskModel = require("../models/task");
-    const conn      = req.body.tukhainBaaziinKholbolt || getConn();
+    const conn      = getFsmConnFromReq(req);
     const TaskModel = getTaskModel(conn, true);
 
     const onoosonVal = Math.round(points * 10) / 10;
@@ -73,7 +74,7 @@ export const giveTaskPoints = async (req: any, res: Response, next: any) => {
 
     for (const userId of usersToUpdate) {
       try {
-        const kpiResult = await kpiShineelekh(userId, task.baiguullagiinId, req.body.tukhainBaaziinKholbolt);
+        const kpiResult = await kpiShineelekh(userId, task.baiguullagiinId, getFsmConnFromReq(req));
         console.log(`[KPI] Recalculated for user ${userId}:`, kpiResult);
         lastKpiResult = kpiResult;
 
@@ -87,7 +88,7 @@ export const giveTaskPoints = async (req: any, res: Response, next: any) => {
           title:           "Оноо авлаа 🎯",
           message:         `${task.ner} даалгаварт ${points}/10 оноо авлаа${onoosonTailbar ? ": " + onoosonTailbar : ""}`,
           object:          updatedTask
-        }, req.body.tukhainBaaziinKholbolt);
+        }, getFsmConnFromReq(req));
         emitToRoom(`user_${userId}`, "new_notification", notification);
 
         emitToRoom(`baiguullaga_${task.baiguullagiinId}`, "kpi_updated", {
@@ -126,7 +127,7 @@ export const giveClientTaskPoints = async (req: any, res: Response, next: any) =
       return res.status(400).json({ success: false, message: "Оноо 0-10 хооронд байх ёстой" });
     }
 
-    const task = await taskNegAvakh(taskId, req.body.tukhainBaaziinKholbolt);
+    const task = await taskNegAvakh(taskId, getFsmConnFromReq(req));
     if (!task) {
       return res.status(404).json({ success: false, message: "Даалгавар олдсонгүй" });
     }
@@ -138,9 +139,8 @@ export const giveClientTaskPoints = async (req: any, res: Response, next: any) =
       });
     }
 
-    const { getConn } = require("../utils/db");
     const getTaskModel = require("../models/task");
-    const conn      = req.body.tukhainBaaziinKholbolt || getConn();
+    const conn      = getFsmConnFromReq(req);
     const TaskModel = getTaskModel(conn, true);
 
     const uilchOnoosonVal = Math.round(points * 10) / 10;
@@ -177,7 +177,7 @@ export const giveClientTaskPoints = async (req: any, res: Response, next: any) =
 
     for (const userId of usersToUpdate) {
       try {
-        const kpiResult = await kpiShineelekh(userId, task.baiguullagiinId, req.body.tukhainBaaziinKholbolt);
+        const kpiResult = await kpiShineelekh(userId, task.baiguullagiinId, getFsmConnFromReq(req));
         lastKpiResult = kpiResult;
 
         const notification = await medegdelUusgekh({
@@ -190,7 +190,7 @@ export const giveClientTaskPoints = async (req: any, res: Response, next: any) =
           title:           "Үйлчлүүлэгчээс оноо авлаа 🎯",
           message:         `${task.ner} даалгаварт үйлчлүүлэгчээс ${points}/10 оноо авлаа${uilchluulegchOnoosonTailbar ? ": " + uilchluulegchOnoosonTailbar : ""}`,
           object:          updatedTask
-        }, req.body.tukhainBaaziinKholbolt);
+        }, getFsmConnFromReq(req));
         emitToRoom(`user_${userId}`, "new_notification", notification);
 
         emitToRoom(`baiguullaga_${task.baiguullagiinId}`, "kpi_updated", {
@@ -210,7 +210,7 @@ export const giveClientTaskPoints = async (req: any, res: Response, next: any) =
     const finalClientId = uilchluulegchId || task.uilchluulegchId;
     if (finalClientId) {
       try {
-        clientKpi = await kpiShineelekhUilchluulegch(finalClientId, req.body.tukhainBaaziinKholbolt);
+        clientKpi = await kpiShineelekhUilchluulegch(finalClientId, getFsmConnFromReq(req));
         
         // Emit to barilga room
         if (task.barilgiinId) {
@@ -240,7 +240,7 @@ export const giveClientTaskPoints = async (req: any, res: Response, next: any) =
  
 export const getTaskPoints = async (req: any, res: Response, next: any) => {
   try {
-    const task = await taskNegAvakh(req.params.id, req.body.tukhainBaaziinKholbolt);
+    const task = await taskNegAvakh(req.params.id, getFsmConnFromReq(req));
     if (!task) return res.status(404).json({ success: false, message: "Даалгавар олдсонгүй" });
 
     res.json({
@@ -268,9 +268,8 @@ export const getTaskPoints = async (req: any, res: Response, next: any) => {
  
 export const getUserKpi = async (req: any, res: Response, next: any) => {
   try {
-    const { getConn } = require("../utils/db");
     const getUilchluulegchModel = require("../models/uilchluulegch");
-    const conn = req.body.tukhainBaaziinKholbolt || getConn();
+    const conn = getFsmConnFromReq(req);
     const AjiltanModel = getUilchluulegchModel(conn, false, "ajiltan");
 
     const user = await AjiltanModel.findById(req.params.id)
@@ -289,15 +288,14 @@ export const getUserKpi = async (req: any, res: Response, next: any) => {
 export const refreshUserKpi = async (req: any, res: Response, next: any) => {
   try {
     const userId = req.params.id;
-    const { getConn } = require("../utils/db");
     const getUilchluulegchModel = require("../models/uilchluulegch");
-    const conn = req.body.tukhainBaaziinKholbolt || getConn();
+    const conn = getFsmConnFromReq(req);
     const AjiltanModel = getUilchluulegchModel(conn, false, "ajiltan");
 
     const user = await AjiltanModel.findById(userId).lean();
     if (!user) return res.status(404).json({ success: false, message: "Ажилтан олдсонгүй" });
 
-    const kpiResult = await kpiShineelekh(userId, (user as any).baiguullagiinId, req.body.tukhainBaaziinKholbolt);
+    const kpiResult = await kpiShineelekh(userId, (user as any).baiguullagiinId, getFsmConnFromReq(req));
 
     // Broadcast update
     const { getIO } = require("../utils/socket");
@@ -319,9 +317,8 @@ export const refreshUserKpi = async (req: any, res: Response, next: any) => {
 export const getBaiguullagaKpis = async (req: any, res: Response, next: any) => {
   try {
     const { id: baiguullagiinId } = req.params;
-    const { getCol } = require("../utils/db");
     const { ObjectId } = require("mongodb");
-    const ajiltanCol = getCol("ajiltan");
+    const ajiltanCol = getErunkhiiCol("ajiltan");
 
     let idQuery: any[] = [baiguullagiinId, baiguullagiinId.toString()];
     try {
@@ -364,9 +361,8 @@ export const getBaiguullagaKpis = async (req: any, res: Response, next: any) => 
 export const refreshBaiguullagaKpis = async (req: any, res: Response, next: any) => {
   try {
     const { id: baiguullagiinId } = req.params;
-    const { getCol } = require("../utils/db");
     const { ObjectId } = require("mongodb");
-    const ajiltanCol = getCol("ajiltan");
+    const ajiltanCol = getErunkhiiCol("ajiltan");
 
     let idQuery: any[] = [baiguullagiinId, baiguullagiinId.toString()];
     try {
@@ -389,7 +385,7 @@ export const refreshBaiguullagaKpis = async (req: any, res: Response, next: any)
     const results = [];
     for (const user of users) {
       const userId = user._id.toString();
-      const stats = await kpiShineelekh(userId, baiguullagiinId, req.body.tukhainBaaziinKholbolt);
+      const stats = await kpiShineelekh(userId, baiguullagiinId, getFsmConnFromReq(req));
       results.push({ userId, stats });
       
       // Emit update to the organization room

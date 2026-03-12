@@ -2,4 +2,5 @@
 const { db }: any = require("zevbackv2");
 
 export const getConn = () => db.erunkhiiKholbolt;
-export const getCol = (name: string) => db.erunkhiiKholbolt.kholbolt.collection(name);
+export const getErunkhiiCol = (name: string) => db.erunkhiiKholbolt.kholbolt.collection(name);
+export const getFsmConns = () => db.kholboltuud || [];

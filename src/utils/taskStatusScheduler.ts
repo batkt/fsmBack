@@ -57,12 +57,29 @@ const runTaskStatusUpdate = async () => {
 
   isRunning = true;
   try {
-    console.log("[Task Scheduler] 🔄 Running task status update...");
-    const result = await updateTaskStatusesByTime();
-    if (result.updated > 0) {
-      console.log(`[Task Scheduler] ✅ Updated ${result.updated} task(s)`);
+    const { getFsmConns } = require("./db");
+    const conns = getFsmConns();
+    
+    if (conns.length === 0) {
+      console.log("[Task Scheduler] ℹ️ No FSM connections found to update");
     } else {
-      console.log("[Task Scheduler] ℹ️ No tasks needed status updates");
+      console.log(`[Task Scheduler] 🔄 Running task status update for ${conns.length} tenants...`);
+      let totalUpdated = 0;
+      
+      for (const conn of conns) {
+        try {
+          const result = await updateTaskStatusesByTime(conn);
+          totalUpdated += result.updated;
+        } catch (connError) {
+          console.error(`[Task Scheduler] ❌ Error updating tasks for connection:`, connError);
+        }
+      }
+      
+      if (totalUpdated > 0) {
+        console.log(`[Task Scheduler] ✅ Completed. Total updated: ${totalUpdated} task(s)`);
+      } else {
+        console.log("[Task Scheduler] ℹ️ No tasks needed status updates across all tenants");
+      }
     }
   } catch (error) {
     console.error("[Task Scheduler] ❌ Error in scheduled update:", error);

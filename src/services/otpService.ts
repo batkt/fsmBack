@@ -1,8 +1,6 @@
-import { getConn } from "../utils/db";
+import { getConn, getErunkhiiCol } from "../utils/db";
 const getOtpModel = require("../models/otp");
 import { sendSMS, formatPhoneNumber } from "./smsService";
-
-const getCol = (name: string) => getConn().kholbolt.collection(name);
 
 /**
  * Generate a random 6-digit OTP code
@@ -42,7 +40,7 @@ export const requestOTP = async (utas: string, purpose: string = "forgot_passwor
   const uniquePhones = [...new Set(phoneVariations.filter(p => p && p.length > 0))];
   
   // Try to find employee using $in operator (more efficient)
-  let ajiltan = await getCol("ajiltan").findOne({ utas: { $in: uniquePhones } });
+  let ajiltan = await getErunkhiiCol("ajiltan").findOne({ utas: { $in: uniquePhones } });
   
   // If still not found, try regex pattern matching (for partial matches)
   if (!ajiltan) {
@@ -50,7 +48,7 @@ export const requestOTP = async (utas: string, purpose: string = "forgot_passwor
     if (digitsOnly.length >= 8) {
       // Try to find by last 8 digits (Mongolian mobile numbers are 8 digits)
       const last8Digits = digitsOnly.slice(-8);
-      ajiltan = await getCol("ajiltan").findOne({
+      ajiltan = await getErunkhiiCol("ajiltan").findOne({
         $or: [
           { utas: { $regex: last8Digits + "$", $options: "i" } }, // Ends with these digits
           { utas: { $regex: "^" + last8Digits, $options: "i" } } // Starts with these digits
@@ -214,9 +212,11 @@ export const resetPassword = async (resetToken: string, newPassword: string, con
   // Hash new password
   const hashedPassword = await bcrypt.hash(newPassword, 10);
   
+  const mongoose = require("mongoose");
+  
   // Update password
-  const result = await getCol("ajiltan").updateOne(
-    { _id: require("mongoose").Types.ObjectId(ajiltniiId) },
+  const result = await getErunkhiiCol("ajiltan").updateOne(
+    { _id: new mongoose.Types.ObjectId(ajiltniiId) },
     { $set: { nuutsUg: hashedPassword } }
   );
   

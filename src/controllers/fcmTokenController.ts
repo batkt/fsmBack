@@ -5,6 +5,7 @@ import {
   deactivateFcmToken,
   removeFcmToken
 } from "../services/fcmTokenService";
+import { getFsmConnFromReq } from "../utils/fsmConn";
 
 /**
  * Register or update FCM token
@@ -32,7 +33,7 @@ export const registerToken = async (req: any, res: Response, next: any) => {
       deviceId,
       appVersion,
       baiguullagiinId
-    }, req.body.tukhainBaaziinKholbolt);
+    }, getFsmConnFromReq(req));
 
     console.log("[FCM Token] ✅ Token registered:", {
       ajiltniiId,
@@ -62,7 +63,7 @@ export const getTokens = async (req: any, res: Response, next: any) => {
       return res.status(400).json({ success: false, message: "Ажилтны ID шаардлагатай" });
     }
 
-    const tokens = await getUserFcmTokens(ajiltniiId, req.body.tukhainBaaziinKholbolt);
+    const tokens = await getUserFcmTokens(ajiltniiId, getFsmConnFromReq(req));
     res.json({ success: true, data: tokens });
   } catch (err) {
     next(err);
@@ -81,7 +82,7 @@ export const deactivateToken = async (req: any, res: Response, next: any) => {
       return res.status(400).json({ success: false, message: "FCM token шаардлагатай" });
     }
 
-    await deactivateFcmToken(token, req.body.tukhainBaaziinKholbolt);
+    await deactivateFcmToken(token, getFsmConnFromReq(req));
     res.json({ success: true, message: "FCM token идэвхгүй болголоо" });
   } catch (err) {
     next(err);
@@ -100,7 +101,7 @@ export const removeToken = async (req: any, res: Response, next: any) => {
       return res.status(400).json({ success: false, message: "FCM token шаардлагатай" });
     }
 
-    await removeFcmToken(token, req.body.tukhainBaaziinKholbolt);
+    await removeFcmToken(token, getFsmConnFromReq(req));
     res.json({ success: true, message: "FCM token устгагдлаа" });
   } catch (err) {
     next(err);

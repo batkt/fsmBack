@@ -7,6 +7,7 @@ import {
 } from "../services/taskStatusService";
 import { getSchedulerStatus } from "../utils/taskStatusScheduler";
 import { authMiddleware } from "../middlewares/auth";
+import { getFsmConnFromReq } from "../utils/fsmConn";
 
 const router = Router();
 
@@ -16,7 +17,7 @@ const router = Router();
  */
 router.post("/task-status/update-all", authMiddleware, async (req: any, res: Response) => {
   try {
-    const result = await updateTaskStatusesByTime(req.body.tukhainBaaziinKholbolt);
+    const result = await updateTaskStatusesByTime(getFsmConnFromReq(req));
     res.json({
       success: true,
       message: `Updated ${result.updated} task(s)`,
@@ -42,7 +43,7 @@ router.post("/task-status/update-all", authMiddleware, async (req: any, res: Res
 router.post("/task-status/update/:taskId", authMiddleware, async (req: any, res: Response) => {
   try {
     const { tuluv, ajiltanTsag } = req.body || {};
-    const result = await updateSingleTaskStatus(req.params.taskId, tuluv, ajiltanTsag, req.body.tukhainBaaziinKholbolt);
+    const result = await updateSingleTaskStatus(req.params.taskId, tuluv, ajiltanTsag, getFsmConnFromReq(req));
     if (result.success) {
       res.json({
         success: true,
@@ -69,9 +70,8 @@ router.post("/task-status/update/:taskId", authMiddleware, async (req: any, res:
  */
 router.get("/task-status/calculate/:taskId", authMiddleware, async (req: any, res: Response) => {
   try {
-    const { getConn } = require("../utils/db");
     const getTaskModel = require("../models/task");
-    const conn = req.body.tukhainBaaziinKholbolt || getConn();
+    const conn = getFsmConnFromReq(req);
     const Task = getTaskModel(conn, true);
 
     const task = await Task.findById(req.params.taskId).lean();

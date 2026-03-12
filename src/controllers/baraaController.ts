@@ -7,6 +7,7 @@ import {
   baraaNegAvakh,
   baraaAshiglalatStats,
 } from "../services/baraaService";
+import { getFsmConnFromReq } from "../utils/fsmConn";
 
 export const getBaraas = async (req: any, res: Response, next: any) => {
   try {
@@ -18,7 +19,7 @@ export const getBaraas = async (req: any, res: Response, next: any) => {
     if (req.query.barilgiinId) query.barilgiinId = req.query.barilgiinId;
     if (req.query.idevhtei !== undefined) query.idevhtei = req.query.idevhtei === "true";
 
-    const baraas = await baraaJagsaalt(query, req.body.tukhainBaaziinKholbolt);
+    const baraas = await baraaJagsaalt(query, getFsmConnFromReq(req));
     res.json({ success: true, data: baraas });
   } catch (err) {
     next(err);
@@ -27,7 +28,7 @@ export const getBaraas = async (req: any, res: Response, next: any) => {
 
 export const getBaraa = async (req: any, res: Response, next: any) => {
   try {
-    const baraa = await baraaNegAvakh(req.params.id, req.body.tukhainBaaziinKholbolt);
+    const baraa = await baraaNegAvakh(req.params.id, getFsmConnFromReq(req));
     if (!baraa) return res.status(404).json({ success: false, message: "Бараа олдсонгүй" });
     res.json({ success: true, data: baraa });
   } catch (err) {
@@ -42,7 +43,7 @@ export const createBaraa = async (req: any, res: Response, next: any) => {
       ...req.body,
       ...(bid && { baiguullagiinId: bid })
     };
-    const baraa = await baraaUusgekh(data, req.body.tukhainBaaziinKholbolt);
+    const baraa = await baraaUusgekh(data, getFsmConnFromReq(req));
     
     // Emit socket event for real-time refresh
     const { emitToRoom }: any = require("../utils/socket");
@@ -56,7 +57,7 @@ export const createBaraa = async (req: any, res: Response, next: any) => {
 
 export const updateBaraa = async (req: any, res: Response, next: any) => {
   try {
-    const baraa = await baraaZasakh(req.params.id, req.body, req.body.tukhainBaaziinKholbolt);
+    const baraa = await baraaZasakh(req.params.id, req.body, getFsmConnFromReq(req));
     if (!baraa) return res.status(404).json({ success: false, message: "Бараа олдсонгүй" });
 
     // Emit socket event for real-time refresh
@@ -71,7 +72,7 @@ export const updateBaraa = async (req: any, res: Response, next: any) => {
 
 export const deleteBaraa = async (req: any, res: Response, next: any) => {
   try {
-    const baraa = await baraaUstgakh(req.params.id, req.body.tukhainBaaziinKholbolt);
+    const baraa = await baraaUstgakh(req.params.id, getFsmConnFromReq(req));
     if (!baraa) return res.status(404).json({ success: false, message: "Бараа олдсонгүй" });
     
     // Emit socket event to refresh frontend charts and tables
@@ -98,7 +99,7 @@ export const getBaraaUsageStats = async (req: any, res: Response, next: any) => 
     const sDate = startDate ? new Date(startDate as string) : undefined;
     const eDate = endDate ? new Date(endDate as string) : undefined;
 
-    const stats = await baraaAshiglalatStats(bid, barilgiinId as string, sDate, eDate, req.body.tukhainBaaziinKholbolt);
+    const stats = await baraaAshiglalatStats(bid, barilgiinId as string, sDate, eDate, getFsmConnFromReq(req));
     res.json({ success: true, data: stats });
   } catch (err) {
     next(err);
