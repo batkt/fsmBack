@@ -126,6 +126,16 @@ export const initSocket = (server: HttpServer) => {
       }
     });
 
+    socket.on("join_baiguullaga", (data: { baiguullagiinId: string }) => {
+      try {
+        const room = `baiguullaga_${data.baiguullagiinId}`;
+        socket.join(room);
+        console.log(`[Socket.IO] Joined baiguullaga room: ${room}`);
+      } catch (error) {
+        console.error("[Socket.IO] Error in join_baiguullaga:", error);
+      }
+    });
+
     socket.on("leave_room", (roomData: { projectId: string; taskId?: string }) => {
       try {
         const room = roomData.taskId ? `task_${roomData.taskId}` : `project_${roomData.projectId}`;
