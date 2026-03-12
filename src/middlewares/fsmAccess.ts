@@ -36,7 +36,7 @@ export const validateFSMAccess = async (req: any, res: Response, next: any) => {
     if (!fsmConfig) {
       return res.status(403).json({ 
         success: false, 
-        message: `Энэ байгууллага (${bid}) FSM системд хандах эрхгүй байна.` 
+        message: `Тухайн байгууллага FSM системд хандах эрхгүй байна.` 
       });
     }
 
