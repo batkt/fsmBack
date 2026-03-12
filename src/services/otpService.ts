@@ -63,7 +63,7 @@ export const requestOTP = async (utas: string, purpose: string = "forgot_passwor
   });
   
   // Send SMS
-  const message = `Таны нууц үг сэргээх код: ${otp}. Энэ код 10 минутын дотор хүчинтэй.`;
+  const message = `Tany nuuts ug sergeekh code: ${otp}. 10 minutiin dotor kuchintei.`;
   await sendSMS({
     to: formattedPhone,
     message: message,
