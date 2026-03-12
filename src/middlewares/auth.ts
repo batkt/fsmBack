@@ -22,13 +22,20 @@ export const authMiddleware = (req: any, res: Response, next: any) => {
     
     // Multi-tenancy: Attach the organization-specific database connection
     const { db }: any = require("zevbackv2");
-    if (decoded.baiguullagiinId && db.kholboltuud && db.kholboltuud[decoded.baiguullagiinId]) {
-      const tenantConn = db.kholboltuud[decoded.baiguullagiinId];
-      req.tukhainBaaziinKholbolt = tenantConn;
-      
-      // Ensure it's available in body for controllers that expect it there
-      if (req.body) {
-        req.body.tukhainBaaziinKholbolt = tenantConn;
+    if (decoded.baiguullagiinId && db.kholboltuud && Array.isArray(db.kholboltuud)) {
+      const tenantConn = db.kholboltuud.find((c: any) => 
+        c.baiguullagiinId === decoded.baiguullagiinId || 
+        c.dotoodNer === decoded.baiguullagiinId ||
+        c._id === decoded.baiguullagiinId
+      );
+
+      if (tenantConn) {
+        req.tukhainBaaziinKholbolt = tenantConn;
+        
+        // Ensure it's available in body for controllers that expect it there
+        if (req.body) {
+          req.body.tukhainBaaziinKholbolt = tenantConn;
+        }
       }
     }
     

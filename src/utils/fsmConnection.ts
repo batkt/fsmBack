@@ -40,43 +40,42 @@ export async function loadAllFsmConnections(): Promise<void> {
         const shortName = config.dotoodNer;
         const dbName = config.baaziinNer || config.baaz;
         
-        const { cloudMongoDBEsekh, clusterUrl, password, userName } = config;
-        
-        if (!dbName) {
-          console.warn(`[FSM] ⚠️ Skipping config with no database name: ${JSON.stringify(config)}`);
-          continue;
+        if (!dbName) continue;
+
+        // Check if this database name is already registered to avoid duplicates
+        const existing = Array.isArray(db.kholboltuud) 
+          ? db.kholboltuud.find((c: any) => c.baaziinNer === dbName)
+          : null;
+
+        if (!existing) {
+          const { cloudMongoDBEsekh, clusterUrl, password, userName } = config;
+          const primaryKey = orgId || internalId;
+          
+          await db.kholboltNemyeFSM(
+            primaryKey,
+            dbName,
+            cloudMongoDBEsekh,
+            clusterUrl,
+            password,
+            userName
+          );
         }
 
-        // Register the connection in zevbackv2's registry (db.kholboltuud)
-        // Primary registration ID (used by zevbackv2 internals)
-        const primaryKey = orgId || internalId;
-        
-        await db.kholboltNemyeFSM(
-          primaryKey,
-          dbName,
-          cloudMongoDBEsekh,
-          clusterUrl,
-          password,
-          userName
-        );
-
-        // Find the newly added connection in the registry array and add helper identifiers
+        // Standardize identifiers in the registry array
         if (db.kholboltuud && Array.isArray(db.kholboltuud)) {
-          const connObj = db.kholboltuud.find((c: any) => c.baaziinNer === dbName && (c.baiguullagiinId === primaryKey || c.baiguullagiinId === orgId));
+          const connObj = db.kholboltuud.find((c: any) => c.baaziinNer === dbName);
           
           if (connObj) {
-            // Standardize identifiers for easier lookup
-            connObj.baiguullagiinId = orgId || primaryKey;
-            connObj.dotoodNer = shortName;
-            connObj._id = internalId;
+            if (orgId) connObj.baiguullagiinId = orgId;
+            if (shortName) connObj.dotoodNer = shortName;
+            if (internalId && !connObj._id) connObj._id = internalId;
             
-            console.log(`[FSM] ✅ Loaded ${dbName} (Org: ${orgId || shortName}). State: ${connObj.kholbolt?.readyState}`);
-          } else {
-            console.warn(`[FSM] ⚠️ Registered ${dbName} but could not find it in registry for decoration`);
+            const state = connObj.kholbolt?.readyState;
+            console.log(`[FSM] ${state === 1 ? '✅' : '⏳'} ${dbName} (Org: ${orgId || shortName}). State: ${state}`);
           }
         }
       } catch (err) {
-        console.error(`[FSM] ❌ Failed to load connection for ${config.baaziinNer || config.baaz}:`, err);
+        console.error(`[FSM] ❌ Failed to process ${config.baaziinNer || config.baaz}:`, err);
       }
     }
 
