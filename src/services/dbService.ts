@@ -19,24 +19,44 @@ export const baiguullagaBurtgekh = async (data: any) => {
   }
 
   // Check if this company should have FSM access
-  // Only create FSM connection if explicitly requested and valid
+  // First check baaziinMedeelel to see if this database name is allowed
   try {
-    // Check if company already has FSM config in baaziinMedeelel
     const mainConn = db.erunkhiiKholbolt?.kholbolt;
-    if (mainConn) {
-      const baaziinMedeelelCol = mainConn.collection("baaziinMedeelel");
-      const existingConfig = await baaziinMedeelelCol.findOne({
-        baiguullagiinId: bId,
+    if (!mainConn) {
+      throw new Error("Main database connection not available");
+    }
+
+    const baaziinMedeelelCol = mainConn.collection("baaziinMedeelel");
+    
+    // Step 1: Check if the database name (baaziinNer) exists in baaziinMedeelel with fsmEsekh: true
+    // This is the primary check - the database must be registered for FSM access
+    const dbConfig = await baaziinMedeelelCol.findOne({
+      baaz: baaziinNer,
+      fsmEsekh: true
+    });
+
+    if (!dbConfig) {
+      // Try case-insensitive match
+      const dbConfigCaseInsensitive = await baaziinMedeelelCol.findOne({
+        baaz: { $regex: new RegExp(`^${baaziinNer}$`, "i") },
         fsmEsekh: true
       });
 
-      // If no existing FSM config found, don't create connection
-      // This prevents creating connections for companies that shouldn't have FSM
-      if (!existingConfig) {
-        console.warn(`[DB Service] Company ${bId} does not have FSM access configured. Skipping connection creation.`);
-        throw new Error(`Энэ байгууллагад FSM системд хандах эрх байхгүй байна.`);
+      if (!dbConfigCaseInsensitive) {
+        console.warn(`[DB Service] Database ${baaziinNer} is not registered for FSM access in baaziinMedeelel`);
+        throw new Error(`Энэ бааз (${baaziinNer}) FSM системд бүртгэгдээгүй байна.`);
       }
     }
+
+    // Step 2: If database exists, check if the baiguullagiinId matches
+    // If baiguullagiinId is provided in the request, verify it matches the one in baaziinMedeelel
+    // If it doesn't match, we still allow it (since multiple companies might use the same FSM database)
+    // but log a warning
+    if (dbConfig && dbConfig.baiguullagiinId && dbConfig.baiguullagiinId !== bId) {
+      console.warn(`[DB Service] baiguullagiinId mismatch: Request has ${bId}, but baaziinMedeelel has ${dbConfig.baiguullagiinId} for database ${baaziinNer}. Allowing connection anyway.`);
+    }
+
+    console.log(`[DB Service] ✅ FSM access validated for database ${baaziinNer}${dbConfig ? ` (registered by ${dbConfig.baiguullagiinId})` : ''}`);
 
     // Wrap in Promise.race to add timeout
     await Promise.race([
