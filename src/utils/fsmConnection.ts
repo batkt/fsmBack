@@ -3,15 +3,7 @@ import mongoose from "mongoose";
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { db }: any = require("zevbackv2");
 
-/**
- * Connects to the FSM database (fManageFsm) using credentials from baaziinMedeelel collection
- * Sets the connection as kholboltFSM for models to use
- * 
- * Note: baiguullaga and ajiltan collections are in the main turees database (kholbolt),
- * not in the FSM database. The FSM database config is stored in baaziinMedeelel collection.
- * This function queries baaziinMedeelel from the main DB to get FSM connection config,
- * then connects to the separate fManageFsm database.
- */
+
 export async function loadAllFsmConnections(): Promise<void> {
   try {
     const mainConn = db.erunkhiiKholbolt?.kholbolt;

@@ -22,25 +22,19 @@ export const baiguullagaBurtgekh = async (data: any) => {
 
   const baaziinMedeelelCol = mainConn.collection("baaziinMedeelel");
 
-  // For FSM tenant DB: we treat one org -> one FSM DB config
-  await baaziinMedeelelCol.updateOne(
-    { baiguullagiinId: bId, fsmEsekh: true },
-    {
-      $set: {
-        baaz: baaziinNer,
-        baaziinNer: baaziinNer, // keep both keys for compatibility with older data
-        cloudMongoDBEsekh: !!cloudMongoDBEsekh,
-        clusterUrl,
-        password,
-        userName,
-        baiguullagiinId: bId,
-        fsmEsekh: true,
-        updatedAt: new Date(),
-      },
-      $setOnInsert: { createdAt: new Date() },
-    },
-    { upsert: true },
-  );
+  // Allow multiple records for the same Org ID as requested
+  await baaziinMedeelelCol.insertOne({
+    baaz: baaziinNer,
+    baaziinNer: baaziinNer,
+    cloudMongoDBEsekh: !!cloudMongoDBEsekh,
+    clusterUrl,
+    password,
+    userName,
+    baiguullagiinId: bId,
+    fsmEsekh: true,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  });
 
   // Connect lazily: ensure there is a zevbackv2 connection object for this DB name.
   // If connection already exists in registry, do not create again.

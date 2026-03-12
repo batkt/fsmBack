@@ -71,39 +71,6 @@ async function start() {
       process.env.BAAZ,
     );
 
-    // Enforce unique indexes to prevent duplicate baaziinMedeelel rows (which create duplicate connections)
-    try {
-      const mainConn = db.erunkhiiKholbolt?.kholbolt;
-      if (mainConn) {
-        const col = mainConn.collection("baaziinMedeelel");
-
-        // One org -> one FSM config (only for fsmEsekh:true docs)
-        await col.createIndex(
-          { baiguullagiinId: 1, fsmEsekh: 1 },
-          {
-            unique: true,
-            name: "uniq_baiguullagiinId_fsmEsekh_true",
-            partialFilterExpression: { fsmEsekh: true },
-          },
-        );
-
-        // Also prevent duplicate DB names among FSM configs (optional but useful)
-        await col.createIndex(
-          { baaz: 1, fsmEsekh: 1 },
-          {
-            unique: true,
-            name: "uniq_baaz_fsmEsekh_true",
-            partialFilterExpression: { fsmEsekh: true, baaz: { $type: "string" } },
-          },
-        );
-
-        console.log("[Startup] ✅ baaziinMedeelel indexes ensured");
-      }
-    } catch (idxErr: any) {
-      // If duplicates still exist, index creation will fail. That's OK; delete duplicates then restart.
-      console.warn("[Startup] ⚠️ Could not create unique indexes for baaziinMedeelel:", idxErr?.message || idxErr);
-    }
-
     // Wait a moment for zevbackv2 to potentially set up FSM connections
     await new Promise(resolve => setTimeout(resolve, 1000));
 
