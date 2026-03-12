@@ -320,8 +320,22 @@ export const getBaiguullagaKpis = async (req: any, res: Response, next: any) => 
   try {
     const { id: baiguullagiinId } = req.params;
     const { getCol } = require("../utils/db");
+    const { ObjectId } = require("mongodb");
     const ajiltanCol = getCol("ajiltan");
-    const users = await ajiltanCol.find({ baiguullagiinId }).toArray();
+
+    let query: any = { baiguullagiinId };
+    try {
+      if (ObjectId.isValid(baiguullagiinId)) {
+        query = { 
+          $or: [
+            { baiguullagiinId: baiguullagiinId }, 
+            { baiguullagiinId: new ObjectId(baiguullagiinId) }
+          ] 
+        };
+      }
+    } catch (e) {}
+
+    const users = await ajiltanCol.find(query).toArray();
     res.json({ success: true, data: users });
   } catch (err) {
     next(err);
@@ -332,9 +346,22 @@ export const refreshBaiguullagaKpis = async (req: any, res: Response, next: any)
   try {
     const { id: baiguullagiinId } = req.params;
     const { getCol } = require("../utils/db");
+    const { ObjectId } = require("mongodb");
     const ajiltanCol = getCol("ajiltan");
 
-    const users = await ajiltanCol.find({ baiguullagiinId }).toArray();
+    let query: any = { baiguullagiinId };
+    try {
+      if (ObjectId.isValid(baiguullagiinId)) {
+        query = { 
+          $or: [
+            { baiguullagiinId: baiguullagiinId }, 
+            { baiguullagiinId: new ObjectId(baiguullagiinId) }
+          ] 
+        };
+      }
+    } catch (e) {}
+
+    const users = await ajiltanCol.find(query).toArray();
     
     const results = [];
     for (const user of users) {
