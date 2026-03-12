@@ -344,13 +344,16 @@ export const getBaiguullagaKpis = async (req: any, res: Response, next: any) => 
     // Debug info if empty
     if (users.length === 0) {
       const totalWorkers = await ajiltanCol.countDocuments({});
+      const sampleWorker = await ajiltanCol.findOne({});
       return res.json({ 
         success: true, 
         data: [], 
         debug: { 
           queriedId: baiguullagiinId, 
           idQuery: idQuery.map(q => q.toString()), 
-          totalWorkersInDB: totalWorkers 
+          totalWorkersInDB: totalWorkers,
+          sampleWorkerFields: sampleWorker ? Object.keys(sampleWorker) : "none",
+          sampleWorkerOrgId: sampleWorker ? (sampleWorker.baiguullagiinId || sampleWorker.baiguullagaId || sampleWorker.baiguullaga) : "none"
         } 
       });
     }
@@ -385,6 +388,21 @@ export const refreshBaiguullagaKpis = async (req: any, res: Response, next: any)
     };
 
     const users = await ajiltanCol.find(query).toArray();
+    
+    if (users.length === 0) {
+      const totalWorkers = await ajiltanCol.countDocuments({});
+      const sampleWorker = await ajiltanCol.findOne({});
+      return res.json({
+        success: true,
+        message: "0 ажилтны KPI амжилттай шинэчлэгдлээ",
+        count: 0,
+        debug: {
+          queriedId: baiguullagiinId,
+          totalWorkersInDB: totalWorkers,
+          sampleWorkerOrgId: sampleWorker ? (sampleWorker.baiguullagiinId || sampleWorker.baiguullagaId || sampleWorker.baiguullaga) : "none"
+        }
+      });
+    }
     
     const results = [];
     for (const user of users) {
