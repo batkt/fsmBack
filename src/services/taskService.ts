@@ -1,4 +1,5 @@
 import { getConn } from "../utils/db";
+import { ensureFsmConn } from "../utils/fsmConn";
 const getTaskModel = require("../models/task");
 const getBaraaModel = require("../models/baraa");
 const getProjectModel = require("../models/project");
@@ -7,12 +8,12 @@ const getProjectModel = require("../models/project");
 // If conn is not provided, fall back to global getConn() (main DB).
 
 export const taskJagsaalt = async (query: any, conn?: any) => {
-  const baseConn = conn || getConn();
+  const baseConn = ensureFsmConn(conn || getConn());
   return await getTaskModel(baseConn, true).find(query).sort({ createdAt: -1 }).lean();
 };
 
 export const taskUusgekh = async (data: any, conn?: any) => {
-  const baseConn = conn || getConn();
+  const baseConn = ensureFsmConn(conn || getConn());
   const TaskModel = getTaskModel(baseConn, true);
   const ProjectModel = getProjectModel(baseConn, true);
   const BaraaModel = getBaraaModel(baseConn, true);
@@ -84,7 +85,7 @@ export const taskUusgekh = async (data: any, conn?: any) => {
 };
 
 export const taskZasakh = async (id: string, data: any, conn?: any) => {
-  const baseConn = conn || getConn();
+  const baseConn = ensureFsmConn(conn || getConn());
   const TaskModel = getTaskModel(baseConn, true);
   const ProjectModel = getProjectModel(baseConn, true);
   const BaraaModel = getBaraaModel(baseConn, true);
@@ -177,12 +178,12 @@ export const taskZasakh = async (id: string, data: any, conn?: any) => {
 };
 
 export const taskUstgakh = async (id: string, conn?: any) => {
-  const baseConn = conn || getConn();
+  const baseConn = ensureFsmConn(conn || getConn());
   return await getTaskModel(baseConn, true).findByIdAndDelete(id);
 };
 
 export const taskNegAvakh = async (id: string, conn?: any) => {
-  const baseConn = conn || getConn();
+  const baseConn = ensureFsmConn(conn || getConn());
   return await getTaskModel(baseConn, true).findById(id).lean();
 };
 
@@ -191,7 +192,7 @@ export const taskNegAvakh = async (id: string, conn?: any) => {
  * Creates a new time entry with start time (no end time yet)
  */
 export const startTaskTime = async (taskId: string, ajiltniiId: string, tailbar?: string, conn?: any) => {
-  const baseConn = conn || getConn();
+  const baseConn = ensureFsmConn(conn || getConn());
   const TaskModel = getTaskModel(baseConn, true);
 
   const task = await TaskModel.findById(taskId);
@@ -239,7 +240,7 @@ export const startTaskTime = async (taskId: string, ajiltniiId: string, tailbar?
  * Finds the active entry (no duusakhTsag) and updates it with end time and calculated duration
  */
 export const endTaskTime = async (taskId: string, ajiltniiId: string, tailbar?: string, conn?: any) => {
-  const baseConn = conn || getConn();
+  const baseConn = ensureFsmConn(conn || getConn());
   const TaskModel = getTaskModel(baseConn, true);
 
   const task = await TaskModel.findById(taskId);

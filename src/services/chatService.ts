@@ -1,26 +1,27 @@
 import { getConn } from "../utils/db";
+import { ensureFsmConn } from "../utils/fsmConn";
 const getChatModel = require("../models/chat");
 
 // All functions accept optional conn for per-org FSM DB.
 // If conn is not provided, fall back to global getConn() (main DB).
 
 export const chatJagsaalt = async (query: any, conn?: any) => {
-  const baseConn = conn || getConn();
+  const baseConn = ensureFsmConn(conn || getConn());
   return await getChatModel(baseConn, true).find(query).sort({ createdAt: 1 }).lean();
 };
 
 export const chatUusgekh = async (data: any, conn?: any) => {
-  const baseConn = conn || getConn();
+  const baseConn = ensureFsmConn(conn || getConn());
   return await getChatModel(baseConn, true).create(data);
 };
 
 
 export const chatUstgakh = async (id: string, conn?: any) => {
-  const baseConn = conn || getConn();
+  const baseConn = ensureFsmConn(conn || getConn());
   return await getChatModel(baseConn, true).findByIdAndDelete(id);
 };
 export const chatSoftUstgakh = async (id: string, conn?: any) => {
-  const baseConn = conn || getConn();
+  const baseConn = ensureFsmConn(conn || getConn());
   return await getChatModel(baseConn, true).findByIdAndUpdate(
     id,
     { $set: { isDeleted: true, medeelel: "" } },
@@ -30,7 +31,7 @@ export const chatSoftUstgakh = async (id: string, conn?: any) => {
 
 
 export const chatZasakh = async (id: string, newMedeelel: string, conn?: any) => {
-  const baseConn = conn || getConn();
+  const baseConn = ensureFsmConn(conn || getConn());
   return await getChatModel(baseConn, true).findByIdAndUpdate(
     id,
     { $set: { medeelel: newMedeelel, isEdited: true, editedAt: new Date() } },
@@ -39,7 +40,7 @@ export const chatZasakh = async (id: string, newMedeelel: string, conn?: any) =>
 };
 
 export const chatUnshuulakh = async (chatIds: string[], ajiltniiId: string, conn?: any) => {
-  const baseConn = conn || getConn();
+  const baseConn = ensureFsmConn(conn || getConn());
   return await getChatModel(baseConn, true).updateMany(
     { _id: { $in: chatIds } },
     { $addToSet: { unshsan: ajiltniiId } }

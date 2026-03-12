@@ -1,9 +1,10 @@
 import { getConn } from "../utils/db";
+import { ensureFsmConn } from "../utils/fsmConn";
 
 const getMedegdelModel = require("../models/medegdel");
 
 export const medegdelJagsaalt = async (query: any, conn?: any) => {
-  const baseConn = conn || getConn();
+  const baseConn = ensureFsmConn(conn || getConn());
   return await getMedegdelModel(baseConn, true)
     .find(query)
     .sort({ createdAt: -1 })
@@ -11,7 +12,7 @@ export const medegdelJagsaalt = async (query: any, conn?: any) => {
 };
 
 export const medegdelUusgekh = async (data: any, conn?: any) => {
-  const baseConn = conn || getConn();
+  const baseConn = ensureFsmConn(conn || getConn());
   const notification = await getMedegdelModel(baseConn, true).create(data);
 
   // Send FCM push notification (async, don't wait for it)
@@ -41,14 +42,14 @@ export const medegdelUusgekh = async (data: any, conn?: any) => {
 };
 
 export const medegdelZasakh = async (id: string, data: any, conn?: any) => {
-  const baseConn = conn || getConn();
+  const baseConn = ensureFsmConn(conn || getConn());
   return await getMedegdelModel(baseConn, true)
     .findByIdAndUpdate(id, data, { new: true })
     .lean();
 };
 
 export const medegdelKharlaa = async (id: string, ajiltniiId: string, conn?: any) => {
-  const baseConn = conn || getConn();
+  const baseConn = ensureFsmConn(conn || getConn());
   // Mark as read
   await getMedegdelModel(baseConn, true).findByIdAndUpdate(id, {
     $set: { kharsanEsekh: true, tuluv: 1 }
@@ -63,18 +64,18 @@ export const medegdelKharlaa = async (id: string, ajiltniiId: string, conn?: any
 };
 
 export const medegdelNegAvakh = async (id: string, conn?: any) => {
-  const baseConn = conn || getConn();
+  const baseConn = ensureFsmConn(conn || getConn());
   return await getMedegdelModel(baseConn, true).findById(id).lean();
 };
 
 export const medegdelUstgakh = async (id: string, conn?: any) => {
-  const baseConn = conn || getConn();
+  const baseConn = ensureFsmConn(conn || getConn());
   return await getMedegdelModel(baseConn, true).findByIdAndDelete(id);
 };
 
 // Mark all notifications as read for a user
 export const medegdelBuhKharlaa = async (ajiltniiId: string, baiguullagiinId?: string, conn?: any) => {
-  const baseConn = conn || getConn();
+  const baseConn = ensureFsmConn(conn || getConn());
   const query: any = { ajiltniiId, kharsanEsekh: false };
   if (baiguullagiinId) query.baiguullagiinId = baiguullagiinId;
   
@@ -86,7 +87,7 @@ export const medegdelBuhKharlaa = async (ajiltniiId: string, baiguullagiinId?: s
 
 // Get unread count for a user
 export const medegdelUnreadCount = async (ajiltniiId: string, baiguullagiinId?: string, conn?: any) => {
-  const baseConn = conn || getConn();
+  const baseConn = ensureFsmConn(conn || getConn());
   const query: any = { ajiltniiId, kharsanEsekh: false };
   if (baiguullagiinId) query.baiguullagiinId = baiguullagiinId;
   

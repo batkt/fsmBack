@@ -58,6 +58,7 @@ const runTaskStatusUpdate = async () => {
   isRunning = true;
   try {
     const { getFsmConns } = require("./db");
+    const { ensureFsmConn } = require("./fsmConn");
     const conns = getFsmConns();
     
     if (conns.length === 0) {
@@ -68,10 +69,18 @@ const runTaskStatusUpdate = async () => {
       
       for (const conn of conns) {
         try {
-          const result = await updateTaskStatusesByTime(conn);
+          const baseConn = ensureFsmConn(conn);
+          // Check if connection is actually ready
+          const mConn = baseConn.kholbolt;
+          if (mConn && mConn.readyState !== 1) {
+             console.log(`[Task Scheduler] ⏳ Connection for ${conn.baiguullagiinId || 'unknown'} not ready (state: ${mConn.readyState}), skipping...`);
+             continue;
+          }
+
+          const result = await updateTaskStatusesByTime(baseConn);
           totalUpdated += result.updated;
-        } catch (connError) {
-          console.error(`[Task Scheduler] ❌ Error updating tasks for connection:`, connError);
+        } catch (connError: any) {
+          console.error(`[Task Scheduler] ❌ Error updating tasks for connection:`, connError.message || connError);
         }
       }
       

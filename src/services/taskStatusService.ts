@@ -1,4 +1,5 @@
 import { getConn } from "../utils/db";
+import { ensureFsmConn } from "../utils/fsmConn";
 
 const getTaskModel = require("../models/task");
 
@@ -9,7 +10,7 @@ const getTaskModel = require("../models/task");
  * - Only updates tasks that are not already "duussan" (completed)
  */
 export const updateTaskStatusesByTime = async (conn?: any) => {
-  const baseConn = conn || getConn();
+  const baseConn = ensureFsmConn(conn || getConn());
   const Task = getTaskModel(baseConn, true); // Use FSM database
 
   const now = new Date();
@@ -115,7 +116,7 @@ export const getTaskStatusByTime = (task: any): string => {
  * - If not provided → calculate based on time (automatic)
  */
 export const updateSingleTaskStatus = async (taskId: string, newStatus?: string, ajiltanTsag?: any[], conn?: any) => {
-  const baseConn = conn || getConn();
+  const baseConn = ensureFsmConn(conn || getConn());
   const Task = getTaskModel(baseConn, true);
 
   try {

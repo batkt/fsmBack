@@ -1,4 +1,5 @@
 import { getConn } from "../utils/db";
+import { ensureFsmConn } from "../utils/fsmConn";
 const getProjectModel = require("../models/project");
 const getTaskModel = require("../models/task");
 
@@ -6,17 +7,17 @@ const getTaskModel = require("../models/task");
 // If conn is not provided, fall back to global getConn() (main DB).
 
 export const projectJagsaalt = async (query: any, conn?: any) => {
-  const baseConn = conn || getConn();
+  const baseConn = ensureFsmConn(conn || getConn());
   return await getProjectModel(baseConn, true).find(query).sort({ createdAt: -1 }).lean();
 };
 
 export const projectUusgekh = async (data: any, conn?: any) => {
-  const baseConn = conn || getConn();
+  const baseConn = ensureFsmConn(conn || getConn());
   return await getProjectModel(baseConn, true).create(data);
 };
 
 export const projectZasakh = async (id: string, data: any, conn?: any) => {
-  const baseConn = conn || getConn();
+  const baseConn = ensureFsmConn(conn || getConn());
   const ProjectModel = getProjectModel(baseConn, true);
   const result = await ProjectModel.findByIdAndUpdate(id, data, { new: true }).lean();
   
@@ -29,11 +30,11 @@ export const projectZasakh = async (id: string, data: any, conn?: any) => {
 };
 
 export const projectUstgakh = async (id: string, conn?: any) => {
-  const baseConn = conn || getConn();
+  const baseConn = ensureFsmConn(conn || getConn());
   return await getProjectModel(baseConn, true).findByIdAndDelete(id);
 };
 
 export const projectNegAvakh = async (id: string, conn?: any) => {
-  const baseConn = conn || getConn();
+  const baseConn = ensureFsmConn(conn || getConn());
   return await getProjectModel(baseConn, true).findById(id).lean();
 };
