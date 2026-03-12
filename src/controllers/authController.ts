@@ -111,10 +111,10 @@ export const resetPassword = async (req: any, res: Response, next: any) => {
       });
     }
     
-    if (newPassword.length < 6) {
+    if (newPassword.length < 4) {
       return res.status(400).json({ 
         success: false, 
-        message: "Нууц үг хамгийн багадаа 6 тэмдэгт байх ёстой" 
+        message: "Нууц үг хамгийн багадаа 4 тэмдэгт байх ёстой" 
       });
     }
     

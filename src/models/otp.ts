@@ -7,7 +7,7 @@ const otpSchema = new Schema(
   {
     utas: { type: String, required: true, index: true }, // Phone number
     ajiltniiId: { type: String, required: true }, // Employee ID
-    otp: { type: String, required: true }, // 6-digit OTP code
+    otp: { type: String, required: true }, // 4-digit OTP code
     purpose: { 
       type: String, 
       enum: ["forgot_password", "verify_phone"], 
