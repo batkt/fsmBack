@@ -321,12 +321,39 @@ export const getBaiguullagaKpis = async (req: any, res: Response, next: any) => 
     const { id: baiguullagiinId } = req.params;
     const { getCol } = require("../utils/db");
     const ajiltanCol = getCol("ajiltan");
-
-    const users = await ajiltanCol.find(
-      { baiguullagiinId }
-    ).toArray();
-
+    const users = await ajiltanCol.find({ baiguullagiinId }).toArray();
     res.json({ success: true, data: users });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const refreshBaiguullagaKpis = async (req: any, res: Response, next: any) => {
+  try {
+    const { id: baiguullagiinId } = req.params;
+    const { getCol } = require("../utils/db");
+    const ajiltanCol = getCol("ajiltan");
+
+    const users = await ajiltanCol.find({ baiguullagiinId }).toArray();
+    
+    const results = [];
+    for (const user of users) {
+      const userId = user._id.toString();
+      const stats = await kpiShineelekh(userId, baiguullagiinId);
+      results.push({ userId, stats });
+      
+      // Emit update to the organization room
+      emitToRoom(`baiguullaga_${baiguullagiinId}`, "kpi_updated", {
+        userId: userId,
+        ...stats
+      });
+    }
+
+    res.json({ 
+      success: true, 
+      message: `${results.length} ажилтны KPI амжилттай шинэчлэгдлээ`, 
+      count: results.length 
+    });
   } catch (err) {
     next(err);
   }
