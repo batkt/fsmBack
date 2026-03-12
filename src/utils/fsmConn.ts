@@ -23,13 +23,21 @@ export const getFsmConnFromReq = (req: any) => {
   // 1. Try connection already attached by middleware
   let baseConn = req.tukhainBaaziinKholbolt || req.body?.tukhainBaaziinKholbolt;
   
-  // 2. If missing, try to lookup by organization ID in registry
-  if (!baseConn) {
+  // 2. If missing, try to lookup by organization ID or short name in the array
+  if (!baseConn && db.kholboltuud && Array.isArray(db.kholboltuud)) {
     const orgId = req.ajiltan?.baiguullagiinId || req.body?.baiguullagiinId || req.query?.baiguullagiinId;
-    if (orgId && db.kholboltuud && db.kholboltuud[orgId]) {
-      baseConn = db.kholboltuud[orgId];
-      // Cache it on the request for subsequent calls
-      req.tukhainBaaziinKholbolt = baseConn;
+    
+    if (orgId) {
+      baseConn = db.kholboltuud.find((c: any) => 
+        c.baiguullagiinId === orgId || 
+        c.dotoodNer === orgId || 
+        c._id === orgId
+      );
+      
+      if (baseConn) {
+        // Cache it on the request for subsequent calls
+        req.tukhainBaaziinKholbolt = baseConn;
+      }
     }
   }
 

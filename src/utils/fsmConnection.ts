@@ -48,7 +48,7 @@ export async function loadAllFsmConnections(): Promise<void> {
         }
 
         // Register the connection in zevbackv2's registry (db.kholboltuud)
-        // We use the most reliable key for the primary registration
+        // Primary registration ID (used by zevbackv2 internals)
         const primaryKey = orgId || internalId;
         
         await db.kholboltNemyeFSM(
@@ -60,15 +60,21 @@ export async function loadAllFsmConnections(): Promise<void> {
           userName
         );
 
-        // If we have alternative identifiers, map them to the same connection object
-        if (db.kholboltuud && db.kholboltuud[primaryKey]) {
-          const connObj = db.kholboltuud[primaryKey];
-          if (orgId && !db.kholboltuud[orgId]) db.kholboltuud[orgId] = connObj;
-          if (internalId && !db.kholboltuud[internalId]) db.kholboltuud[internalId] = connObj;
-          if (shortName && !db.kholboltuud[shortName]) db.kholboltuud[shortName] = connObj;
+        // Find the newly added connection in the registry array and add helper identifiers
+        if (db.kholboltuud && Array.isArray(db.kholboltuud)) {
+          const connObj = db.kholboltuud.find((c: any) => c.baaziinNer === dbName && (c.baiguullagiinId === primaryKey || c.baiguullagiinId === orgId));
+          
+          if (connObj) {
+            // Standardize identifiers for easier lookup
+            connObj.baiguullagiinId = orgId || primaryKey;
+            connObj.dotoodNer = shortName;
+            connObj._id = internalId;
+            
+            console.log(`[FSM] ✅ Loaded ${dbName} (Org: ${orgId || shortName}). State: ${connObj.kholbolt?.readyState}`);
+          } else {
+            console.warn(`[FSM] ⚠️ Registered ${dbName} but could not find it in registry for decoration`);
+          }
         }
-        
-        console.log(`[FSM] ✅ Registered ${dbName} for OrgKeys: [${primaryKey}, ${shortName || ''}]. readyState: ${db.kholboltuud[primaryKey]?.kholbolt?.readyState}`);
       } catch (err) {
         console.error(`[FSM] ❌ Failed to load connection for ${config.baaziinNer || config.baaz}:`, err);
       }
