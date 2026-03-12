@@ -90,7 +90,7 @@ export const giveTaskPoints = async (req: any, res: Response, next: any) => {
         });
         emitToRoom(`user_${userId}`, "new_notification", notification);
 
-        getIO().emit("kpi_updated", {
+        emitToRoom(`baiguullaga_${task.baiguullagiinId}`, "kpi_updated", {
           userId: userId,
           ...kpiResult
         });
@@ -193,7 +193,7 @@ export const giveClientTaskPoints = async (req: any, res: Response, next: any) =
         });
         emitToRoom(`user_${userId}`, "new_notification", notification);
 
-        getIO().emit("kpi_updated", {
+        emitToRoom(`baiguullaga_${task.baiguullagiinId}`, "kpi_updated", {
           userId: userId,
           ...kpiResult
         });
@@ -301,7 +301,7 @@ export const refreshUserKpi = async (req: any, res: Response, next: any) => {
 
     // Broadcast update
     const { getIO } = require("../utils/socket");
-    getIO().emit("kpi_updated", {
+    emitToRoom(`baiguullaga_${(user as any).baiguullagiinId}`, "kpi_updated", {
       userId: userId,
       ...kpiResult
     });
