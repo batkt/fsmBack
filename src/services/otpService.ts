@@ -53,7 +53,7 @@ export const requestOTP = async (utas: string, purpose: string = "forgot_passwor
   
   if (!ajiltan) {
     console.log(`[OTP] ❌ No employee found with any phone number variation`);
-    throw new Error("Энэ утасны дугаартай ажилтан олдсонгүй");
+    throw new Error("Дугаар олдсонгүй");
   }
   
   const ajiltniiId = ajiltan._id.toString();
