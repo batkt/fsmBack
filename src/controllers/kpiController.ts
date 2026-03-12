@@ -391,8 +391,8 @@ export const refreshBaiguullagaKpis = async (req: any, res: Response, next: any)
     
     if (users.length === 0) {
       const totalWorkers = await ajiltanCol.countDocuments({});
-      const sampleWorker = await ajiltanCol.findOne({});
-      const sampleWorkerWithId = await ajiltanCol.findOne({ baiguullagiinId: { $exists: true } });
+      const sampleWorkers = await ajiltanCol.find({}).limit(5).toArray();
+      const distinctOrgIds = await ajiltanCol.distinct("baiguullagiinId");
       
       return res.json({
         success: true,
@@ -400,14 +400,15 @@ export const refreshBaiguullagaKpis = async (req: any, res: Response, next: any)
         count: 0,
         debug: {
           queriedId: baiguullagiinId,
-          totalWorkersInDB: totalWorkers,
-          sampleWorkerKeys: sampleWorker ? Object.keys(sampleWorker) : "none",
-          sampleWithFieldNames: sampleWorkerWithId ? Object.keys(sampleWorkerWithId) : "none",
-          sampleData: sampleWorker ? {
-             baiguullagiinId: sampleWorker.baiguullagiinId,
-             baiguullagaId: sampleWorker.baiguullagaId,
-             baiguullaga: sampleWorker.baiguullaga
-          } : "none"
+          totalInDB: totalWorkers,
+          sampleOrgs: sampleWorkers.map((w: any) => ({
+            id: w._id,
+            ner: w.ner,
+            bId: w.baiguullagiinId,
+            bIdType: typeof w.baiguullagiinId,
+            allFields: Object.keys(w)
+          })),
+          distinctOrgIdsTop10: distinctOrgIds.slice(0, 10)
         }
       });
     }
