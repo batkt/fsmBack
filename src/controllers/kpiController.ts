@@ -392,6 +392,8 @@ export const refreshBaiguullagaKpis = async (req: any, res: Response, next: any)
     if (users.length === 0) {
       const totalWorkers = await ajiltanCol.countDocuments({});
       const sampleWorker = await ajiltanCol.findOne({});
+      const sampleWorkerWithId = await ajiltanCol.findOne({ baiguullagiinId: { $exists: true } });
+      
       return res.json({
         success: true,
         message: "0 ажилтны KPI амжилттай шинэчлэгдлээ",
@@ -399,7 +401,13 @@ export const refreshBaiguullagaKpis = async (req: any, res: Response, next: any)
         debug: {
           queriedId: baiguullagiinId,
           totalWorkersInDB: totalWorkers,
-          sampleWorkerOrgId: sampleWorker ? (sampleWorker.baiguullagiinId || sampleWorker.baiguullagaId || sampleWorker.baiguullaga) : "none"
+          sampleWorkerKeys: sampleWorker ? Object.keys(sampleWorker) : "none",
+          sampleWithFieldNames: sampleWorkerWithId ? Object.keys(sampleWorkerWithId) : "none",
+          sampleData: sampleWorker ? {
+             baiguullagiinId: sampleWorker.baiguullagiinId,
+             baiguullagaId: sampleWorker.baiguullagaId,
+             baiguullaga: sampleWorker.baiguullaga
+          } : "none"
         }
       });
     }
