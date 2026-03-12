@@ -32,15 +32,15 @@ otpSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
 /**
  * Get OTP model from connection
- * OTP is stored in the main database (kholbolt), not FSM database
+ * OTP is stored in the FSM database (kholboltFSM)
  * @param conn Connection object (from getConn())
- * @param connectFSM Whether to use FSM database (always false for OTP)
+ * @param connectFSM Whether to use FSM database (default: true for OTP)
  * @param modelName Model name (default: "otp")
  */
-module.exports = function a(conn: any, connectFSM = false, modelName = "otp") {
+module.exports = function a(conn: any, connectFSM = true, modelName = "otp") {
   if (!conn || !conn.kholbolt || !conn.kholboltFSM)
     throw new Error("Холболтын мэдээлэл заавал бөглөх шаардлагатай!");
-  // OTP stored in main database (turees), not FSM database
+  // OTP stored in FSM database (fManageFsm)
   conn = connectFSM && !!conn.kholboltFSM ? conn.kholboltFSM : conn.kholbolt;
   return conn.model(modelName, otpSchema);
 };

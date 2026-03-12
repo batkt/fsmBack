@@ -20,19 +20,39 @@ const generateOTP = (): string => {
  */
 export const requestOTP = async (utas: string, purpose: string = "forgot_password", baiguullagiinId?: string): Promise<{ otp: string; expiresAt: Date }> => {
   const conn = getConn();
-  // OTP is stored in main database (kholbolt), not FSM
-  const OtpModel = getOtpModel(conn, false);
+  // OTP is stored in FSM database (kholboltFSM)
+  const OtpModel = getOtpModel(conn, true);
   
   // Format phone number
   const formattedPhone = formatPhoneNumber(utas);
   
-  // Find employee by phone number (try both formatted and original)
-  let ajiltan = await getCol("ajiltan").findOne({ utas: formattedPhone });
-  if (!ajiltan) {
-    ajiltan = await getCol("ajiltan").findOne({ utas: utas });
+  // Try multiple phone number formats to find employee
+  // Phone numbers in database might be stored in different formats
+  const phoneVariations = [
+    formattedPhone,           // +976xxxxxxxx
+    utas,                     // Original input
+    formattedPhone.replace(/^\+976/, "976"),  // 976xxxxxxxx
+    formattedPhone.replace(/^\+976/, ""),     // xxxxxxxx (local)
+    utas.replace(/^0/, ""),   // Remove leading 0
+    utas.replace(/\D/g, ""),  // Digits only
+  ];
+  
+  // Remove duplicates
+  const uniquePhones = [...new Set(phoneVariations.filter(p => p))];
+  
+  console.log(`[OTP] Looking for employee with phone number. Trying variations:`, uniquePhones);
+  
+  let ajiltan = null;
+  for (const phone of uniquePhones) {
+    ajiltan = await getCol("ajiltan").findOne({ utas: phone });
+    if (ajiltan) {
+      console.log(`[OTP] ✅ Found employee with phone format: ${phone}`);
+      break;
+    }
   }
   
   if (!ajiltan) {
+    console.log(`[OTP] ❌ No employee found with any phone number variation`);
     throw new Error("Энэ утасны дугаартай ажилтан олдсонгүй");
   }
   
@@ -85,7 +105,7 @@ export const requestOTP = async (utas: string, purpose: string = "forgot_passwor
  */
 export const verifyOTP = async (utas: string, otp: string, purpose: string = "forgot_password"): Promise<{ verified: boolean; resetToken: string }> => {
   const conn = getConn();
-  const OtpModel = getOtpModel(conn, false);
+  const OtpModel = getOtpModel(conn, true);
   
   // Format phone number
   const formattedPhone = formatPhoneNumber(utas);
@@ -176,7 +196,7 @@ export const resetPassword = async (resetToken: string, newPassword: string): Pr
   
   // Check if OTP was verified
   const conn = getConn();
-  const OtpModel = getOtpModel(conn, false);
+  const OtpModel = getOtpModel(conn, true);
   const otpRecord = await OtpModel.findOne({
     ajiltniiId,
     verified: true,
