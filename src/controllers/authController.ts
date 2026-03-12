@@ -55,10 +55,10 @@ export const forgotPassword = async (req: any, res: Response, next: any) => {
       ...(process.env.NODE_ENV !== "production" && { otp: result.otp })
     });
   } catch (err: any) {
-    if (err.message.includes("олдсонгүй")) {
-      return res.status(404).json({ success: false, message: err.message });
-    }
-    next(err);
+    // Always return error message in consistent format for frontend
+    const errorMessage = err.message || "Алдаа гарлаа";
+    const statusCode = errorMessage.includes("олдсонгүй") ? 404 : 400;
+    return res.status(statusCode).json({ success: false, message: errorMessage });
   }
 };
 
@@ -86,13 +86,9 @@ export const verifyOTP = async (req: any, res: Response, next: any) => {
       resetToken: result.resetToken
     });
   } catch (err: any) {
-    if (err.message.includes("олдсонгүй") || 
-        err.message.includes("дууссан") || 
-        err.message.includes("буруу") ||
-        err.message.includes("хэт олон")) {
-      return res.status(400).json({ success: false, message: err.message });
-    }
-    next(err);
+    // Always return error message in consistent format for frontend
+    const errorMessage = err.message || "Алдаа гарлаа";
+    return res.status(400).json({ success: false, message: errorMessage });
   }
 };
 
@@ -126,12 +122,8 @@ export const resetPassword = async (req: any, res: Response, next: any) => {
       message: "Нууц үг амжилттай солигдлоо"
     });
   } catch (err: any) {
-    if (err.message.includes("хүчингүй") || 
-        err.message.includes("дууссан") || 
-        err.message.includes("баталгаажаагүй") ||
-        err.message.includes("олдсонгүй")) {
-      return res.status(400).json({ success: false, message: err.message });
-    }
-    next(err);
+    // Always return error message in consistent format for frontend
+    const errorMessage = err.message || "Алдаа гарлаа";
+    return res.status(400).json({ success: false, message: errorMessage });
   }
 };
