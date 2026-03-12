@@ -23,14 +23,13 @@ export const baiguullagaBurtgekh = async (data: any) => {
   const baaziinMedeelelCol = mainConn.collection("baaziinMedeelel");
   const dbName = data.baaziinNer || data.baaz;
 
-  // Ensure all fields are correctly captured from the input data
+  // Match the sample structure exactly
   await baaziinMedeelelCol.insertOne({
     baaz: dbName,
-    baaziinNer: dbName,
     cloudMongoDBEsekh: !!data.cloudMongoDBEsekh,
-    clusterUrl: data.clusterUrl || null,
-    password: data.password || null,
     userName: data.userName || null,
+    password: data.password || null,
+    clusterUrl: data.clusterUrl || null,
     baiguullagiinId: bId,
     fsmEsekh: true,
     createdAt: new Date(),
