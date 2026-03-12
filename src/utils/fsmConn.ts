@@ -25,13 +25,11 @@ export const getFsmConnFromReq = (req: any) => {
   
   // 2. If missing, try to lookup by organization ID or short name in the array
   if (!baseConn && db.kholboltuud && Array.isArray(db.kholboltuud)) {
-    const orgId = req.ajiltan?.baiguullagiinId || req.body?.baiguullagiinId || req.query?.baiguullagiinId;
+    const orgId = (req.ajiltan?.baiguullagiinId || req.body?.baiguullagiinId || req.query?.baiguullagiinId)?.toString();
     
     if (orgId) {
       baseConn = db.kholboltuud.find((c: any) => 
-        c.baiguullagiinId === orgId || 
-        c.dotoodNer === orgId || 
-        c._id === orgId
+        c.orgIds && c.orgIds.has(orgId)
       );
       
       if (baseConn) {

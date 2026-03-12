@@ -23,10 +23,9 @@ export const authMiddleware = (req: any, res: Response, next: any) => {
     // Multi-tenancy: Attach the organization-specific database connection
     const { db }: any = require("zevbackv2");
     if (decoded.baiguullagiinId && db.kholboltuud && Array.isArray(db.kholboltuud)) {
+      const orgIdStr = decoded.baiguullagiinId.toString();
       const tenantConn = db.kholboltuud.find((c: any) => 
-        c.baiguullagiinId === decoded.baiguullagiinId || 
-        c.dotoodNer === decoded.baiguullagiinId ||
-        c._id === decoded.baiguullagiinId
+        c.orgIds && c.orgIds.has(orgIdStr)
       );
 
       if (tenantConn) {
