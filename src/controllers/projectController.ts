@@ -11,7 +11,22 @@ export const getProjects = async (req: any, res: Response, next: any) => {
   try {
     const query: any = {};
     const bid = req.ajiltan?.baiguullagiinId || req.query.baiguullagiinId;
-    if (bid) query.baiguullagiinId = bid;
+    
+    // Filter by FSM authorized baiguullagiinIds
+    const authorizedIds = req.fsmAuthorizedIds || [];
+    if (authorizedIds.length > 0) {
+      if (bid && authorizedIds.includes(bid)) {
+        query.baiguullagiinId = bid;
+      } else if (!bid) {
+        // If no specific bid requested, only show authorized companies
+        query.baiguullagiinId = { $in: authorizedIds };
+      } else {
+        // Requested bid is not authorized, return empty
+        return res.json({ success: true, data: [] });
+      }
+    } else if (bid) {
+      query.baiguullagiinId = bid;
+    }
 
     if (req.query.tuluv) query.tuluv = req.query.tuluv;
     if (req.query.barilgiinId) query.barilgiinId = req.query.barilgiinId;
@@ -38,6 +53,13 @@ export const getProject = async (req: any, res: Response, next: any) => {
   try {
     const project = await projectNegAvakh(req.params.id);
     if (!project) return res.status(404).json({ success: false, message: "Төсөл олдсонгүй" });
+    
+    // Check if project's baiguullagiinId has FSM access
+    const authorizedIds = req.fsmAuthorizedIds || [];
+    if (authorizedIds.length > 0 && project.baiguullagiinId && !authorizedIds.includes(project.baiguullagiinId)) {
+      return res.status(403).json({ success: false, message: "Төсөл олдсонгүй" });
+    }
+    
     res.json({ success: true, data: project });
   } catch (err) {
     next(err);
