@@ -25,9 +25,12 @@ fcmTokenSchema.index({ token: 1 });
 fcmTokenSchema.index({ baiguullagiinId: 1 });
 
 module.exports = function a(conn: any, connectFSM = false, modelName = "fcmToken") {
-  if (!conn || !conn.kholbolt || !conn.kholboltFSM)
+  if (!conn || !conn.kholbolt)
     throw new Error("Холболтын мэдээлэл заавал бөглөх шаардлагатай!");
-  // FCM tokens stored in main database (turees), not FSM database
-  conn = connectFSM && !!conn.kholboltFSM ? conn.kholboltFSM : conn.kholbolt;
-  return conn.model(modelName, fcmTokenSchema);
+  
+  // FCM tokens stored in main database (turees) by default.
+  // If connectFSM is true AND kholboltFSM exists, use FSM DB instead.
+  const targetConn = connectFSM && conn.kholboltFSM ? conn.kholboltFSM : conn.kholbolt;
+
+  return targetConn.model(modelName, fcmTokenSchema);
 };
