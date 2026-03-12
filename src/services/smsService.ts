@@ -97,16 +97,19 @@ export const sendSMS = async (options: SMSOptions): Promise<boolean> => {
       throw new Error("MSG_SERVER тохиргоо олдсонгүй (.env файлд MSG_SERVER тохируулна уу)");
     }
 
+    // Format phone number for CallPro API (remove + prefix, use local format)
+    const phoneForCallPro = formatPhoneForCallPro(to);
+    
     // Build CallPro API URL
     let url = `${msgServer}/send` +
       `?key=${key}` +
       `&from=${dugaar}` +
-      `&to=${to}` +
-      `&text=${message}`;
+      `&to=${phoneForCallPro}` +
+      `&text=${encodeURIComponent(message)}`;
     
     url = encodeURI(url);
 
-    console.log(`[SMS] Sending SMS via CallPro to ${to}`);
+    console.log(`[SMS] Sending SMS via CallPro to ${phoneForCallPro} (original: ${to})`);
 
     // Send SMS using CallPro API
     return new Promise((resolve, reject) => {
@@ -119,7 +122,8 @@ export const sendSMS = async (options: SMSOptions): Promise<boolean> => {
 
         if (res && res.statusCode !== 200) {
           console.error("[SMS] CallPro API returned error status:", res.statusCode, body);
-          reject(new Error(`SMS илгээхэд алдаа гарлаа (Status: ${res.statusCode})`));
+          const errorReason = body?.reason || body?.message || "Unknown error";
+          reject(new Error(`SMS илгээхэд алдаа гарлаа (Status: ${res.statusCode}): ${errorReason}. Phone: ${phoneForCallPro}`));
           return;
         }
 
@@ -135,10 +139,7 @@ export const sendSMS = async (options: SMSOptions): Promise<boolean> => {
   }
 };
 
-/**
- * Format phone number for SMS
- * Ensures phone number is in correct format (e.g., +976xxxxxxxx)
- */
+
 export const formatPhoneNumber = (phone: string): string => {
   // Remove all non-digit characters
   let cleaned = phone.replace(/\D/g, "");
@@ -155,4 +156,19 @@ export const formatPhoneNumber = (phone: string): string => {
   
   // Add + prefix
   return "+" + cleaned;
+};
+
+const formatPhoneForCallPro = (phone: string): string => {
+  let cleaned = phone.replace(/\D/g, "");
+  
+  if (cleaned.startsWith("976")) {
+    cleaned = cleaned.substring(3);
+  }
+  
+  // If it starts with 0, remove the 0
+  if (cleaned.startsWith("0")) {
+    cleaned = cleaned.substring(1);
+  }
+  
+  return cleaned;
 };
