@@ -42,15 +42,7 @@ module.exports = function a(conn: any, connectFSM = true, modelName = "otp") {
     throw new Error("Холболтын мэдээлэл заавал бөглөх шаардлагатай!");
   
   // OTP stored in FSM database (fManageFsm)
-  if (connectFSM && conn.kholboltFSM) {
-    console.log(`[OTP Model] Using FSM database (kholboltFSM) for OTP storage`);
-    conn = conn.kholboltFSM;
-  } else {
-    if (connectFSM) {
-      console.warn(`[OTP Model] ⚠️ FSM database (kholboltFSM) not available, falling back to main database (kholbolt)`);
-    }
-    conn = conn.kholbolt;
-  }
+  conn = connectFSM && !!conn.kholboltFSM ? conn.kholboltFSM : conn.kholbolt;
   
   return conn.model(modelName, otpSchema);
 };

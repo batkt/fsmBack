@@ -20,23 +20,8 @@ const generateOTP = (): string => {
  */
 export const requestOTP = async (utas: string, purpose: string = "forgot_password", baiguullagiinId?: string): Promise<{ otp: string; expiresAt: Date }> => {
   const conn = getConn();
-  
-  // Log connection info for debugging
-  console.log(`[OTP] Connection check:`, {
-    hasKholbolt: !!conn.kholbolt,
-    hasKholboltFSM: !!conn.kholboltFSM,
-    kholboltName: conn.kholbolt?.name,
-    kholboltFSMName: conn.kholboltFSM?.name,
-    kholboltDbName: conn.kholbolt?.db?.databaseName,
-    kholboltFSMDbName: conn.kholboltFSM?.db?.databaseName
-  });
-  
   // OTP is stored in FSM database (kholboltFSM)
   const OtpModel = getOtpModel(conn, true);
-  
-  // Log which database the model is using
-  const modelDb = OtpModel.db?.databaseName || OtpModel.db?.name || 'unknown';
-  console.log(`[OTP] OTP Model is using database: ${modelDb}`);
   
   // Format phone number
   const formattedPhone = formatPhoneNumber(utas);
@@ -50,24 +35,31 @@ export const requestOTP = async (utas: string, purpose: string = "forgot_passwor
     formattedPhone.replace(/^\+976/, ""),     // xxxxxxxx (local)
     utas.replace(/^0/, ""),   // Remove leading 0
     utas.replace(/\D/g, ""),  // Digits only
+    "0" + utas.replace(/^0/, "").replace(/\D/g, ""), // Add leading 0
   ];
   
-  // Remove duplicates
-  const uniquePhones = [...new Set(phoneVariations.filter(p => p))];
+  // Remove duplicates and empty strings
+  const uniquePhones = [...new Set(phoneVariations.filter(p => p && p.length > 0))];
   
-  console.log(`[OTP] Looking for employee with phone number. Trying variations:`, uniquePhones);
+  // Try to find employee using $in operator (more efficient)
+  let ajiltan = await getCol("ajiltan").findOne({ utas: { $in: uniquePhones } });
   
-  let ajiltan = null;
-  for (const phone of uniquePhones) {
-    ajiltan = await getCol("ajiltan").findOne({ utas: phone });
-    if (ajiltan) {
-      console.log(`[OTP] ✅ Found employee with phone format: ${phone}`);
-      break;
+  // If still not found, try regex pattern matching (for partial matches)
+  if (!ajiltan) {
+    const digitsOnly = utas.replace(/\D/g, "");
+    if (digitsOnly.length >= 8) {
+      // Try to find by last 8 digits (Mongolian mobile numbers are 8 digits)
+      const last8Digits = digitsOnly.slice(-8);
+      ajiltan = await getCol("ajiltan").findOne({
+        $or: [
+          { utas: { $regex: last8Digits + "$", $options: "i" } }, // Ends with these digits
+          { utas: { $regex: "^" + last8Digits, $options: "i" } } // Starts with these digits
+        ]
+      });
     }
   }
   
   if (!ajiltan) {
-    console.log(`[OTP] ❌ No employee found with any phone number variation`);
     throw new Error("Дугаар олдсонгүй");
   }
   
@@ -104,8 +96,6 @@ export const requestOTP = async (utas: string, purpose: string = "forgot_passwor
     message: message,
     baiguullagiinId: employeeBaiguullagiinId
   });
-  
-  console.log(`[OTP] OTP sent to ${formattedPhone} for employee ${ajiltniiId}`);
   
   return { otp, expiresAt };
 };
@@ -179,8 +169,6 @@ export const verifyOTP = async (utas: string, otp: string, purpose: string = "fo
     { expiresIn: "15m" }
   );
   
-  console.log(`[OTP] OTP verified for ${formattedPhone}, reset token generated`);
-  
   return { verified: true, resetToken };
 };
 
@@ -238,5 +226,4 @@ export const resetPassword = async (resetToken: string, newPassword: string): Pr
   // Delete the OTP record (one-time use)
   await OtpModel.deleteOne({ _id: otpRecord._id });
   
-  console.log(`[OTP] Password reset successful for employee ${ajiltniiId}`);
 };
