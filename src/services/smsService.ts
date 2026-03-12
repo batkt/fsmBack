@@ -56,22 +56,39 @@ export const sendSMS = async (options: SMSOptions): Promise<boolean> => {
       throw new Error("Утасны дугаар болон мессеж шаардлагатай");
     }
 
-    // If baiguullagiinId is provided, get CallPro credentials from baiguullaga
-    let key: string;
-    let dugaar: string;
+    // Try to get CallPro credentials from baiguullaga first, fallback to environment variables
+    let key: string = "";
+    let dugaar: string = "";
 
     if (baiguullagiinId) {
-      const credentials = await getCallProCredentials(baiguullagiinId);
-      key = credentials.key;
-      dugaar = credentials.dugaar;
+      try {
+        const credentials = await getCallProCredentials(baiguullagiinId);
+        key = credentials.key;
+        dugaar = credentials.dugaar;
+        console.log(`[SMS] ✅ Using CallPro credentials from baiguullaga (ID: ${baiguullagiinId})`);
+      } catch (dbError: any) {
+        // If database credentials fail, fallback to environment variables
+        console.log(`[SMS] ⚠️ Could not get credentials from database: ${dbError.message}`);
+        console.log(`[SMS] Falling back to environment variables...`);
+        key = process.env.MSG_ILGEEKH_KEY || "";
+        dugaar = process.env.MSG_ILGEEKH_DUGAAR || "";
+      }
     } else {
-      // Fallback to environment variables if baiguullagiinId not provided
+      // Use environment variables if baiguullagiinId not provided
       key = process.env.MSG_ILGEEKH_KEY || "";
       dugaar = process.env.MSG_ILGEEKH_DUGAAR || "";
-      
-      if (!key || !dugaar) {
-        throw new Error("CallPro тохиргоо олдсонгүй (MSG_ILGEEKH_KEY, MSG_ILGEEKH_DUGAAR эсвэл baiguullagiinId шаардлагатай)");
-      }
+    }
+
+    // Final check - if still no credentials, throw error
+    if (!key || !dugaar) {
+      const errorMsg = baiguullagiinId
+        ? `CallPro тохиргоо олдсонгүй. Баазад (baiguullaga.tokhirgoo.msgIlgeekhKey, msgIlgeekhDugaar) эсвэл .env файлд (MSG_ILGEEKH_KEY, MSG_ILGEEKH_DUGAAR) тохируулна уу.`
+        : `CallPro тохиргоо олдсонгүй. .env файлд MSG_ILGEEKH_KEY болон MSG_ILGEEKH_DUGAAR тохируулна уу.`;
+      throw new Error(errorMsg);
+    }
+
+    if (!baiguullagiinId || (key === process.env.MSG_ILGEEKH_KEY && dugaar === process.env.MSG_ILGEEKH_DUGAAR)) {
+      console.log(`[SMS] ✅ Using CallPro credentials from environment variables`);
     }
 
     // Check if MSG_SERVER is configured
