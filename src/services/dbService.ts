@@ -11,7 +11,7 @@ export const baiguullagaBurtgekh = async (data: any) => {
     userName 
   } = data;
 
-  const bId = baiguullagiinId || new mongoose.Types.ObjectId().toString();
+  const bId = baiguullagiinId 
 
   await db.kholboltNemyeFSM(
     bId,
