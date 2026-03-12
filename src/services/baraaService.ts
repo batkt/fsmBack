@@ -35,7 +35,6 @@ export const baraaAshiglalatStats = async (baiguullagiinId: string, barilgiinId:
     const dateQuery: any = {};
     if (startDate) dateQuery.$gte = startDate;
     if (endDate) dateQuery.$lte = endDate;
-    // Filter tasks that have at least one baraa usage within this range
     query["baraa.ognoo"] = dateQuery;
   }
   
@@ -45,7 +44,6 @@ export const baraaAshiglalatStats = async (baiguullagiinId: string, barilgiinId:
   tasks.forEach((task: any) => {
     if (task.baraa) {
       task.baraa.forEach((b: any) => {
-        // If we have a range, only aggregate baraa entries within that range
         if (startDate || endDate) {
           const entryDate = new Date(b.ognoo || task.createdAt);
           if (startDate && entryDate < startDate) return;
@@ -53,6 +51,8 @@ export const baraaAshiglalatStats = async (baiguullagiinId: string, barilgiinId:
         }
 
         const key = b.baraaId || b.ner;
+        if (!key) return; // skip entries with no identifier
+
         if (!stats[key]) {
           stats[key] = {
             baraaId: b.baraaId,
@@ -60,11 +60,13 @@ export const baraaAshiglalatStats = async (baiguullagiinId: string, barilgiinId:
             too: 0
           };
         }
-        stats[key].too += (b.too || 0);
+        stats[key].too += Math.abs(Number(b.too) || 0); // ← fix: always positive
       });
     }
   });
   
-  return Object.values(stats).sort((a: any, b: any) => b.too - a.too);
+  return Object.values(stats)
+    .filter((s: any) => s.too > 0)  // ← fix: exclude zeros
+    .sort((a: any, b: any) => b.too - a.too);
 };
 
