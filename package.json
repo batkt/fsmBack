@@ -14,11 +14,13 @@
   "license": "ISC",
   "dependencies": {
     "@types/bcrypt": "^6.0.0",
+    "@types/cors": "^2.8.19",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/lodash": "^4.17.24",
     "@types/request": "^2.48.13",
     "axios": "^1.13.5",
     "bcrypt": "^6.0.0",
+    "cors": "^2.8.6",
     "dotenv": "^16.4.7",
     "express": "^5.2.1",
     "express-async-handler": "^1.2.0",
