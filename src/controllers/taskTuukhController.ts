@@ -10,6 +10,7 @@ export const getTaskTuukhs = async (req: any, res: Response, next: any) => {
 
     if (req.query.projectId) query.projectId = req.query.projectId;
     if (req.query.barilgiinId) query.barilgiinId = req.query.barilgiinId;
+    if (req.query.ajiltniiId) query.ajiltniiId = req.query.ajiltniiId;
 
     const tuukhs = await taskTuukhJagsaalt(query, getFsmConnFromReq(req));
     res.json({ success: true, data: tuukhs });

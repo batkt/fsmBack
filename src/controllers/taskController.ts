@@ -33,8 +33,21 @@ export const getTasks = async (req: any, res: Response, next: any) => {
     if (req.query.projectId) query.projectId = req.query.projectId;
     if (req.query.tuluv) query.tuluv = req.query.tuluv;
     if (req.query.zereglel) query.zereglel = req.query.zereglel;
-    if (req.query.hariutsagchId) query.hariutsagchId = req.query.hariutsagchId;
     if (req.query.barilgiinId) query.barilgiinId = req.query.barilgiinId;
+
+    const filters: any[] = [];
+
+    // Filter by involved employee (lead or member)
+    const ajiltanId = req.query.ajiltanId || req.query.hariutsagchId;
+    if (ajiltanId) {
+      filters.push({
+        $or: [
+          { hariutsagchId: ajiltanId },
+          { ajiltnuud: ajiltanId }
+        ]
+      });
+    }
+
     if (req.query.uilchluulegchId) {
       const getProjectModel = require("../models/project");
       const conn = getFsmConnFromReq(req);
@@ -42,10 +55,16 @@ export const getTasks = async (req: any, res: Response, next: any) => {
       const projects = await ProjectModel.find({ uilchluulegchId: req.query.uilchluulegchId }).select("_id").lean();
       const pIds = projects.map((p: any) => p._id.toString());
       
-      query.$or = [
-        { uilchluulegchId: req.query.uilchluulegchId },
-        { projectId: { $in: pIds } }
-      ];
+      filters.push({
+        $or: [
+          { uilchluulegchId: req.query.uilchluulegchId },
+          { projectId: { $in: pIds } }
+        ]
+      });
+    }
+
+    if (filters.length > 0) {
+      query.$and = filters;
     }
 
     const tasks = await taskJagsaalt(query, getFsmConnFromReq(req));
