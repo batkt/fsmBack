@@ -1,9 +1,11 @@
 const { db }: any = require("zevbackv2");
 import mongoose from "mongoose";
+import { loadAllFsmConnections } from "../utils/fsmConnection";
 
 export const baiguullagaBurtgekh = async (data: any) => {
   const { 
     baiguullagiinId, 
+    register,
     baaziinNer, 
     cloudMongoDBEsekh, 
     clusterUrl, 
@@ -11,7 +13,28 @@ export const baiguullagaBurtgekh = async (data: any) => {
     userName 
   } = data;
 
-  const bId = baiguullagiinId 
+  let bId = baiguullagiinId;
+
+  // If baiguullagiinId is missing, look it up via register number in the main DB
+  if (!bId && register) {
+    const mainConn = db.erunkhiiKholbolt?.kholbolt;
+    if (mainConn) {
+      const org = await mainConn.collection("baiguullaga").findOne({
+        $or: [
+          { register: register },
+          { register: register.toString() },
+          { register: Number(register) }
+        ]
+      });
+      if (org) {
+        bId = org._id.toString();
+      }
+    }
+  }
+
+  if (!bId) {
+    throw new Error("Байгууллагын ID эсвэл регистрийн дугаар олдсонгүй.");
+  }
 
   await db.kholboltNemyeFSM(
     bId,
@@ -21,6 +44,9 @@ export const baiguullagaBurtgekh = async (data: any) => {
     password,
     userName
   );
+
+  // Refresh in-memory mapping for instant access
+  await loadAllFsmConnections();
 
   return { baiguullagiinId: bId, baaziinNer };
 };
