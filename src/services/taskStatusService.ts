@@ -16,9 +16,8 @@ export const updateTaskStatusesByTime = async (conn: any) => {
   const updatedTasks: any[] = [];
 
   try {
-    // Find tasks that should be expired (deadline passed but not completed or already overdue)
     const tasksToExpire = await Task.find({
-      tuluv: { $nin: ["duussan", "khugatsaa khetersen"] }, // Not already completed or expired
+      tuluv: { $nin: ["duussan", "khugatsaa khetersen", "khiigdej bui"] }, // Not already completed, expired, or in progress
       khugatsaaDuusakhOgnoo: { $lt: now, $exists: true, $ne: null } // Deadline has passed and exists
     }).lean();
 
@@ -95,9 +94,9 @@ export const getTaskStatusByTime = (task: any): string => {
     return "duussan";
   }
 
-  // If already expired, return as is
-  if (task.tuluv === "khugatsaa khetersen") {
-    return "khugatsaa khetersen";
+  // If already expired or in progress, return as is
+  if (task.tuluv === "khugatsaa khetersen" || task.tuluv === "khiigdej bui") {
+    return task.tuluv;
   }
 
   // Check if deadline has passed
