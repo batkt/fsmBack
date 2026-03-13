@@ -15,7 +15,6 @@ export const baiguullagaBurtgekh = async (data: any) => {
 
   let bId = baiguullagiinId;
 
-  // If baiguullagiinId is missing, look it up via register number in the main DB
   if (!bId && register) {
     const mainConn = db.erunkhiiKholbolt?.kholbolt;
     if (mainConn) {
@@ -45,7 +44,6 @@ export const baiguullagaBurtgekh = async (data: any) => {
     userName
   );
 
-  // Refresh in-memory mapping for instant access
   await loadAllFsmConnections();
 
   return { baiguullagiinId: bId, baaziinNer };
