@@ -35,11 +35,21 @@ export const kpiShineelekh = async (
     const deadline = task.khugatsaaDuusakhOgnoo || task.duusakhTsag;
     const completedAt = task.duussanOgnoo;
 
-    if (completedAt && deadline) {
-      if (new Date(completedAt).getTime() <= new Date(deadline).getTime()) {
-        onTimeCount++;
+    if (deadline) {
+      const deadlineTime = new Date(deadline).getTime();
+      if (completedAt) {
+        // Task is finished, check if it was finished before or on the deadline
+        if (new Date(completedAt).getTime() <= deadlineTime) {
+          onTimeCount++;
+        }
+      } else {
+        // Task is not finished yet, check if it's already past the deadline
+        if (new Date().getTime() <= deadlineTime) {
+          onTimeCount++;
+        }
       }
     } else {
+      // No deadline set, treat as on time
       onTimeCount++;
     }
   });
