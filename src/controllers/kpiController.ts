@@ -268,17 +268,25 @@ export const getTaskPoints = async (req: any, res: Response, next: any) => {
  
 export const getUserKpi = async (req: any, res: Response, next: any) => {
   try {
-    const getUilchluulegchModel = require("../models/uilchluulegch");
     const conn = getFsmConnFromReq(req);
-    const AjiltanModel = getUilchluulegchModel(conn, false, "ajiltan");
+    const getAjiltanKpiModel = require("../models/ajiltanKpi");
+    const AjiltanKpiModel = getAjiltanKpiModel(conn, true);
 
-    const user = await AjiltanModel.findById(req.params.id)
-      .select("ner kpiOnoo kpiDaalgavarToo kpiDundaj kpiHuvv kpiShineelsenOgnoo")
-      .lean();
+    const kpi = await AjiltanKpiModel.findOne({ 
+      ajiltniiId: req.params.id,
+      baiguullagiinId: req.ajiltan?.baiguullagiinId || req.query.baiguullagiinId
+    }).lean();
 
-    if (!user) return res.status(404).json({ success: false, message: "Ажилтан олдсонгүй" });
+    if (!kpi) {
+      return res.json({ 
+        success: true, 
+        data: { 
+          kpiOnoo: 0, kpiDaalgavarToo: 0, kpiDundaj: 0, kpiHuvv: 0 
+        } 
+      });
+    }
 
-    res.json({ success: true, data: user });
+    res.json({ success: true, data: kpi });
   } catch (err) {
     next(err);
   }
@@ -316,7 +324,7 @@ export const refreshUserKpi = async (req: any, res: Response, next: any) => {
 
 export const getBaiguullagaKpis = async (req: any, res: Response, next: any) => {
   try {
-    const { id: baiguullagiinId } = req.params;
+    const baiguullagiinId = req.params.id;
     const { ObjectId } = require("mongodb");
     const ajiltanCol = getErunkhiiCol("ajiltan");
 
@@ -338,21 +346,30 @@ export const getBaiguullagaKpis = async (req: any, res: Response, next: any) => 
 
     const users = await ajiltanCol.find(query).toArray();
     
-    // Debug info if empty
-    if (users.length === 0) {
-      const totalWorkers = await ajiltanCol.countDocuments({});
-      return res.json({ 
-        success: true, 
-        data: [], 
-        debug: { 
-          queriedId: baiguullagiinId, 
-          idQuery: idQuery.map(q => q.toString()), 
-          totalWorkersInDB: totalWorkers 
-        } 
-      });
-    }
+    // Now fetch FSM-specific KPIs
+    const conn = getFsmConnFromReq(req);
+    const getAjiltanKpiModel = require("../models/ajiltanKpi");
+    const AjiltanKpiModel = getAjiltanKpiModel(conn, true);
 
-    res.json({ success: true, data: users });
+    const kpis = await AjiltanKpiModel.find({ 
+      baiguullagiinId: baiguullagiinId 
+    }).lean();
+
+    // Merge KPI data into user list
+    const merged = users.map((user: any) => {
+      const userId = user._id.toString();
+      const userKpi = kpis.find((k: any) => k.ajiltniiId === userId);
+      return {
+        ...user,
+        kpiOnoo: userKpi?.kpiOnoo || 0,
+        kpiDaalgavarToo: userKpi?.kpiDaalgavarToo || 0,
+        kpiDundaj: userKpi?.kpiDundaj || 0,
+        kpiHuvv: userKpi?.kpiHuvv || 0,
+        kpiShineelsenOgnoo: userKpi?.kpiShineelsenOgnoo || null
+      };
+    });
+
+    res.json({ success: true, data: merged });
   } catch (err) {
     next(err);
   }

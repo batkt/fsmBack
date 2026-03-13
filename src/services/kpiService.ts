@@ -2,6 +2,7 @@ import { getConn, getErunkhiiCol } from "../utils/db";
 import { ensureFsmConn } from "../utils/fsmConn";
 const getTaskModel          = require("../models/task");
 const getUilchluulegchModel = require("../models/uilchluulegch");
+const getAjiltanKpiModel    = require("../models/ajiltanKpi");
 
  
 export const kpiShineelekh = async (
@@ -63,17 +64,10 @@ export const kpiShineelekh = async (
 
   console.log(`[KPI] Calculated for ${hariutsagchId}: Tasks=${kpiDaalgavarToo}, QualityPts=${qualityPoints}, OnTime=${onTimeCount}, FinalPct=${kpiHuvv}%`);
 
-  const ajiltanCol = getErunkhiiCol("ajiltan");
-  let userQuery: any = { _id: hariutsagchId };
-  try {
-     const { ObjectId } = require("mongodb");
-     if (ObjectId.isValid(hariutsagchId)) {
-        userQuery = { $or: [{ _id: hariutsagchId }, { _id: new ObjectId(hariutsagchId) }] };
-     }
-  } catch (e) {}
-
-  const result = await ajiltanCol.findOneAndUpdate(
-    userQuery,
+  const AjiltanKpiModel = getAjiltanKpiModel(baseConn, true);
+  
+  const updatedKpi = await AjiltanKpiModel.findOneAndUpdate(
+    { ajiltniiId: hariutsagchId, baiguullagiinId },
     {
       $set: {
         kpiOnoo,
@@ -83,18 +77,17 @@ export const kpiShineelekh = async (
         kpiShineelsenOgnoo: new Date()
       }
     },
-    { returnDocument: 'after' }
-  );
+    { upsert: true, new: true }
+  ).lean();
 
-  const updatedUser = result.value || result; // Handle both driver versions
-  console.log(`[KPI] Update result for ${hariutsagchId}:`, updatedUser ? "Found" : "NOT FOUND");
+  console.log(`[KPI] Update result for ${hariutsagchId}:`, updatedKpi ? "Saved to ajiltanKpi" : "FAILED");
 
   return {
     kpiOnoo,
     kpiDaalgavarToo,
     kpiDundaj,
     kpiHuvv,
-    updatedUser: updatedUser || null
+    updatedUser: updatedKpi
   };
 };
 
