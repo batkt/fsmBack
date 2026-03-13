@@ -11,11 +11,15 @@ export const projectJagsaalt = async (query: any, conn: any) => {
 
 export const projectUusgekh = async (data: any, conn: any) => {
   const baseConn = ensureFsmConn(conn);
+  // Sanitize data to prevent Mongoose circular reference errors
+  if (data) delete data.tukhainBaaziinKholbolt;
   return await getProjectModel(baseConn, true).create(data);
 };
 
 export const projectZasakh = async (id: string, data: any, conn: any) => {
   const baseConn = ensureFsmConn(conn);
+  // Sanitize data to prevent Mongoose circular reference errors
+  if (data) delete data.tukhainBaaziinKholbolt;
   const ProjectModel = getProjectModel(baseConn, true);
   const result = await ProjectModel.findByIdAndUpdate(id, data, { new: true }).lean();
   

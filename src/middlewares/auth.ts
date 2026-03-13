@@ -30,11 +30,6 @@ export const authMiddleware = (req: any, res: Response, next: any) => {
 
       if (tenantConn) {
         req.tukhainBaaziinKholbolt = tenantConn;
-        
-        // Ensure it's available in body for controllers that expect it there
-        if (req.body) {
-          req.body.tukhainBaaziinKholbolt = tenantConn;
-        }
       }
     }
     
