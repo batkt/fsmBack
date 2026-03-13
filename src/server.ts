@@ -11,7 +11,11 @@ const app: Application = express();
 
 // Configure CORS and Security Headers
 app.use(cors({
-  origin: ["https://turees.zevtabs.mn", "http://localhost:3000"], // Added localhost for development
+  origin: [
+    "https://turees.zevtabs.mn", 
+    "https://103.143.40.175", 
+    "http://localhost:3000"
+  ],
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
   allowedHeaders: ["Origin", "X-Requested-With", "Content-Type", "Accept", "Authorization"],
   credentials: true
