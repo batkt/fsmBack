@@ -26,6 +26,10 @@ const taskSchema = new Schema(
     ekhlekhMinute: { type: Number }, // Start minute (0-1439, minutes from midnight)
     duusakhMinute: { type: Number }, // End minute (0-1439, minutes from midnight)
     khugatsaaDuusakhOgnoo: { type: Date },
+    ekhlekhOgnoo: { type: Date },
+    duusakhOgnoo: { type: Date },
+    isLoop: { type: Boolean, default: false },
+    isDay: { type: Boolean, default: false },
     // Time tracking for each employee (ajiltan) - how much time each employee spent on this task
     ajiltanTsag: [{
       ajiltniiId: { type: String, required: true }, // Employee ID

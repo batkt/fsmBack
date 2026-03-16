@@ -17,17 +17,28 @@ export const updateTaskStatusesByTime = async (conn: any) => {
 
   try {
     const tasksToExpire = await Task.find({
-      tuluv: { $nin: ["duussan", "khugatsaa khetersen", "khiigdej bui"] }, // Not already completed, expired, or in progress
-      khugatsaaDuusakhOgnoo: { $lt: now, $exists: true, $ne: null } // Deadline has passed and exists
+      tuluv: { $nin: ["duussan", "khugatsaa khetersen"] }, // Not already completed or expired
+      $or: [
+        { khugatsaaDuusakhOgnoo: { $lt: now, $exists: true, $ne: null } },
+        { duusakhTsag: { $lt: now, $exists: true, $ne: null }, isLoop: false },
+        { duusakhOgnoo: { $lt: now, $exists: true, $ne: null }, isLoop: true }
+      ]
     }).lean();
 
     // Expire tasks
     for (const task of tasksToExpire) {
+      // For looping tasks, double check if the current time is past the end of the loop day
+      if (task.isLoop && task.duusakhOgnoo) {
+        const loopEnd = new Date(task.duusakhOgnoo);
+        loopEnd.setHours(23, 59, 59, 999);
+        if (loopEnd > now) continue; // Not actually expired yet (still on its last day)
+      }
+
       await Task.findByIdAndUpdate(task._id, {
         $set: { tuluv: "khugatsaa khetersen" }
       });
       updatedTasks.push({ taskId: task._id, action: "expired", oldStatus: task.tuluv, newStatus: "khugatsaa khetersen" });
-      console.log(`[Task Status] ⏰ Task ${task.taskId} (${task.ner}) expired - deadline passed`);
+      console.log(`[Task Status] ⏰ Task ${task.taskId} (${task.ner}) expired`);
     }
 
     if (updatedTasks.length > 0) {
@@ -100,9 +111,25 @@ export const getTaskStatusByTime = (task: any): string => {
   }
 
   // Check if deadline has passed
-  if (task.khugatsaaDuusakhOgnoo && new Date(task.khugatsaaDuusakhOgnoo) < now) {
+  let deadline = task.khugatsaaDuusakhOgnoo ? new Date(task.khugatsaaDuusakhOgnoo) : null;
+  
+  // If we have newer date fields, use them for more precise expiration
+  if (task.duusakhTsag && !task.isLoop) {
+    deadline = new Date(task.duusakhTsag);
+  } else if (task.duusakhOgnoo && task.isLoop) {
+    // Looping tasks expire at the end of their last day
+    deadline = new Date(task.duusakhOgnoo);
+    deadline.setHours(23, 59, 59, 999);
+  }
+
+  if (deadline && deadline < now) {
     return "khugatsaa khetersen";
   }
+
+  // Automatically start tasks if start time reached (if desired)
+  // if (task.tuluv === "shine" && task.ekhlekhTsag && new Date(task.ekhlekhTsag) <= now) {
+  //   return "khiigdej bui";
+  // }
 
   // Otherwise, return current status
   return task.tuluv || "shine";

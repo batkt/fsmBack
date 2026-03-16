@@ -17,6 +17,10 @@ const taskTuukhSchema = new Schema(
     ekhlekhTsag: { type: Date },
     duusakhTsag: { type: Date },
     khugatsaaDuusakhOgnoo: { type: Date },
+    ekhlekhOgnoo: { type: Date },
+    duusakhOgnoo: { type: Date },
+    isLoop: { type: Boolean, default: false },
+    isDay: { type: Boolean, default: false },
     duussanOgnoo: { type: Date, default: Date.now },
     zurag: [{
       zamNer: { type: String },

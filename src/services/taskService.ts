@@ -45,6 +45,20 @@ export const taskUusgekh = async (data: any, conn: any) => {
     data.uilchluulegchId = project.uilchluulegchId;
   }
 
+  // Handle Full Day (isDay) normalization
+  if (data.isDay) {
+    if (data.ekhlekhOgnoo) {
+      const start = new Date(data.ekhlekhOgnoo);
+      start.setHours(0, 0, 0, 0);
+      data.ekhlekhTsag = start;
+    }
+    if (data.duusakhOgnoo) {
+      const end = new Date(data.duusakhOgnoo);
+      end.setHours(23, 59, 59, 999);
+      data.duusakhTsag = end;
+    }
+  }
+
   const task = await TaskModel.create(data);
 
   // If task has baraa usage defined, decrease baraa inventory (uldegdel)
@@ -94,6 +108,21 @@ export const taskZasakh = async (id: string, data: any, conn: any) => {
   // Get the task to find its projectId and current baraa usage
   const existingTask = await TaskModel.findById(id).lean();
   if (!existingTask) return null;
+
+  // Handle Full Day (isDay) normalization for updates
+  const isDay = data.isDay !== undefined ? data.isDay : existingTask.isDay;
+  if (isDay) {
+    if (data.ekhlekhOgnoo || existingTask.ekhlekhOgnoo) {
+      const start = new Date(data.ekhlekhOgnoo || existingTask.ekhlekhOgnoo);
+      start.setHours(0, 0, 0, 0);
+      data.ekhlekhTsag = start;
+    }
+    if (data.duusakhOgnoo || existingTask.duusakhOgnoo) {
+      const end = new Date(data.duusakhOgnoo || existingTask.duusakhOgnoo);
+      end.setHours(23, 59, 59, 999);
+      data.duusakhTsag = end;
+    }
+  }
 
   // Handle duussanOgnoo and timers
   if (data.tuluv === "duussan" && existingTask.tuluv !== "duussan") {
