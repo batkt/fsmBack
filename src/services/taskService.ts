@@ -20,81 +20,135 @@ export const taskUusgekh = async (data: any, conn: any) => {
 
   const prefix = (project.ner).substring(0, 3).toUpperCase();
 
-  const updatedProject = await ProjectModel.findByIdAndUpdate(
-    data.projectId,
-    { $inc: { taskCount: 1 } },
-    { new: true }
-  );
-
-  const taskNumber = updatedProject.taskCount;
-  const formattedNumber = taskNumber.toString().padStart(4, "0");
-
-  data.taskId = `${prefix}-${formattedNumber}`;
-  if (project.color) {
-    data.color = project.color;
-  }
-
-  // Inherit baiguullagiinId and barilgiinId from project if not provided
-  if (!data.baiguullagiinId && project.baiguullagiinId) {
-    data.baiguullagiinId = project.baiguullagiinId;
-  }
-  if (!data.barilgiinId && project.barilgiinId) {
-    data.barilgiinId = project.barilgiinId;
-  }
-  if (!data.uilchluulegchId && project.uilchluulegchId) {
-    data.uilchluulegchId = project.uilchluulegchId;
-  }
-
-  // Handle Full Day (isDay) normalization
-  if (data.isDay) {
-    if (data.ekhlekhOgnoo) {
-      const start = new Date(data.ekhlekhOgnoo);
-      start.setHours(0, 0, 0, 0);
-      data.ekhlekhTsag = start;
-    }
-    if (data.duusakhOgnoo) {
-      const end = new Date(data.duusakhOgnoo);
-      end.setHours(23, 59, 59, 999);
-      data.duusakhTsag = end;
-    }
-  }
-
-  const task = await TaskModel.create(data);
-
-  // If task has baraa usage defined, decrease baraa inventory (uldegdel)
-  if (Array.isArray(data.baraa) && data.baraa.length > 0) {
-    for (const item of data.baraa) {
-      if (!item || !item.baraaId) continue;
-      const qty = Number(item.too) || 0;
-      if (qty === 0) continue;
-
-      await BaraaModel.findByIdAndUpdate(
-        item.baraaId,
-        { $inc: { uldegdel: -Math.abs(qty) } },
-        { new: false }
-      );
-    }
-  }
-
-  // Automatically add assigned employees to project's ajiltnuud array
-  const employeesToAdd: string[] = [];
-  if (data.hariutsagchId) {
-    employeesToAdd.push(data.hariutsagchId);
-  }
-  if (data.ajiltnuud && Array.isArray(data.ajiltnuud)) {
-    employeesToAdd.push(...data.ajiltnuud);
-  }
-
-  if (employeesToAdd.length > 0) {
-    await ProjectModel.findByIdAndUpdate(
-      data.projectId,
-      { $addToSet: { ajiltnuud: { $each: employeesToAdd } } },
+  const createSingleTask = async (taskData: any) => {
+    const updatedProject = await ProjectModel.findByIdAndUpdate(
+      taskData.projectId,
+      { $inc: { taskCount: 1 } },
       { new: true }
     );
-  }
 
-  return task;
+    const taskNumber = updatedProject.taskCount;
+    const formattedNumber = taskNumber.toString().padStart(4, "0");
+
+    taskData.taskId = `${prefix}-${formattedNumber}`;
+    if (project.color) {
+      taskData.color = project.color;
+    }
+
+    // Inherit baiguullagiinId and barilgiinId from project if not provided
+    if (!taskData.baiguullagiinId && project.baiguullagiinId) {
+      taskData.baiguullagiinId = project.baiguullagiinId;
+    }
+    if (!taskData.barilgiinId && project.barilgiinId) {
+      taskData.barilgiinId = project.barilgiinId;
+    }
+    if (!taskData.uilchluulegchId && project.uilchluulegchId) {
+      taskData.uilchluulegchId = project.uilchluulegchId;
+    }
+
+    // Handle Full Day (isDay) normalization
+    if (taskData.isDay) {
+      if (taskData.ekhlekhOgnoo) {
+        const start = new Date(taskData.ekhlekhOgnoo);
+        start.setHours(0, 0, 0, 0);
+        taskData.ekhlekhTsag = start;
+      }
+      if (taskData.duusakhOgnoo) {
+        const end = new Date(taskData.duusakhOgnoo);
+        end.setHours(23, 59, 59, 999);
+        taskData.duusakhTsag = end;
+      }
+    }
+
+    const task = await TaskModel.create(taskData);
+
+    // If task has baraa usage defined, decrease baraa inventory (uldegdel)
+    if (Array.isArray(taskData.baraa) && taskData.baraa.length > 0) {
+      for (const item of taskData.baraa) {
+        if (!item || !item.baraaId) continue;
+        const qty = Number(item.too) || 0;
+        if (qty === 0) continue;
+
+        await BaraaModel.findByIdAndUpdate(
+          item.baraaId,
+          { $inc: { uldegdel: -Math.abs(qty) } },
+          { new: false }
+        );
+      }
+    }
+
+    // Automatically add assigned employees to project's ajiltnuud array
+    const employeesToAdd: string[] = [];
+    if (taskData.hariutsagchId) {
+      employeesToAdd.push(taskData.hariutsagchId);
+    }
+    if (taskData.ajiltnuud && Array.isArray(taskData.ajiltnuud)) {
+      employeesToAdd.push(...taskData.ajiltnuud);
+    }
+
+    if (employeesToAdd.length > 0) {
+      await ProjectModel.findByIdAndUpdate(
+        taskData.projectId,
+        { $addToSet: { ajiltnuud: { $each: employeesToAdd } } },
+        { new: true }
+      );
+    }
+
+    return task;
+  };
+
+  if (data.isLoop && data.ekhlekhOgnoo && data.duusakhOgnoo) {
+    const startDate = new Date(data.ekhlekhOgnoo);
+    const endDate = new Date(data.duusakhOgnoo);
+    
+    // Safety check for insane ranges (e.g. > 1 year)
+    const diffTime = Math.abs(endDate.getTime() - startDate.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    if (diffDays > 366) throw new Error("Давтагдах хугацаа хэтэрхий урт байна (макс 1 жил)");
+
+    let current = new Date(startDate);
+    let firstTaskCreated: any = null;
+
+    while (current <= endDate) {
+      const dayData = { ...data };
+      
+      const dayStart = new Date(current);
+      const dayEnd = new Date(current);
+
+      if (data.isDay) {
+        dayStart.setHours(0, 0, 0, 0);
+        dayEnd.setHours(23, 59, 59, 999);
+      } else {
+        // Preserve hours from original times if provided
+        if (data.ekhlekhTsag) {
+          const d = new Date(data.ekhlekhTsag);
+          dayStart.setHours(d.getHours(), d.getMinutes(), d.getSeconds(), d.getMilliseconds());
+        }
+        if (data.duusakhTsag) {
+          const d = new Date(data.duusakhTsag);
+          dayEnd.setHours(d.getHours(), d.getMinutes(), d.getSeconds(), d.getMilliseconds());
+        }
+      }
+
+      dayData.ekhlekhOgnoo = dayStart;
+      dayData.duusakhOgnoo = dayEnd; // Individual task is for one day
+      dayData.ekhlekhTsag = dayStart;
+      dayData.duusakhTsag = dayEnd;
+      // We keep isLoop: true because the user might want the icon on each instance
+      // But notice that ekhlekhOgnoo and duusakhOgnoo are now the same day.
+      
+      const task = await createSingleTask(dayData);
+      if (!firstTaskCreated) firstTaskCreated = task;
+
+      current.setDate(current.getDate() + 1);
+    }
+    
+    return firstTaskCreated;
+  } else {
+    return await createSingleTask(data);
+  }
 };
+
 
 export const taskZasakh = async (id: string, data: any, conn: any) => {
   const baseConn = ensureFsmConn(conn);
