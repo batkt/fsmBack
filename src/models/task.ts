@@ -41,13 +41,14 @@ const taskSchema = new Schema(
     }],
     // Baraa usage for this task (what items were used and how many)
     baraa: [{
-      baraaId: { type: String, required: true }, // Reference to baraa._id
+      baraaId: { type: String }, // Reference to baraa._id
       ner: { type: String },                     // Snapshot of item name
       negj: { type: String },                    // Snapshot of unit (e.g. shirheg, litr)
-      too: { type: Number, required: true },     // Quantity used for this task
+      too: { type: Number },                     // Quantity used for this task
       une: { type: Number },                     // Unit price at time of usage
       niitUne: { type: Number },                 // Calculated total price (too * une)
       tailbar: { type: String },                 // Optional note/description
+      type: { type: String },                    // Material category type (e.g. tseverlegch)
       ognoo: { type: Date, default: Date.now }   // When this usage was recorded
     }],
     // Images provided by the assigned user (hariutsagch)
