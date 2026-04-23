@@ -299,9 +299,13 @@ export const refreshUserKpi = async (req: any, res: Response, next: any) => {
     const mongoose = require("mongoose");
     const { ObjectId } = require("mongodb");
     
+    console.log(`[KPI Refresh] Request for user ID: ${userId}`);
+    
     const conn = getFsmConnFromReq(req);
     const ajiltanCol = getErunkhiiCol("ajiltan");
     
+    console.log(`[KPI Refresh] Searching in collection: ${ajiltanCol.collectionName} on database: ${ajiltanCol.dbName || "default"}`);
+
     // Flexible ID matching (ObjectId or String)
     let idQuery: any[] = [userId];
     try {
@@ -311,16 +315,24 @@ export const refreshUserKpi = async (req: any, res: Response, next: any) => {
     } catch (e) {}
 
     const user = await ajiltanCol.findOne({ _id: { $in: idQuery } });
-    if (!user) return res.status(404).json({ success: false, message: "Ажилтан олдсонгүй" });
+    
+    if (!user) {
+      console.log(`[KPI Refresh] ❌ User not found with ID variations:`, idQuery);
+      return res.status(404).json({ success: false, message: "Ажилтан олдсонгүй" });
+    }
+
+    console.log(`[KPI Refresh] ✅ User found: ${user.ner} (${user._id})`);
 
     // Ensure we use the normalized string ID for calculations
     const normalizedUserId = user._id.toString();
     const bid = user.baiguullagiinId || user.baiguullagaId;
 
     if (!bid) {
+      console.log(`[KPI Refresh] ❌ Company ID missing for user:`, user._id);
       return res.status(400).json({ success: false, message: "Ажилтны байгууллагын мэдээлэл олдсонгүй" });
     }
 
+    console.log(`[KPI Refresh] Calculating KPI for user ${normalizedUserId} in company ${bid}`);
     const kpiResult = await kpiShineelekh(normalizedUserId, bid, conn);
 
     // Broadcast update
@@ -336,6 +348,7 @@ export const refreshUserKpi = async (req: any, res: Response, next: any) => {
       data: kpiResult
     });
   } catch (err) {
+    console.error(`[KPI Refresh] ❌ Error:`, err);
     next(err);
   }
 };
