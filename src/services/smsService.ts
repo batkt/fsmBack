@@ -105,31 +105,42 @@ export const sendSMS = async (options: SMSOptions): Promise<boolean> => {
     const url = `${msgServer}/send?key=${key}&from=${dugaar}&to=${phoneForCallPro}&text=${encodedMessage}`;
 
     console.log(`[SMS] Sending SMS via CallPro to ${phoneForCallPro} (original: ${to})`);
+    console.log(`[SMS] URL (redacted key): ${msgServer}/send?key=***&from=${dugaar}&to=${phoneForCallPro}`);
 
     // Send SMS using CallPro API
     return new Promise((resolve, reject) => {
-      request(url, { json: true }, (err: any, res: any, body: any) => {
+      request(url, { json: true, timeout: 10000 }, (err: any, res: any, body: any) => {
         if (err) {
-          console.error("[SMS] CallPro API error:", err);
-          reject(new Error("SMS илгээхэд алдаа гарлаа: " + err.message));
+          console.error("[SMS] ❌ CallPro API Network Error:", err);
+          reject(new Error(`SMS илгээхэд сүлжээний алдаа гарлаа: ${err.message}`));
           return;
         }
 
-        if (res && res.statusCode !== 200) {
-          console.error("[SMS] CallPro API returned error status:", res.statusCode, body);
-          const errorReason = body?.reason || body?.message || "Unknown error";
-          reject(new Error(`SMS илгээхэд алдаа гарлаа (Status: ${res.statusCode}): ${errorReason}. Phone: ${phoneForCallPro}`));
+        const statusCode = res?.statusCode;
+        console.log(`[SMS] Response Status: ${statusCode}`);
+        console.log(`[SMS] Response Body:`, JSON.stringify(body));
+
+        if (statusCode !== 200) {
+          console.error("[SMS] ❌ CallPro API returned error status:", statusCode, body);
+          const errorReason = body?.reason || body?.message || body?.error || "Unknown error";
+          reject(new Error(`SMS илгээхэд алдаа гарлаа (Status: ${statusCode}): ${errorReason}`));
           return;
+        }
+
+        // MessagePro sometimes returns 200 even for some errors inside the body
+        if (body && body.success === false) {
+           console.error("[SMS] ❌ CallPro API success:false in body:", body);
+           reject(new Error(`SMS илгээхэд алдаа гарлаа: ${body.message || "Unknown provider error"}`));
+           return;
         }
 
         console.log(`[SMS] ✅ SMS sent successfully to ${to}`);
-        console.log(`[SMS] Response:`, body);
         resolve(true);
       });
     });
 
   } catch (error: any) {
-    console.error("[SMS] Failed to send SMS:", error);
+    console.error("[SMS] ❌ Failed to send SMS:", error);
     throw new Error(error.message || "SMS илгээхэд алдаа гарлаа");
   }
 };

@@ -296,19 +296,37 @@ export const getUserKpi = async (req: any, res: Response, next: any) => {
 export const refreshUserKpi = async (req: any, res: Response, next: any) => {
   try {
     const userId = req.params.id;
-    const getUilchluulegchModel = require("../models/uilchluulegch");
+    const mongoose = require("mongoose");
+    const { ObjectId } = require("mongodb");
+    
     const conn = getFsmConnFromReq(req);
-    const AjiltanModel = getUilchluulegchModel(conn, false, "ajiltan");
+    const ajiltanCol = getErunkhiiCol("ajiltan");
+    
+    // Flexible ID matching (ObjectId or String)
+    let idQuery: any[] = [userId];
+    try {
+      if (ObjectId.isValid(userId)) {
+        idQuery.push(new ObjectId(userId));
+      }
+    } catch (e) {}
 
-    const user = await AjiltanModel.findById(userId).lean();
+    const user = await ajiltanCol.findOne({ _id: { $in: idQuery } });
     if (!user) return res.status(404).json({ success: false, message: "Ажилтан олдсонгүй" });
 
-    const kpiResult = await kpiShineelekh(userId, (user as any).baiguullagiinId, getFsmConnFromReq(req));
+    // Ensure we use the normalized string ID for calculations
+    const normalizedUserId = user._id.toString();
+    const bid = user.baiguullagiinId || user.baiguullagaId;
+
+    if (!bid) {
+      return res.status(400).json({ success: false, message: "Ажилтны байгууллагын мэдээлэл олдсонгүй" });
+    }
+
+    const kpiResult = await kpiShineelekh(normalizedUserId, bid, conn);
 
     // Broadcast update
-    const { getIO } = require("../utils/socket");
-    emitToRoom(`baiguullaga_${(user as any).baiguullagiinId}`, "kpi_updated", {
-      userId: userId,
+    const { emitToRoom } = require("../utils/socket");
+    emitToRoom(`baiguullaga_${bid}`, "kpi_updated", {
+      userId: normalizedUserId,
       ...kpiResult
     });
 
