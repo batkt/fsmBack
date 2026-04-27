@@ -31,7 +31,7 @@ import medegdelRoutes from "./routes/medegdelRoutes";
 import fcmTokenRoutes from "./routes/fcmTokenRoutes";
 import taskStatusRoutes from "./routes/taskStatusRoutes";
 import kpiRoutes from "./routes/kpiRoutes";
-
+import fsmTurulRoutes from "./routes/fsmTurulRoutes";
 
 app.use(authRoutes);
 app.use(projectRoutes);
@@ -46,7 +46,7 @@ app.use(medegdelRoutes);
 app.use(fcmTokenRoutes);
 app.use(taskStatusRoutes);
 app.use(kpiRoutes);
-
+app.use(fsmTurulRoutes);
 
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
