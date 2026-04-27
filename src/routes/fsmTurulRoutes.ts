@@ -9,9 +9,9 @@ import { validateFSMAccess } from "../middlewares/fsmAccess";
 
 const router = Router();
 
-router.get("/api/fsm-turuls", validateFSMAccess, getTuruls);
-router.post("/api/fsm-turuls", validateFSMAccess, createTurul);
-router.put("/api/fsm-turuls/:id", validateFSMAccess, updateTurul);
-router.delete("/api/fsm-turuls/:id", validateFSMAccess, deleteTurul);
+router.get("/fsm-turuls", validateFSMAccess, getTuruls);
+router.post("/fsm-turuls", validateFSMAccess, createTurul);
+router.put("/fsm-turuls/:id", validateFSMAccess, updateTurul);
+router.delete("/fsm-turuls/:id", validateFSMAccess, deleteTurul);
 
 export default router;
