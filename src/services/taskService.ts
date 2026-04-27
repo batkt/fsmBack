@@ -97,9 +97,16 @@ export const taskUusgekh = async (data: any, conn: any) => {
     return task;
   };
 
-  if (data.isLoop && data.ekhlekhOgnoo && data.duusakhOgnoo) {
-    const startDate = new Date(data.ekhlekhOgnoo);
-    const endDate = new Date(data.duusakhOgnoo);
+  const startDate = data.ekhlekhOgnoo ? new Date(data.ekhlekhOgnoo) : null;
+  const endDate = data.duusakhOgnoo ? new Date(data.duusakhOgnoo) : null;
+
+  const isMultiDay = startDate && endDate && (
+    startDate.getFullYear() !== endDate.getFullYear() ||
+    startDate.getMonth() !== endDate.getMonth() ||
+    startDate.getDate() !== endDate.getDate()
+  );
+
+  if ((data.isLoop || isMultiDay) && startDate && endDate) {
     
     // Safety check for insane ranges (e.g. > 1 year)
     const diffTime = Math.abs(endDate.getTime() - startDate.getTime());
