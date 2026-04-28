@@ -1,10 +1,10 @@
 import express from "express";
 import * as chatbotController from "../controllers/chatbotController";
-const { verifyToken } = require("../middlewares/authMiddleware");
+const { authMiddleware } = require("../middlewares/auth");
 
 const router = express.Router();
 
-router.get("/defaults", verifyToken, chatbotController.getDefaultQuestions);
-router.post("/ask", verifyToken, chatbotController.askBot);
+router.get("/defaults", authMiddleware, chatbotController.getDefaultQuestions);
+router.post("/ask", authMiddleware, chatbotController.askBot);
 
 export default router;
