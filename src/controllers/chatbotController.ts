@@ -37,31 +37,48 @@ export const askBot = async (req: any, res: Response) => {
 
     // --- APP DATA LOGIC ---
     
-    // 1. Task counting
+    // 1. Task counting (Today)
     if ((lowerQ.includes("даалгавар") || lowerQ.includes("ажил")) && 
-        (lowerQ.includes("хэд") || lowerQ.includes("өнөөдөр") || lowerQ.includes("бүгд"))) {
+        (lowerQ.includes("хэд") || lowerQ.includes("өнөөдөр"))) {
       
       const TaskModel = require("../models/task")(conn, true);
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
+      const todayStart = new Date();
+      todayStart.setHours(0, 0, 0, 0);
+      const todayEnd = new Date();
+      todayEnd.setHours(23, 59, 59, 999);
       
       const count = await TaskModel.countDocuments({
         $or: [{ hariutsagchId: userId }, { ajiltnuud: userId }],
-        createdAt: { $gte: today }
+        ekhlekhOgnoo: { $lte: todayEnd },
+        duusakhOgnoo: { $gte: todayStart }
       });
 
-      const answer = `Та өнөөдөр нийт ${count} даалгавартай байна.`;
+      const answer = count > 0 
+        ? `Танд өнөөдөр ${count} даалгавар хуваарилагдсан байна.` 
+        : "Танд өнөөдөр хуваарилагдсан даалгавар байхгүй байна.";
       
       await BotInteraction.create({ userId, userQuestion: question, botAnswer: answer, isAnswered: true, baiguullagiinId: bid });
       return res.status(200).json({ answer });
     }
 
-    // 2. Project listing
+    // 2. Completed Tasks
+    if (lowerQ.includes("дууссан") && lowerQ.includes("даалгавар")) {
+      const TaskModel = require("../models/task")(conn, true);
+      const count = await TaskModel.countDocuments({
+        $or: [{ hariutsagchId: userId }, { ajiltnuud: userId }],
+        tuluv: "duussan"
+      });
+      const answer = `Та нийт ${count} даалгавар амжилттай дуусгасан байна. Сайн ажиллаж байна!`;
+      await BotInteraction.create({ userId, userQuestion: question, botAnswer: answer, isAnswered: true, baiguullagiinId: bid });
+      return res.status(200).json({ answer });
+    }
+
+    // 3. Project listing
     if (lowerQ.includes("төсөл") && (lowerQ.includes("миний") || lowerQ.includes("ямар"))) {
       const ProjectModel = require("../models/project")(conn, true);
       const projects = await ProjectModel.find({
         baiguullagiinId: bid
-      }).limit(3);
+      }).limit(5);
 
       if (projects.length > 0) {
         const names = projects.map((p: any) => p.ner).join(", ");
@@ -69,6 +86,14 @@ export const askBot = async (req: any, res: Response) => {
         await BotInteraction.create({ userId, userQuestion: question, botAnswer: answer, isAnswered: true, baiguullagiinId: bid });
         return res.status(200).json({ answer });
       }
+    }
+
+    // 4. Organization/Profile Info
+    if (lowerQ.includes("байгууллага") || lowerQ.includes("би хэн") || lowerQ.includes("миний нэр")) {
+      const userName = req.ajiltan?.ner || "ажилтан";
+      const answer = `Таны нэр: ${userName}. Та ${bid ? "бүртгэлтэй байгууллагадаа" : "манай системд"} ажиллаж байна.`;
+      await BotInteraction.create({ userId, userQuestion: question, botAnswer: answer, isAnswered: true, baiguullagiinId: bid });
+      return res.status(200).json({ answer });
     }
 
     // --- KNOWLEDGE BASE LOGIC ---
