@@ -10,10 +10,10 @@ export const getDefaultQuestions = async (req: any, res: Response) => {
     
     if (questions.length === 0) {
       return res.status(200).json([
+        { question: "Гомдол, санал илгээх", answer: "Та гомдол, саналаа энд бичээрэй. Бид шуурхай шийдвэрлэх болно." },
         { question: "Өнөөдөр хэдэн даалгавартай вэ?", answer: "Таны өнөөдрийн даалгавруудыг шалгаж байна..." },
         { question: "Даалгаврыг хэрхэн эхлүүлэх вэ?", answer: "Даалгаврын дэлгэрэнгүй цонхноос 'Эхлэх' товчийг дарна уу." },
-        { question: "Зураг хэрхэн нэмэх вэ?", answer: "Даалгавар дотор 'Зураг' хэсгийн 'Нэмэх' товчийг ашиглана уу." },
-        { question: "Чат хэрхэн ашиглах вэ?", answer: "Даалгаврын карт дээрх чат дүрс дээр дарж нэвтэрнэ үү." }
+        { question: "Зураг хэрхэн нэмэх вэ?", answer: "Даалгавар дотор 'Зураг' хэсгийн 'Нэмэх' товчийг ашиглана уу." }
       ]);
     }
 
@@ -93,6 +93,41 @@ export const askBot = async (req: any, res: Response) => {
       const userName = req.ajiltan?.ner || "ажилтан";
       const answer = `Таны нэр: ${userName}. Та ${bid ? "бүртгэлтэй байгууллагадаа" : "манай системд"} ажиллаж байна.`;
       await BotInteraction.create({ userId, userQuestion: question, botAnswer: answer, isAnswered: true, baiguullagiinId: bid });
+      return res.status(200).json({ answer });
+    }
+
+    // 5. Complaints/Suggestions (Gomdol Sanal)
+    if (lowerQ.includes("гомдол") || lowerQ.includes("санал")) {
+      const userName = req.ajiltan?.ner || "ажилтан";
+      const answer = "Таны гомдол, саналыг хүлээн авлаа. Бид холбогдох баг руу (Viber group) шуурхай дамжуулж шийдвэрлэх болно. Баярлалаа!";
+      
+      // Log interaction
+      await BotInteraction.create({ userId, userQuestion: question, botAnswer: answer, isAnswered: true, baiguullagiinId: bid });
+
+      // Send to Viber (Simulated/Placeholder)
+      try {
+        const axios = require("axios");
+        const viberToken = process.env.VIBER_AUTH_TOKEN;
+        const viberReceiverId = process.env.VIBER_GROUP_CHAT_ID; // This would be the group or admin ID
+        
+        if (viberToken && viberReceiverId) {
+          await axios.post("https://chatapi.viber.com/pa/send_message", {
+            receiver: viberReceiverId,
+            min_api_version: 1,
+            sender: { name: "Chatbot" },
+            type: "text",
+            text: `📢 ШИНЭ ГОМДОЛ/САНАЛ\n\nАжилтан: ${userName}\nАсуулт/Санал: ${question}`
+          }, {
+            headers: { "X-Viber-Auth-Token": viberToken }
+          });
+          console.log("[Viber] Complaint sent successfully");
+        } else {
+          console.warn("[Viber] Credentials missing, skipping send");
+        }
+      } catch (vError: any) {
+        console.error("[Viber] Error sending message:", vError.message);
+      }
+
       return res.status(200).json({ answer });
     }
 
