@@ -62,6 +62,15 @@ export async function loadAllFsmConnections(): Promise<void> {
 
           const state = connObj.kholbolt?.readyState;
           console.log(`[FSM] ${state === 1 ? '✅' : '⏳'} ${dbName} mapped to ${connObj.orgIds.size} IDs. (State: ${state})`);
+
+          if (connObj.kholbolt && state !== 1) {
+            connObj.kholbolt.on('error', (err: any) => {
+              console.error(`[FSM] ❌ Connection error for ${dbName}:`, err.message);
+            });
+            connObj.kholbolt.on('disconnected', () => {
+              console.warn(`[FSM] ⚠️ Connection disconnected for ${dbName}`);
+            });
+          }
         }
       } catch (err) {
         console.error(`[FSM] ❌ Failed to connect to database ${dbName}:`, err);
