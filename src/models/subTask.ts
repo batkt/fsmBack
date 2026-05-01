@@ -26,5 +26,5 @@ module.exports = function a(conn: any, connectFSM = true, modelName = "subTask")
   
   const fsmConn = connectFSM && conn.kholboltFSM ? conn.kholboltFSM : conn.kholbolt;
 
-  return fsmConn.model(modelName, subTaskSchema);
+  return fsmConn.models[modelName] || fsmConn.model(modelName, subTaskSchema);
 };

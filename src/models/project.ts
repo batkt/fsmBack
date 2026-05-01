@@ -41,5 +41,5 @@ module.exports = function a(conn: any, connectFSM = true, modelName = "project")
   // For FSM we prefer kholboltFSM (per-org FSM DB) but fall back to kholbolt
   const fsmConn = connectFSM && conn.kholboltFSM ? conn.kholboltFSM : conn.kholbolt;
 
-  return fsmConn.model(modelName, projectSchema);
+  return fsmConn.models[modelName] || fsmConn.model(modelName, projectSchema);
 };

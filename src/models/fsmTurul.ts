@@ -22,5 +22,5 @@ module.exports = function a(conn: any, connectFSM = true, modelName = "fsmTurul"
   
   const fsmConn = connectFSM && conn.kholboltFSM ? conn.kholboltFSM : conn.kholbolt;
 
-  return fsmConn.model(modelName, fsmTurulSchema);
+  return fsmConn.models[modelName] || fsmConn.model(modelName, fsmTurulSchema);
 };

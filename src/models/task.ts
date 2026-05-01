@@ -119,5 +119,5 @@ module.exports = function a(conn: any, connectFSM = true, modelName = "task") {
   
   const fsmConn = connectFSM && conn.kholboltFSM ? conn.kholboltFSM : conn.kholbolt;
 
-  return fsmConn.model(modelName, taskSchema);
+  return fsmConn.models[modelName] || fsmConn.model(modelName, taskSchema);
 };

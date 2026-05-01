@@ -57,6 +57,6 @@ medegdelSchema.index({ ajiltnuud: 1 }); // For filtering by task membership
 module.exports = function a(conn: any, connectFSM = true, modelName = "medegdel") {
   if (!conn || !conn.kholbolt || !conn.kholboltFSM)
     throw new Error("Холболтын мэдээлэл заавал бөглөх шаардлагатай!");
-  conn = connectFSM && !!conn.kholboltFSM ? conn.kholboltFSM : conn.kholbolt;
-  return conn.model(modelName, medegdelSchema);
+  const fsmConn = connectFSM && !!conn.kholboltFSM ? conn.kholboltFSM : conn.kholbolt;
+  return fsmConn.models[modelName] || fsmConn.model(modelName, medegdelSchema);
 };
