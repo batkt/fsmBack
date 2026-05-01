@@ -1,6 +1,8 @@
 import jwt from "jsonwebtoken";
 import { Response } from "express";
 import { config } from "../config";
+const { db }: any = require("zevbackv2");
+
 
 export const authMiddleware = (req: any, res: Response, next: any) => {
   if (req.method === "OPTIONS") {
@@ -20,16 +22,20 @@ export const authMiddleware = (req: any, res: Response, next: any) => {
     const decoded = jwt.verify(token, config.APP_SECRET) as any;
     req.ajiltan = decoded;
     
-    // Multi-tenancy: Attach the organization-specific database connection
-    const { db }: any = require("zevbackv2");
-    if (decoded.baiguullagiinId && db.kholboltuud && Array.isArray(db.kholboltuud)) {
+    if (decoded.baiguullagiinId && db.kholboltuud) {
       const orgIdStr = decoded.baiguullagiinId.toString();
-      const tenantConn = db.kholboltuud.find((c: any) => 
+      
+      // 1. Try to find in existing connections
+      let tenantConn = Array.isArray(db.kholboltuud) ? db.kholboltuud.find((c: any) => 
         c.orgIds && c.orgIds.has(orgIdStr)
-      );
+      ) : null;
 
       if (tenantConn) {
         req.tukhainBaaziinKholbolt = tenantConn;
+      } else {
+        // 2. If not found, it might be a newly authorized organization.
+        // We could trigger a reload or just log it.
+        console.warn(`[Auth] No FSM connection found for org: ${orgIdStr}`);
       }
     }
     

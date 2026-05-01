@@ -24,6 +24,14 @@ export const getFsmConnFromReq = (req: any) => {
     throw new Error("FSM холболт олдсонгүй (tukhainBaaziinKholbolt)");
   }
 
+  // readyState 1 means Connected.
+  // 0 = disconnected, 2 = connecting, 3 = disconnecting
+  if (baseConn.kholbolt.readyState !== 1) {
+    const states: any = { 0: "Disconnected", 2: "Connecting", 3: "Disconnecting" };
+    const stateStr = states[baseConn.kholbolt.readyState] || "Unknown";
+    throw new Error(`FSM холболт бэлэн биш байна (State: ${stateStr})`);
+  }
+
   return baseConn;
 };
 
