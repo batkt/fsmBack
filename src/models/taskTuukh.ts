@@ -21,6 +21,7 @@ const taskTuukhSchema = new Schema(
     duusakhOgnoo: { type: Date },
     isLoop: { type: Boolean, default: false },
     isDay: { type: Boolean, default: false },
+    loopWeekdaysOnly: { type: Boolean, default: false },
     duussanOgnoo: { type: Date, default: Date.now },
     zurag: [{
       zamNer: { type: String },

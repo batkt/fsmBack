@@ -117,6 +117,14 @@ export const taskUusgekh = async (data: any, conn: any) => {
     let firstTaskCreated: any = null;
 
     while (current <= endDate) {
+      if (data.loopWeekdaysOnly === true || data.loopWeekdaysOnly === 'true') {
+        const dayOfWeek = current.getDay();
+        if (dayOfWeek === 0 || dayOfWeek === 6) {
+          current.setDate(current.getDate() + 1);
+          continue;
+        }
+      }
+
       const dayData = { ...data };
       
       const dayStart = new Date(current);
