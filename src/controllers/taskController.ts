@@ -68,7 +68,24 @@ export const getTasks = async (req: any, res: Response, next: any) => {
     }
 
     const tasks = await taskJagsaalt(query, getFsmConnFromReq(req));
-    res.json({ success: true, data: tasks });
+
+    const taskIds = tasks.map((t: any) => String(t._id || t.id));
+    const getChatModel = require("../models/chat");
+    const ChatModel = getChatModel(getFsmConnFromReq(req), true);
+    const chatCounts = await ChatModel.aggregate([
+      { $match: { taskId: { $in: taskIds }, isDeleted: { $ne: true } } },
+      { $group: { _id: "$taskId", count: { $sum: 1 } } }
+    ]);
+    
+    const chatCountMap = new Map();
+    chatCounts.forEach((c: any) => chatCountMap.set(String(c._id), c.count));
+    
+    const tasksWithChatCount = tasks.map((t: any) => ({
+      ...t,
+      chatCount: chatCountMap.get(String(t._id || t.id)) || 0
+    }));
+
+    res.json({ success: true, data: tasksWithChatCount });
   } catch (err) {
     next(err);
   }
@@ -671,6 +688,66 @@ export const endTaskTime = async (req: any, res: Response, next: any) => {
     if (err.message.includes("цаг тоолж эхлээгүй")) {
       return res.status(400).json({ success: false, message: err.message });
     }
+    next(err);
+  }
+};
+
+export const deleteTaskImage = async (req: any, res: Response, next: any) => {
+  try {
+    const taskId = req.params.id;
+    const { fileZam } = req.body;
+    const ajiltniiId = req.ajiltan?.id;
+
+    if (!fileZam) {
+      return res.status(400).json({ success: false, message: "Файлын зам дутуу байна" });
+    }
+
+    const getTaskModel = require("../models/task");
+    const TaskModel = getTaskModel(getFsmConnFromReq(req), true);
+
+    const task = await TaskModel.findById(taskId);
+    if (!task) return res.status(404).json({ success: false, message: "Даалгавар олдсонгүй" });
+
+    let found = false;
+    let isAdmin = req.ajiltan?.erkh === 'Admin' || req.ajiltan?.erkh === 'Manager';
+    
+    if (task.zurag && Array.isArray(task.zurag)) {
+      const idx = task.zurag.findIndex((z: any) => {
+        const zPath = typeof z === 'string' ? z : (z.zamNer || z.fileZam || z.zam || z.path);
+        return zPath === fileZam;
+      });
+      if (idx !== -1) {
+        const img = task.zurag[idx];
+        if (typeof img === 'object' && img.ajiltniiId && String(img.ajiltniiId) !== String(ajiltniiId) && !isAdmin) {
+          return res.status(403).json({ success: false, message: "Зөвхөн өөрийн оруулсан зургийг устгах боломжтой" });
+        }
+        task.zurag.splice(idx, 1);
+        found = true;
+      }
+    }
+
+    if (!found && task.hariutsagchZurag && Array.isArray(task.hariutsagchZurag)) {
+      const idx = task.hariutsagchZurag.findIndex((z: any) => {
+        const zPath = typeof z === 'string' ? z : (z.zamNer || z.fileZam || z.zam || z.path);
+        return zPath === fileZam;
+      });
+      if (idx !== -1) {
+        const img = task.hariutsagchZurag[idx];
+        if (typeof img === 'object' && img.ajiltniiId && String(img.ajiltniiId) !== String(ajiltniiId) && !isAdmin) {
+          return res.status(403).json({ success: false, message: "Зөвхөн өөрийн оруулсан зургийг устгах боломжтой" });
+        }
+        task.hariutsagchZurag.splice(idx, 1);
+        found = true;
+      }
+    }
+
+    if (!found) {
+      return res.status(404).json({ success: false, message: "Зураг олдсонгүй эсвэл устгах эрхгүй байна" });
+    }
+
+    await task.save();
+    res.json({ success: true, message: "Зураг амжилттай устгагдлаа", data: task });
+  } catch (err) {
     next(err);
   }
 };

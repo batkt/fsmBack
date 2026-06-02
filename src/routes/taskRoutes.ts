@@ -6,6 +6,7 @@ import {
   updateTask,
   deleteTask,
   uploadTaskImage,
+  deleteTaskImage,
   startTaskTime,
   endTaskTime,
 } from "../controllers/taskController";
@@ -43,6 +44,7 @@ router.get("/tasks/:id", authMiddleware, filterFSMAccess, getTask);
 router.post("/tasks", authMiddleware, validateFSMAccess, createTask);
 router.put("/tasks/:id", authMiddleware, validateFSMAccess, updateTask);
 router.delete("/tasks/:id", authMiddleware, validateFSMAccess, deleteTask);
+router.delete("/tasks/:id/image", authMiddleware, validateFSMAccess, deleteTaskImage);
 router.post("/tasks/:id/upload-image", authMiddleware, validateFSMAccess, upload.single("file"), uploadTaskImage);
 router.post("/tasks/:id/start-time", authMiddleware, validateFSMAccess, startTaskTime);
 router.post("/tasks/:id/end-time", authMiddleware, validateFSMAccess, endTaskTime);
