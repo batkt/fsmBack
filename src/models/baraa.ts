@@ -10,22 +10,13 @@ const baraaSchema = new Schema(
       type: String,
       default: "tseverlegch"
     },
-    // tailbar: { type: String },
     negj: {
       type: String,
       enum: ["shirheg", "litr", "kg", "haire", "bogts", "dana"],
       default: "shirheg"
     },
-    // une: { type: Number, default: 0 },
-    // negjUne : { type: Number, default: 0 },
-    // niitUrtug : { type: Number, default: 0 },
     uldegdel: { type: Number, default: 0 },
-    // doodUldegdel: { type: Number, default: 0 },
-    // barcode: { type: String },
-    // zurgiinId: { type: String },
-    // brand: { type: String },
-    // niiluulegch: { type: String },
-    // idevhtei: { type: Boolean, default: true },
+    shirhegiinToo: { type: Number, default: 1 }, // хайрцаг доторх ширхэгийн тоо
     baiguullagiinId: { type: String, required: true },
     barilgiinId: { type: String, required: true }
   },

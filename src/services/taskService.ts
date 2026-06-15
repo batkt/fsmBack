@@ -69,9 +69,15 @@ export const taskUusgekh = async (data: any, conn: any) => {
         const qty = Number(item.too) || 0;
         if (qty === 0) continue;
 
+        const baraaDoc = await BaraaModel.findById(item.baraaId).lean();
+        const shirhegiinToo = baraaDoc?.shirhegiinToo || 1;
+        const decrementAmount = baraaDoc?.negj === 'haire'
+          ? Math.ceil(Math.abs(qty) / shirhegiinToo) // ширхэг -> хайрцаг
+          : Math.abs(qty);
+
         await BaraaModel.findByIdAndUpdate(
           item.baraaId,
-          { $inc: { uldegdel: -Math.abs(qty) } },
+          { $inc: { uldegdel: -decrementAmount } },
           { new: false }
         );
       }
@@ -241,11 +247,19 @@ export const taskZasakh = async (id: string, data: any, conn: any) => {
 
       if (delta === 0) continue;
 
+      const baraaDoc = await BaraaModel.findById(baraaId).lean();
+      const shirhegiinToo = baraaDoc?.shirhegiinToo || 1;
+
+      // Convert piece-based delta to box-based delta for haire items
+      const adjustedDelta = baraaDoc?.negj === 'haire'
+        ? Math.sign(delta) * Math.ceil(Math.abs(delta) / shirhegiinToo)
+        : delta;
+
       // If delta > 0, we are using more → decrease inventory
       // If delta < 0, we reduced usage → increase inventory back
       await BaraaModel.findByIdAndUpdate(
         baraaId,
-        { $inc: { uldegdel: -delta } }, // delta positive => -delta; delta negative => +|delta|
+        { $inc: { uldegdel: -adjustedDelta } },
         { new: false }
       );
     }

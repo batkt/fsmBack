@@ -6,6 +6,8 @@ import {
   baraaUstgakh,
   baraaNegAvakh,
   baraaAshiglalatStats,
+  baraaAshiglalatTimeline,
+  baraaIncomeNemekh,
 } from "../services/baraaService";
 import { getFsmConnFromReq } from "../utils/fsmConn";
 
@@ -101,6 +103,40 @@ export const getBaraaUsageStats = async (req: any, res: Response, next: any) => 
 
     const stats = await baraaAshiglalatStats(bid, barilgiinId as string, sDate, eDate, getFsmConnFromReq(req));
     res.json({ success: true, data: stats });
+  } catch (err) {
+    next(err);
+  }
+};
+export const getBaraaUsageTimeline = async (req: any, res: Response, next: any) => {
+  try {
+    const baiguullagiinId = req.ajiltan?.baiguullagiinId || req.query.baiguullagiinId;
+    const barilgiinId = req.query.barilgiinId;
+
+    if (!barilgiinId) {
+      return res.status(400).json({ success: false, message: "barilgiinId шаардлагатай" });
+    }
+
+    const startDate = req.query.startDate ? new Date(req.query.startDate) : undefined;
+    const endDate = req.query.endDate ? new Date(req.query.endDate) : undefined;
+
+    const data = await baraaAshiglalatTimeline(baiguullagiinId, barilgiinId, startDate, endDate, getFsmConnFromReq(req));
+    res.json({ success: true, data });
+  } catch (err) {
+    next(err);
+  }
+};
+export const addBaraaIncome = async (req: any, res: Response, next: any) => {
+  try {
+    const { baraaId, too, tailbar, ognoo } = req.body;
+    const baiguullagiinId = req.ajiltan?.baiguullagiinId || req.body.baiguullagiinId;
+    const barilgiinId = req.body.barilgiinId;
+
+    if (!baraaId || !too) {
+      return res.status(400).json({ success: false, message: "Бараа болон тоо шаардлагатай" });
+    }
+
+    const updated = await baraaIncomeNemekh(baraaId, Number(too), tailbar, ognoo, getFsmConnFromReq(req));
+    res.json({ success: true, data: updated });
   } catch (err) {
     next(err);
   }
