@@ -7,6 +7,7 @@ import {
   taskNegAvakh,
 } from "../services/taskService";
 import { taskTuukhUusgekh } from "../services/taskTuukhService";
+import { taskZassanBarimtBurtgekh } from "../services/zassanBarimtService";
 import { getFsmConnFromReq } from "../utils/fsmConn";
 
 export const getTasks = async (req: any, res: Response, next: any) => {
@@ -399,6 +400,16 @@ export const updateTask = async (req: any, res: Response, next: any) => {
       ajiltniiNer: req.ajiltan?.ner,
       uildel: action
     }, getFsmConnFromReq(req));
+
+    await taskZassanBarimtBurtgekh(
+      oldTask,
+      task,
+      "FsmTask",
+      "Даалгавар (FSM)",
+      req.ajiltan?.id,
+      req.ajiltan?.ner,
+      getFsmConnFromReq(req),
+    );
 
     // Refresh client KPI if status changed or client exists
     if (task.uilchluulegchId || oldTask.uilchluulegchId) {
