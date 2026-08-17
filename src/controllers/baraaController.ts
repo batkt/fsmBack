@@ -8,6 +8,7 @@ import {
   baraaAshiglalatStats,
   baraaAshiglalatTimeline,
   baraaIncomeNemekh,
+  baraaOrlogiinTuukh,
 } from "../services/baraaService";
 import { getFsmConnFromReq } from "../utils/fsmConn";
 
@@ -127,16 +128,57 @@ export const getBaraaUsageTimeline = async (req: any, res: Response, next: any) 
 };
 export const addBaraaIncome = async (req: any, res: Response, next: any) => {
   try {
-    const { baraaId, too, tailbar, ognoo } = req.body;
-    const baiguullagiinId = req.ajiltan?.baiguullagiinId || req.body.baiguullagiinId;
-    const barilgiinId = req.body.barilgiinId;
+    const { baraaId, too, tailbar, ognoo, khairtsag, zadgai } = req.body;
 
     if (!baraaId || !too) {
       return res.status(400).json({ success: false, message: "Бараа болон тоо шаардлагатай" });
     }
 
-    const updated = await baraaIncomeNemekh(baraaId, Number(too), tailbar, ognoo, getFsmConnFromReq(req));
+    const updated = await baraaIncomeNemekh(
+      baraaId,
+      Number(too),
+      tailbar,
+      ognoo,
+      getFsmConnFromReq(req),
+      {
+        khairtsag,
+        zadgai,
+        ajiltniiId: req.ajiltan?._id?.toString() || "",
+        ajiltniiNer: req.ajiltan?.ner || req.ajiltan?.nevtrekhNer || "",
+      },
+    );
     res.json({ success: true, data: updated });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// Барааны орлогын түүх
+export const getBaraaOrlogiinTuukh = async (req: any, res: Response, next: any) => {
+  try {
+    const baiguullagiinId =
+      req.ajiltan?.baiguullagiinId || req.query.baiguullagiinId;
+    const barilgiinId = req.query.barilgiinId;
+
+    if (!baiguullagiinId || !barilgiinId) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Байгууллага, барилга шаардлагатай" });
+    }
+
+    const tuukh = await baraaOrlogiinTuukh(
+      baiguullagiinId,
+      barilgiinId,
+      {
+        baraaId: req.query.baraaId,
+        ekhlekh: req.query.ekhlekh,
+        duusakh: req.query.duusakh,
+        khyazgaar: req.query.khyazgaar,
+      },
+      getFsmConnFromReq(req),
+    );
+
+    res.json({ success: true, data: tuukh });
   } catch (err) {
     next(err);
   }

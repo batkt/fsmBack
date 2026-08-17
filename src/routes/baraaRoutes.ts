@@ -8,6 +8,7 @@ import {
   getBaraaUsageStats,
   getBaraaUsageTimeline,
   addBaraaIncome,
+  getBaraaOrlogiinTuukh,
 } from "../controllers/baraaController";
 
 import { authMiddleware } from "../middlewares/auth";
@@ -18,6 +19,7 @@ const router = Router();
 router.get("/baraas", authMiddleware, getBaraas);
 router.get("/baraas/usage-stats", authMiddleware, getBaraaUsageStats);
 router.get("/baraas/usage-timeline", authMiddleware, getBaraaUsageTimeline);
+router.get("/baraas/orlogiin-tuukh", authMiddleware, getBaraaOrlogiinTuukh);
 router.get("/baraas/:id", authMiddleware, getBaraa);
 
 router.post("/baraas", authMiddleware, validateFSMAccess, createBaraa);

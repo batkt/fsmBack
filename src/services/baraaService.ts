@@ -1,6 +1,7 @@
 import { ensureFsmConn } from "../utils/fsmConn";
 const getBaraaModel = require("../models/baraa");
 const getTaskModel = require("../models/task");
+const getBaraaOrlogoModel = require("../models/baraaOrlogo");
 
 // All functions require explicit conn for per-org FSM DB.
 
@@ -101,9 +102,19 @@ export const baraaAshiglalatTimeline = async (
 
   return entries;
 };
-export const baraaIncomeNemekh = async (baraaId: string, too: number, tailbar: string, ognoo: any, conn: any) => {
+export const baraaIncomeNemekh = async (
+  baraaId: string,
+  too: number,
+  tailbar: string,
+  ognoo: any,
+  conn: any,
+  nemelt: any = {},
+) => {
   const baseConn = ensureFsmConn(conn);
   const BaraaModel = getBaraaModel(baseConn, true);
+
+  const umnukh = await BaraaModel.findById(baraaId).lean();
+  if (!umnukh) throw new Error("Бараа олдсонгүй");
 
   const updated = await BaraaModel.findByIdAndUpdate(
     baraaId,
@@ -113,8 +124,57 @@ export const baraaIncomeNemekh = async (baraaId: string, too: number, tailbar: s
 
   if (!updated) throw new Error("Бараа олдсонгүй");
 
-  // Optional: log to taskTuukh or a separate baraaTuukh collection for history
+  // Орлогын түүхийг тусад нь бүртгэнэ. Бүртгэл унасан ч орлого өөрөө
+  // амжилттай болсон тул алдааг залгина.
+  try {
+    await getBaraaOrlogoModel(baseConn, true).create({
+      baraaId,
+      baraaNer: umnukh.ner || "",
+      negj: umnukh.negj || "shirheg",
+      too: Math.abs(too),
+      khairtsag: Number(nemelt.khairtsag) || 0,
+      zadgai: Number(nemelt.zadgai) || 0,
+      shirhegiinToo: umnukh.shirhegiinToo || 1,
+      umnukhUldegdel: umnukh.uldegdel || 0,
+      daraakhUldegdel: updated.uldegdel || 0,
+      tailbar: tailbar || "",
+      ognoo: ognoo ? new Date(ognoo) : new Date(),
+      ajiltniiId: nemelt.ajiltniiId || "",
+      ajiltniiNer: nemelt.ajiltniiNer || "",
+      baiguullagiinId: umnukh.baiguullagiinId,
+      barilgiinId: umnukh.barilgiinId,
+    });
+  } catch (err) {
+    console.error("Барааны орлогын түүх бүртгэхэд алдаа:", err);
+  }
+
   return updated;
+};
+
+// Орлогын түүхийн жагсаалт. Барааны нэр, огнооны мужаар шүүнэ.
+export const baraaOrlogiinTuukh = async (
+  baiguullagiinId: string,
+  barilgiinId: string,
+  shuult: any,
+  conn: any,
+) => {
+  const baseConn = ensureFsmConn(conn);
+  const OrlogoModel = getBaraaOrlogoModel(baseConn, true);
+
+  const query: any = { baiguullagiinId, barilgiinId };
+  if (shuult?.baraaId) query.baraaId = shuult.baraaId;
+  if (shuult?.ekhlekh || shuult?.duusakh) {
+    query.ognoo = {};
+    if (shuult.ekhlekh) query.ognoo.$gte = new Date(shuult.ekhlekh);
+    if (shuult.duusakh) query.ognoo.$lte = new Date(shuult.duusakh);
+  }
+
+  const khyazgaar = Math.min(Number(shuult?.khyazgaar) || 200, 500);
+
+  return await OrlogoModel.find(query)
+    .sort({ ognoo: -1, createdAt: -1 })
+    .limit(khyazgaar)
+    .lean();
 };
 export const baraaZasakh = async (id: string, data: any, conn: any) => {
   const baseConn = ensureFsmConn(conn);
