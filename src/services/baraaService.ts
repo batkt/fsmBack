@@ -48,18 +48,27 @@ export const baraaAshiglalatTimeline = async (
   const projectNameMap: any = {};
   projects.forEach((p: any) => { projectNameMap[String(p._id)] = p.ner; });
 
-  // Resolve employee names
-  const AjiltanModel = require("../models/ajiltan")(baseConn, false);
-  const ajiltanIds = new Set<string>();
-  tasks.forEach((t: any) => {
-    if (t.hariutsagchId) ajiltanIds.add(t.hariutsagchId);
-    if (Array.isArray(t.ajiltnuud)) t.ajiltnuud.forEach((a: string) => ajiltanIds.add(a));
-  });
-  const ajiltnuud = await AjiltanModel.find({ _id: { $in: Array.from(ajiltanIds) } })
-    .select("ner nevtrekhNer")
-    .lean();
+  // Ажилтны нэр. Нэр олдохгүй байх нь зарцуулалтын түүхийг бүхэлд нь
+  // унагаах шалтгаан болох ёсгүй — өмнө нь `models/ajiltan` файл байхгүйгээс
+  // энэ endpoint үргэлж 500 буцааж, дэлгэц дээр "Дата байхгүй" гэж
+  // харагддаг байсан.
   const ajiltanNameMap: any = {};
-  ajiltnuud.forEach((a: any) => { ajiltanNameMap[String(a._id)] = a.ner || a.nevtrekhNer || "Ажилтан"; });
+  try {
+    const AjiltanModel = require("../models/ajiltan")(baseConn, false);
+    const ajiltanIds = new Set<string>();
+    tasks.forEach((t: any) => {
+      if (t.hariutsagchId) ajiltanIds.add(t.hariutsagchId);
+      if (Array.isArray(t.ajiltnuud)) t.ajiltnuud.forEach((a: string) => ajiltanIds.add(a));
+    });
+    if (ajiltanIds.size > 0) {
+      const ajiltnuud = await AjiltanModel.find({ _id: { $in: Array.from(ajiltanIds) } })
+        .select("ner nevtrekhNer")
+        .lean();
+      ajiltnuud.forEach((a: any) => { ajiltanNameMap[String(a._id)] = a.ner || a.nevtrekhNer || "Ажилтан"; });
+    }
+  } catch (err) {
+    console.error("Ажилтны нэр тодорхойлоход алдаа:", err);
+  }
 
   const entries: any[] = [];
 
