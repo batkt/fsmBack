@@ -6,6 +6,7 @@ import {
   projectUstgakh,
   projectNegAvakh,
 } from "../services/projectService";
+import { taskZassanBarimtBurtgekh } from "../services/zassanBarimtService";
 import { getFsmConnFromReq } from "../utils/fsmConn";
 
 export const getProjects = async (req: any, res: Response, next: any) => {
@@ -156,8 +157,29 @@ export const createProject = async (req: any, res: Response, next: any) => {
 
 export const updateProject = async (req: any, res: Response, next: any) => {
   try {
+    // Зассан түүхийг бичихийн тулд хуучин утгыг өмнө нь авна.
+    const khuuchinProject = await projectNegAvakh(
+      req.params.id,
+      getFsmConnFromReq(req),
+    ).catch(() => null);
+
     const project = await projectZasakh(req.params.id, req.body, getFsmConnFromReq(req));
     if (!project) return res.status(404).json({ success: false, message: "Төсөл олдсонгүй" });
+
+    // Даалгавартай адил зассан түүх үлдээнэ — өмнө нь төлөвлөгөө засахад
+    // зөвхөн "duussan" болоход л taskTuukh бичигддэг, зассан түүх огт
+    // үүсдэггүй байсан.
+    await taskZassanBarimtBurtgekh(
+      khuuchinProject,
+      project,
+      "FsmProject",
+      "Төлөвлөгөө (FSM)",
+      req.ajiltan?.id,
+      req.ajiltan?.ner,
+      getFsmConnFromReq(req),
+    ).catch((err: any) =>
+      console.error("Төлөвлөгөөний зассан түүх бичигдсэнгүй:", err?.message),
+    );
 
     // Emit project update event
     const { emitToRoom }: any = require("../utils/socket");

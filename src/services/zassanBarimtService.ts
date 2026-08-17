@@ -24,6 +24,9 @@ const TALBAR_NERSHIL: Record<string, string> = {
   bairshil: "Байршил",
   davkhar: "Давхар",
   baraa: "Ашигласан материал",
+  // Төлөвлөгөө (project) дээр л тохиолддог талбарууд.
+  udirdagchId: "Удирдагч",
+  uilchluulegchId: "Үйлчлүүлэгч",
 };
 
 function orchuulyaText(key: string) {
