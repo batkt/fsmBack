@@ -59,6 +59,9 @@ export async function taskZassanBarimtBurtgekh(
   ajiltniiId: string | undefined,
   ajiltniiNer: string | undefined,
   conn: any,
+  // Засварын шалтгаан. tureesBack-ийн зассан түүхтэй ижилхэн `shaltgaan`
+  // талбарт бичигдэж, "Зассан түүх" хуудсанд харагдана.
+  shaltgaan?: string,
 ) {
   if (!oldTask || !newTask) return;
 
@@ -94,6 +97,7 @@ export async function taskZassanBarimtBurtgekh(
       uurchlult,
       ajiltniiId,
       ajiltniiNer,
+      shaltgaan,
     });
   } catch (e) {
     console.error("taskZassanBarimtBurtgekh алдаа:", e);

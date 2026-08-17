@@ -409,6 +409,7 @@ export const updateTask = async (req: any, res: Response, next: any) => {
       req.ajiltan?.id,
       req.ajiltan?.ner,
       getFsmConnFromReq(req),
+      req.body?.shaltgaan,
     );
 
     // Refresh client KPI if status changed or client exists

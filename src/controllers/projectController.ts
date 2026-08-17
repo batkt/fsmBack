@@ -166,9 +166,7 @@ export const updateProject = async (req: any, res: Response, next: any) => {
     const project = await projectZasakh(req.params.id, req.body, getFsmConnFromReq(req));
     if (!project) return res.status(404).json({ success: false, message: "Төсөл олдсонгүй" });
 
-    // Даалгавартай адил зассан түүх үлдээнэ — өмнө нь төлөвлөгөө засахад
-    // зөвхөн "duussan" болоход л taskTuukh бичигддэг, зассан түүх огт
-    // үүсдэггүй байсан.
+
     await taskZassanBarimtBurtgekh(
       khuuchinProject,
       project,
@@ -177,6 +175,7 @@ export const updateProject = async (req: any, res: Response, next: any) => {
       req.ajiltan?.id,
       req.ajiltan?.ner,
       getFsmConnFromReq(req),
+      req.body?.shaltgaan,
     ).catch((err: any) =>
       console.error("Төлөвлөгөөний зассан түүх бичигдсэнгүй:", err?.message),
     );
