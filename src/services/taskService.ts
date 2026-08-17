@@ -71,9 +71,20 @@ export const taskUusgekh = async (data: any, conn: any) => {
 
         const baraaDoc = await BaraaModel.findById(item.baraaId).lean();
         const shirhegiinToo = baraaDoc?.shirhegiinToo || 1;
+        // Ширхэгийг хайрцгийн бутархай болгож яг хөрвүүлнэ. Өмнө нь
+        // `Math.ceil` байсан тул 10 ширхэгтэй хайрцгаас 3 ширхэг зарцуулахад
+        // бүтэн 1 хайрцаг хасагддаг байсан.
         const decrementAmount = baraaDoc?.negj === 'haire'
-          ? Math.ceil(Math.abs(qty) / shirhegiinToo) // ширхэг -> хайрцаг
+          ? Math.abs(qty) / shirhegiinToo
           : Math.abs(qty);
+
+        // Үлдэгдэл сөрөг рүү орохыг зөвшөөрөхгүй.
+        const bolomjit = Number(baraaDoc?.uldegdel) || 0;
+        if (decrementAmount - bolomjit > 1e-6) {
+          throw new Error(
+            `"${baraaDoc?.ner || "Бараа"}" барааны үлдэгдэл хүрэлцэхгүй байна.`
+          );
+        }
 
         await BaraaModel.findByIdAndUpdate(
           item.baraaId,
@@ -250,10 +261,18 @@ export const taskZasakh = async (id: string, data: any, conn: any) => {
       const baraaDoc = await BaraaModel.findById(baraaId).lean();
       const shirhegiinToo = baraaDoc?.shirhegiinToo || 1;
 
-      // Convert piece-based delta to box-based delta for haire items
+      // Ширхэгийн зөрүүг хайрцгийн бутархай болгож яг хөрвүүлнэ (Math.ceil-гүй).
       const adjustedDelta = baraaDoc?.negj === 'haire'
-        ? Math.sign(delta) * Math.ceil(Math.abs(delta) / shirhegiinToo)
+        ? delta / shirhegiinToo
         : delta;
+
+      // Зарцуулалт нэмэгдэж байгаа үед үлдэгдэл хүрэлцэхийг шалгана.
+      const bolomjit = Number(baraaDoc?.uldegdel) || 0;
+      if (adjustedDelta > 0 && adjustedDelta - bolomjit > 1e-6) {
+        throw new Error(
+          `"${baraaDoc?.ner || "Бараа"}" барааны үлдэгдэл хүрэлцэхгүй байна.`
+        );
+      }
 
       // If delta > 0, we are using more → decrease inventory
       // If delta < 0, we reduced usage → increase inventory back
