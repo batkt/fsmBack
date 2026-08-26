@@ -7,6 +7,7 @@ import {
   uilchluulegchNegAvakh,
 } from "../services/uilchluulegchService";
 import { getFsmConnFromReq } from "../utils/fsmConn";
+import { fsmZassanBarimtBurtgekh } from "../services/zassanBarimtService";
 
 export const getUilchluulegchs = async (req: any, res: Response, next: any) => {
   try {
@@ -50,8 +51,24 @@ export const createUilchluulegch = async (req: any, res: Response, next: any) =>
 
 export const updateUilchluulegch = async (req: any, res: Response, next: any) => {
   try {
+    // Зассан түүх бичихийн тулд хуучин утгыг өмнө нь авна.
+    const khuuchinUilchluulegch = await uilchluulegchNegAvakh(
+      req.params.id,
+      getFsmConnFromReq(req),
+    );
+
     const item = await uilchluulegchZasakh(req.params.id, req.body, getFsmConnFromReq(req));
     if (!item) return res.status(404).json({ success: false, message: "Үйлчлүүлэгч олдсонгүй" });
+
+    await fsmZassanBarimtBurtgekh({
+      khuuchin: khuuchinUilchluulegch,
+      shine: item,
+      classType: "FsmUilchluulegch",
+      ajiltniiId: req.ajiltan?.id,
+      ajiltniiNer: req.ajiltan?.ner,
+      conn: getFsmConnFromReq(req),
+      shaltgaan: req.body?.shaltgaan,
+    });
     res.json({ success: true, data: item });
   } catch (err) {
     next(err);

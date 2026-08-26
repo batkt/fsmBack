@@ -7,6 +7,7 @@ import {
   subTaskNegAvakh,
 } from "../services/subTaskService";
 import { getFsmConnFromReq } from "../utils/fsmConn";
+import { fsmZassanBarimtBurtgekh } from "../services/zassanBarimtService";
 
 export const getSubTasks = async (req: any, res: Response, next: any) => {
   try {
@@ -50,8 +51,21 @@ export const createSubTask = async (req: any, res: Response, next: any) => {
 
 export const updateSubTask = async (req: any, res: Response, next: any) => {
   try {
+    // Зассан түүх бичихийн тулд хуучин утгыг өмнө нь авна.
+    const khuuchinSubTask = await subTaskNegAvakh(req.params.id, getFsmConnFromReq(req));
+
     const item = await subTaskZasakh(req.params.id, req.body, getFsmConnFromReq(req));
     if (!item) return res.status(404).json({ success: false, message: "Дэд даалгавар олдсонгүй" });
+
+    await fsmZassanBarimtBurtgekh({
+      khuuchin: khuuchinSubTask,
+      shine: item,
+      classType: "FsmSubTask",
+      ajiltniiId: req.ajiltan?.id,
+      ajiltniiNer: req.ajiltan?.ner,
+      conn: getFsmConnFromReq(req),
+      shaltgaan: req.body?.shaltgaan,
+    });
     res.json({ success: true, data: item });
   } catch (err) {
     next(err);

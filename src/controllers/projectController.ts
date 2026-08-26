@@ -6,7 +6,7 @@ import {
   projectUstgakh,
   projectNegAvakh,
 } from "../services/projectService";
-import { taskZassanBarimtBurtgekh } from "../services/zassanBarimtService";
+import { fsmZassanBarimtBurtgekh } from "../services/zassanBarimtService";
 import { getFsmConnFromReq } from "../utils/fsmConn";
 
 export const getProjects = async (req: any, res: Response, next: any) => {
@@ -157,28 +157,29 @@ export const createProject = async (req: any, res: Response, next: any) => {
 
 export const updateProject = async (req: any, res: Response, next: any) => {
   try {
-    // Зассан түүхийг бичихийн тулд хуучин утгыг өмнө нь авна.
+    // Зассан түүхийг бичихийн тулд хуучин утгыг өмнө нь авна. Алдааг нь
+    // залгичихвал засвар хэвийн хадгалагдаад түүх нь чимээгүй үлддэг.
     const khuuchinProject = await projectNegAvakh(
       req.params.id,
       getFsmConnFromReq(req),
-    ).catch(() => null);
+    ).catch((err: any) => {
+      console.error("[zassanBarimt] Төлөвлөгөөний хуучин утга уншигдсангүй:", err?.message);
+      return null;
+    });
 
     const project = await projectZasakh(req.params.id, req.body, getFsmConnFromReq(req));
     if (!project) return res.status(404).json({ success: false, message: "Төсөл олдсонгүй" });
 
 
-    await taskZassanBarimtBurtgekh(
-      khuuchinProject,
-      project,
-      "FsmProject",
-      "Төлөвлөгөө (FSM)",
-      req.ajiltan?.id,
-      req.ajiltan?.ner,
-      getFsmConnFromReq(req),
-      req.body?.shaltgaan,
-    ).catch((err: any) =>
-      console.error("Төлөвлөгөөний зассан түүх бичигдсэнгүй:", err?.message),
-    );
+    await fsmZassanBarimtBurtgekh({
+      khuuchin: khuuchinProject,
+      shine: project,
+      classType: "FsmProject",
+      ajiltniiId: req.ajiltan?.id,
+      ajiltniiNer: req.ajiltan?.ner,
+      conn: getFsmConnFromReq(req),
+      shaltgaan: req.body?.shaltgaan,
+    });
 
     // Emit project update event
     const { emitToRoom }: any = require("../utils/socket");

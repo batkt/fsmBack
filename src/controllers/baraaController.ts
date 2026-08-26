@@ -11,6 +11,7 @@ import {
   baraaOrlogiinTuukh,
 } from "../services/baraaService";
 import { getFsmConnFromReq } from "../utils/fsmConn";
+import { fsmZassanBarimtBurtgekh } from "../services/zassanBarimtService";
 
 export const getBaraas = async (req: any, res: Response, next: any) => {
   try {
@@ -60,8 +61,21 @@ export const createBaraa = async (req: any, res: Response, next: any) => {
 
 export const updateBaraa = async (req: any, res: Response, next: any) => {
   try {
+    // Зассан түүх бичихийн тулд хуучин утгыг өмнө нь авна.
+    const khuuchinBaraa = await baraaNegAvakh(req.params.id, getFsmConnFromReq(req));
+
     const baraa = await baraaZasakh(req.params.id, req.body, getFsmConnFromReq(req));
     if (!baraa) return res.status(404).json({ success: false, message: "Бараа олдсонгүй" });
+
+    await fsmZassanBarimtBurtgekh({
+      khuuchin: khuuchinBaraa,
+      shine: baraa,
+      classType: "FsmBaraa",
+      ajiltniiId: req.ajiltan?.id,
+      ajiltniiNer: req.ajiltan?.ner,
+      conn: getFsmConnFromReq(req),
+      shaltgaan: req.body?.shaltgaan,
+    });
 
     // Emit socket event for real-time refresh
     const { emitToRoom }: any = require("../utils/socket");

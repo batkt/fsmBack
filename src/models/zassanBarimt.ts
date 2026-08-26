@@ -4,9 +4,6 @@ const Schema = mongoose.Schema;
 mongoose.pluralize(null);
 
 // Same collection/schema shape as tureesBack's models/zassanBarimt.js.
-// FSM's per-org connection (kholboltFSM) points at the same physical
-// database as tureesBack's kholbolt for that org, so records written
-// here show up in tureesBack's "Зассан түүх" (zassanBarimt) page.
 const zassanBarimtSchema = new Schema(
   {
     baiguullagiinId: String,
@@ -34,9 +31,18 @@ const zassanBarimtSchema = new Schema(
   },
 );
 
+// ЗААВАЛ `kholbolt` — FSM-ийн өөрийн баазад (`kholboltFSM`) бичиж болохгүй.
+// zassanBarimt бол tureesBack-ийн эзэмшдэг цуглуулга бөгөөд "Зассан түүх"
+// хуудас нь зөвхөн `kholbolt` буюу байгууллагын үндсэн баазаас уншдаг.
+// Өмнө нь `conn.kholboltFSM || conn.kholbolt` байсан тул FSM-ээс бичсэн
+// бүх зассан түүх FSM баазад унаад, хуудсанд хэзээ ч харагддаггүй байв.
+// `ajiltan`, `fcmToken` загварууд ч яг үүнтэй адил `kholbolt` ашигладаг.
 module.exports = function a(conn: any) {
   if (!conn || !conn.kholbolt)
     throw new Error("Холболтын мэдээлэл заавал бөглөх шаардлагатай!");
-  const fsmConn = conn.kholboltFSM || conn.kholbolt;
-  return fsmConn.models["zassanBarimt"] || fsmConn.model("zassanBarimt", zassanBarimtSchema);
+  const undsenConn = conn.kholbolt;
+  return (
+    undsenConn.models["zassanBarimt"] ||
+    undsenConn.model("zassanBarimt", zassanBarimtSchema)
+  );
 };
