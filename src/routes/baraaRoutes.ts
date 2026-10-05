@@ -9,6 +9,7 @@ import {
   getBaraaUsageTimeline,
   addBaraaIncome,
   getBaraaOrlogiinTuukh,
+  importBaraa,
 } from "../controllers/baraaController";
 
 import { authMiddleware } from "../middlewares/auth";
@@ -24,6 +25,7 @@ router.get("/baraas/:id", authMiddleware, getBaraa);
 
 router.post("/baraas", authMiddleware, validateFSMAccess, createBaraa);
 router.post("/baraas/income", authMiddleware, validateFSMAccess, addBaraaIncome);
+router.post("/baraas/import", authMiddleware, validateFSMAccess, importBaraa);
 router.put("/baraas/:id", authMiddleware, validateFSMAccess, updateBaraa);
 router.delete("/baraas/:id", authMiddleware, validateFSMAccess, deleteBaraa);
 

@@ -10,6 +10,7 @@ import {
   baraaIncomeNemekh,
   baraaOrlogiinTuukh,
 } from "../services/baraaService";
+import { baraaExceleesOruulakh, IMPORT_KHYAZGAAR } from "../services/baraaImportService";
 import { getFsmConnFromReq } from "../utils/fsmConn";
 import { fsmZassanBarimtBurtgekh } from "../services/zassanBarimtService";
 
@@ -193,6 +194,64 @@ export const getBaraaOrlogiinTuukh = async (req: any, res: Response, next: any) 
     );
 
     res.json({ success: true, data: tuukh });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// POST /baraas/import — Excel-ээс уншсан мөрүүдийг шалгах (dryRun) / оруулах.
+// Хариу: { success, data: { dun: {shine, orlogo, shineAngilal, aldaa}, murnuud: [{mur, tuluv, aldaa, ...}] } }
+export const importBaraa = async (req: any, res: Response, next: any) => {
+  try {
+    const baiguullagiinId = req.ajiltan?.baiguullagiinId || req.body.baiguullagiinId;
+    const { rows, fileNer, barilgiinId } = req.body || {};
+    // Тодорхой `false` ирээгүй бол шалгалт л хийнэ.
+    const dryRun = req.body?.dryRun !== false;
+
+    if (!baiguullagiinId || !barilgiinId) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Байгууллага, барилга шаардлагатай" });
+    }
+    if (!Array.isArray(rows) || rows.length === 0) {
+      return res.status(400).json({ success: false, message: "Оруулах мөр алга" });
+    }
+    if (rows.length > IMPORT_KHYAZGAAR) {
+      return res.status(400).json({
+        success: false,
+        message: `Нэг удаад ${IMPORT_KHYAZGAAR}-аас ихгүй мөр оруулна`,
+      });
+    }
+
+    const ur = await baraaExceleesOruulakh(
+      {
+        rows,
+        fileNer: fileNer || "",
+        dryRun,
+        baiguullagiinId: String(baiguullagiinId),
+        barilgiinId: String(barilgiinId),
+        ajiltniiId: (req.ajiltan?._id || req.ajiltan?.id || "").toString(),
+        ajiltniiNer: req.ajiltan?.ner || req.ajiltan?.nevtrekhNer || "",
+      },
+      getFsmConnFromReq(req),
+    );
+
+    // Алдаатай мөртэй үед юу ч хадгалагдаагүй — бүгд эсвэл юу ч үгүй.
+    if (!dryRun && !ur.khadgalsan) {
+      return res.status(400).json({
+        success: false,
+        message: "Алдаатай мөр байгаа тул оруулсангүй",
+        data: ur,
+      });
+    }
+
+    if (ur.khadgalsan) {
+      // Socket-ийн үйл явдлыг мөр бүрээр биш, нэг л удаа.
+      const { emitToRoom }: any = require("../utils/socket");
+      emitToRoom("broadcast", "baraa_updated", { import: true, importId: ur.importId });
+    }
+
+    res.json({ success: true, data: ur });
   } catch (err) {
     next(err);
   }

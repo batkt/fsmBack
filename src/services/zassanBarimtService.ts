@@ -1,4 +1,4 @@
-import { ensureFsmConn } from "../utils/fsmConn";
+import { tureesKholboltAvakh } from "../utils/tureesKholbolt";
 const getZassanBarimtModel = require("../models/zassanBarimt");
 
 // Fields worth surfacing as an "edit" in the shared zassanTuukh page.
@@ -105,7 +105,9 @@ export interface ZassanBarimtOruulga {
   className?: string;
   ajiltniiId?: string;
   ajiltniiNer?: string;
-  conn: any;
+  // FSM баазын холболт. zassanBarimt-ыг үүгээр БИЧИХГҮЙ (доорх тайлбарыг
+  // үз) — дуудагч талуудын гарын үсгийг хэвээр үлдээх зорилгоор л байна.
+  conn?: any;
   // Засварын шалтгаан. tureesBack-ийн зассан түүхтэй ижилхэн `shaltgaan`
   // талбарт бичигдэж, "Зассан түүх" хуудсанд харагдана.
   shaltgaan?: string;
@@ -113,7 +115,8 @@ export interface ZassanBarimtOruulga {
 
 /**
  * Diffs the whitelisted fields of an FSM record and, if anything changed,
- * writes a zassanBarimt into the org's DB so the edit shows up in
+ * writes a zassanBarimt into the org's main turees DB (not the FSM DB) so
+ * the edit shows up in
  * tureesBack's "Зассан түүх" page.
  *
  * Every FSM PUT handler calls this. A missing `khuuchin` (the pre-update
@@ -127,7 +130,6 @@ export async function fsmZassanBarimtBurtgekh({
   className,
   ajiltniiId,
   ajiltniiNer,
-  conn,
   shaltgaan,
 }: ZassanBarimtOruulga) {
   if (!khuuchin || !shine) {
@@ -156,11 +158,23 @@ export async function fsmZassanBarimtBurtgekh({
 
   if (uurchlult.length === 0) return;
 
+  const baiguullagiinId = khuuchin.baiguullagiinId || shine.baiguullagiinId;
+
   try {
-    const baseConn = ensureFsmConn(conn);
-    const ZassanBarimt = getZassanBarimtModel(baseConn);
+    // `conn` (req.tukhainBaaziinKholbolt) нь FSM-ийн баазыг заадаг тул
+    // zassanBarimt-ыг байгууллагын үндсэн turees баазад бичнэ. Олдохгүй бол
+    // FSM баазад бичихийн оронд алгасна — тэнд бичсэн түүх хуудсанд
+    // хэзээ ч харагдахгүй.
+    const tureesConn = await tureesKholboltAvakh(baiguullagiinId);
+    if (!tureesConn) {
+      console.error(
+        `[zassanBarimt] ${classType}: ${baiguullagiinId} байгууллагын үндсэн (turees) бааз олдсонгүй — зассан түүх бичигдсэнгүй`,
+      );
+      return;
+    }
+    const ZassanBarimt = getZassanBarimtModel(tureesConn);
     await ZassanBarimt.create({
-      baiguullagiinId: khuuchin.baiguullagiinId || shine.baiguullagiinId,
+      baiguullagiinId,
       barilgiinId: khuuchin.barilgiinId || shine.barilgiinId,
       classId: khuuchin._id,
       classDugaar:

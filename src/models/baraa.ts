@@ -6,9 +6,12 @@ mongoose.pluralize(null);
 const baraaSchema = new Schema(
   {
     ner: { type: String, required: true },
+    // Барааны ангиллын НЭР (fsmTurul.ner, жишээ нь "Цэвэрлэгээ"). Хуучин
+    // бичлэгт "tseverlegch" гэх мэт түлхүүр үлдсэн байж болно —
+    // utils/baraaAngilal.ts-ийн angilalNerAvakh() хөрвүүлнэ.
     turul: {
       type: String,
-      default: "tseverlegch"
+      default: "Бусад"
     },
     negj: {
       type: String,

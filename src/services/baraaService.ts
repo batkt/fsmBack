@@ -111,13 +111,67 @@ export const baraaAshiglalatTimeline = async (
 
   return entries;
 };
+export interface OrlogoNemelt {
+  khairtsag?: any;
+  zadgai?: any;
+  ajiltniiId?: string;
+  ajiltniiNer?: string;
+  une?: any;
+  niitUne?: any;
+  ekhSurvalj?: "excel" | "gar";
+  importId?: string;
+}
+
+function toonEsekh(utga: any) {
+  return utga !== undefined && utga !== null && utga !== "" && Number.isFinite(Number(utga));
+}
+
+/**
+ * Орлогын түүхийн нэг мөр бичнэ. Гараар орлого авах (baraaIncomeNemekh)
+ * болон Excel импорт хоёулаа үүгээр дамжина.
+ */
+export const baraaOrlogoMurBichikh = async (
+  baseConn: any,
+  umnukh: any,
+  updated: any,
+  too: number,
+  tailbar: string,
+  ognoo: any,
+  nemelt: OrlogoNemelt = {},
+) => {
+  const mur: any = {
+    baraaId: String(umnukh._id),
+    baraaNer: umnukh.ner || "",
+    negj: umnukh.negj || "shirheg",
+    too: Math.abs(too),
+    khairtsag: Number(nemelt.khairtsag) || 0,
+    zadgai: Number(nemelt.zadgai) || 0,
+    shirhegiinToo: umnukh.shirhegiinToo || 1,
+    umnukhUldegdel: umnukh.uldegdel || 0,
+    daraakhUldegdel: updated.uldegdel || 0,
+    tailbar: tailbar || "",
+    ognoo: ognoo ? new Date(ognoo) : new Date(),
+    ekhSurvalj: nemelt.ekhSurvalj || "gar",
+    ajiltniiId: nemelt.ajiltniiId || "",
+    ajiltniiNer: nemelt.ajiltniiNer || "",
+    baiguullagiinId: umnukh.baiguullagiinId,
+    barilgiinId: umnukh.barilgiinId,
+  };
+  if (toonEsekh(nemelt.une)) mur.une = Number(nemelt.une);
+  if (toonEsekh(nemelt.niitUne)) mur.niitUne = Number(nemelt.niitUne);
+  else if (toonEsekh(nemelt.une)) mur.niitUne = Number(nemelt.une) * Math.abs(too);
+  if (nemelt.importId) mur.importId = nemelt.importId;
+
+  return await getBaraaOrlogoModel(baseConn, true).create(mur);
+};
+
 export const baraaIncomeNemekh = async (
   baraaId: string,
   too: number,
   tailbar: string,
   ognoo: any,
   conn: any,
-  nemelt: any = {},
+  nemelt: OrlogoNemelt = {},
 ) => {
   const baseConn = ensureFsmConn(conn);
   const BaraaModel = getBaraaModel(baseConn, true);
@@ -136,23 +190,7 @@ export const baraaIncomeNemekh = async (
   // Орлогын түүхийг тусад нь бүртгэнэ. Бүртгэл унасан ч орлого өөрөө
   // амжилттай болсон тул алдааг залгина.
   try {
-    await getBaraaOrlogoModel(baseConn, true).create({
-      baraaId,
-      baraaNer: umnukh.ner || "",
-      negj: umnukh.negj || "shirheg",
-      too: Math.abs(too),
-      khairtsag: Number(nemelt.khairtsag) || 0,
-      zadgai: Number(nemelt.zadgai) || 0,
-      shirhegiinToo: umnukh.shirhegiinToo || 1,
-      umnukhUldegdel: umnukh.uldegdel || 0,
-      daraakhUldegdel: updated.uldegdel || 0,
-      tailbar: tailbar || "",
-      ognoo: ognoo ? new Date(ognoo) : new Date(),
-      ajiltniiId: nemelt.ajiltniiId || "",
-      ajiltniiNer: nemelt.ajiltniiNer || "",
-      baiguullagiinId: umnukh.baiguullagiinId,
-      barilgiinId: umnukh.barilgiinId,
-    });
+    await baraaOrlogoMurBichikh(baseConn, umnukh, updated, too, tailbar, ognoo, nemelt);
   } catch (err) {
     console.error("Барааны орлогын түүх бүртгэхэд алдаа:", err);
   }

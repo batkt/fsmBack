@@ -25,6 +25,14 @@ const baraaOrlogoSchema = new Schema(
     tailbar: { type: String, default: "" },
     ognoo: { type: Date, default: Date.now },
 
+    // Нэгж үнэ (барааны үндсэн нэгжээр) ба нийт үнэ — заавал биш.
+    une: { type: Number },
+    niitUne: { type: Number },
+    // Орлого хаанаас орж ирсэн: гараар ("gar") эсвэл Excel импорт ("excel").
+    ekhSurvalj: { type: String, enum: ["excel", "gar"], default: "gar" },
+    // Нэг удаагийн Excel импортын бүх мөрийг холбох дугаар.
+    importId: { type: String },
+
     ajiltniiId: { type: String, default: "" },
     ajiltniiNer: { type: String, default: "" },
 
@@ -38,6 +46,7 @@ const baraaOrlogoSchema = new Schema(
 
 baraaOrlogoSchema.index({ baiguullagiinId: 1, barilgiinId: 1, ognoo: -1 });
 baraaOrlogoSchema.index({ baraaId: 1, ognoo: -1 });
+baraaOrlogoSchema.index({ importId: 1 }, { sparse: true });
 
 module.exports = function a(
   conn: any,

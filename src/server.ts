@@ -15,7 +15,9 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use(express.json());
+// Excel импорт (/baraas/import) 1000 хүртэл мөр нэг дор илгээдэг тул
+// express-ийн үндсэн 100kb хязгаар хүрэлцэхгүй.
+app.use(express.json({ limit: "5mb" }));
 
 // Routes
 import authRoutes from "./routes/authRoutes";

@@ -31,12 +31,12 @@ const zassanBarimtSchema = new Schema(
   },
 );
 
-// ЗААВАЛ `kholbolt` — FSM-ийн өөрийн баазад (`kholboltFSM`) бичиж болохгүй.
 // zassanBarimt бол tureesBack-ийн эзэмшдэг цуглуулга бөгөөд "Зассан түүх"
-// хуудас нь зөвхөн `kholbolt` буюу байгууллагын үндсэн баазаас уншдаг.
-// Өмнө нь `conn.kholboltFSM || conn.kholbolt` байсан тул FSM-ээс бичсэн
-// бүх зассан түүх FSM баазад унаад, хуудсанд хэзээ ч харагддаггүй байв.
-// `ajiltan`, `fcmToken` загварууд ч яг үүнтэй адил `kholbolt` ашигладаг.
+// хуудас нь байгууллагын ҮНДСЭН (turees) баазаас уншдаг. FSM хүсэлтийн
+// `req.tukhainBaaziinKholbolt` дээр `kholbolt === kholboltFSM` буюу FSM-ийн
+// бааз байдаг тул энэ загварт тэр холболтыг ӨГЧ БОЛОХГҮЙ —
+// utils/tureesKholbolt.ts-ийн `tureesKholboltAvakh()`-аар авсан холболтыг
+// дамжуулна (services/zassanBarimtService.ts).
 module.exports = function a(conn: any) {
   if (!conn || !conn.kholbolt)
     throw new Error("Холболтын мэдээлэл заавал бөглөх шаардлагатай!");
