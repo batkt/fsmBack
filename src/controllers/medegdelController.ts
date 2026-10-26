@@ -33,7 +33,23 @@ export const getMedegdels = async (req: any, res: Response, next: any) => {
       query.ajiltnuud = ajiltniiId; // MongoDB will match if ajiltniiId is in the ajiltnuud array
     }
 
-    const medegdels = await medegdelJagsaalt(query, getFsmConnFromReq(req));
+    let limit: number | undefined;
+    if (req.query.limit !== undefined) {
+      const parsedLimit = Number(req.query.limit);
+      if (!Number.isInteger(parsedLimit) || parsedLimit < 1 || parsedLimit > 100) {
+        return res.status(400).json({
+          success: false,
+          message: "limit нь 1-100 хооронд бүхэл тоо байх шаардлагатай",
+        });
+      }
+      limit = parsedLimit;
+    }
+
+    const medegdels = await medegdelJagsaalt(
+      query,
+      getFsmConnFromReq(req),
+      limit,
+    );
     res.json({ success: true, data: medegdels });
   } catch (err) {
     next(err);

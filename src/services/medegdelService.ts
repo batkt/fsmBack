@@ -2,12 +2,17 @@ import { ensureFsmConn } from "../utils/fsmConn";
 
 const getMedegdelModel = require("../models/medegdel");
 
-export const medegdelJagsaalt = async (query: any, conn: any) => {
+export const medegdelJagsaalt = async (
+  query: any,
+  conn: any,
+  limit?: number,
+) => {
   const baseConn = ensureFsmConn(conn);
-  return await getMedegdelModel(baseConn, true)
+  const jagsaalt = getMedegdelModel(baseConn, true)
     .find(query)
-    .sort({ createdAt: -1 })
-    .lean();
+    .sort({ createdAt: -1 });
+  if (limit !== undefined) jagsaalt.limit(limit);
+  return await jagsaalt.lean();
 };
 
 export const medegdelUusgekh = async (data: any, conn: any) => {
