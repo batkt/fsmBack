@@ -34,6 +34,7 @@ import fcmTokenRoutes from "./routes/fcmTokenRoutes";
 import taskStatusRoutes from "./routes/taskStatusRoutes";
 import kpiRoutes from "./routes/kpiRoutes";
 import fsmTurulRoutes from "./routes/fsmTurulRoutes";
+import fsmTokhirgooRoutes from "./routes/fsmTokhirgooRoutes";
 import chatbotRoutes from "./routes/chatbotRoutes";
 
 app.use(authRoutes);
@@ -50,6 +51,7 @@ app.use(fcmTokenRoutes);
 app.use(taskStatusRoutes);
 app.use(kpiRoutes);
 app.use(fsmTurulRoutes);
+app.use(fsmTokhirgooRoutes);
 app.use("/chatbot", chatbotRoutes);
 
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
