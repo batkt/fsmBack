@@ -4,7 +4,7 @@ import { loadAllFsmConnections } from "./fsmConnection";
 const { db }: any = require("zevbackv2");
 
 // irtsWeb (irts.zevtabs.mn)-ийн байгууллага анх удаа FSM-д хандахад өөрийн
-// шинэ, хоосон FSM баазыг автоматаар үүсгэнэ. turees-ийн FSM баазтай огт
+// шинэ, хоосон FSM баазыг автоматаар бүртгэж нээнэ. turees-ийн FSM баазтай огт
 // холбогдохгүй — ажилтан нь irts-ийн ajiltan (IRTS_MONGODB_URI)-аас ирнэ.
 // Нэр: fsm_irts_<baiguullagiinId> (turees-ийн баазтай давхцахгүй).
 
@@ -22,15 +22,13 @@ async function uusgekh(orgId: string): Promise<any> {
   if (!mainConn) throw new Error("Ерөнхий холболт (erunkhiiKholbolt) алга");
   const baaziinMedeelel = mainConn.collection("baaziinMedeelel");
 
-  let mur = await baaziinMedeelel.findOne({ baiguullagiinId: orgId, fsmEsekh: true });
+  const mur = await baaziinMedeelel.findOne({ baiguullagiinId: orgId, fsmEsekh: true });
   if (!mur) {
     const baaziinNer = irtsFsmBaaziinNer(orgId);
-    console.log(`[irtsFsmBaaz] ${orgId}: шинэ FSM бааз үүсгэж байна (${baaziinNer})`);
-    // fsmBack-ийн /baiguullagaBurtgekh-тэй ижил аргаар (анхдагч MongoDB хост)
-    await db.kholboltNemyeFSM(orgId, baaziinNer, false, undefined, undefined, undefined);
-    mur = await baaziinMedeelel.findOne({ baiguullagiinId: orgId, fsmEsekh: true });
-    if (!mur) {
-      // kholboltNemyeFSM бичлэг үлдээгээгүй бол дараагийн эхлүүлэлтэд ачаалагдахын тулд нэмнэ
+    console.log(`[irtsFsmBaaz] ${orgId}: шинэ FSM бааз бүртгэж байна (${baaziinNer})`);
+    // Зөвхөн бүртгэлийн мөр — бааз нь үндсэн MongoDB дээр анхны бичилтээр
+    // үүснэ; холболтыг loadAllFsmConnections (useDb) нээнэ.
+    try {
       await baaziinMedeelel.insertOne({
         baiguullagiinId: orgId,
         baaziinNer,
@@ -38,6 +36,9 @@ async function uusgekh(orgId: string): Promise<any> {
         irtsEsekh: true,
         createdAt: new Date(),
       });
+    } catch (err: any) {
+      // Зэрэг ирсэн хүсэлт аль хэдийн нэмсэн бол (unique индекс) зүгээр
+      if (err?.code !== 11000) throw err;
     }
   }
   await loadAllFsmConnections();

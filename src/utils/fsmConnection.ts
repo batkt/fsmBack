@@ -4,6 +4,26 @@ import mongoose from "mongoose";
 const { db }: any = require("zevbackv2");
 
 
+/**
+ * Үндсэн (erunkhiiKholbolt) MongoDB холболтын нэг клиент дээр өөр баазыг нээж
+ * db.kholboltuud-д бүртгэнэ. baaziinMedeelel-д юу ч бичихгүй.
+ */
+function undsenKholboltoorNeekh(baiguullagiinId: string, dbName: string): any {
+  const mainConn = db.erunkhiiKholbolt?.kholbolt;
+  if (!mainConn?.useDb) return null;
+  const kholbolt = mainConn.useDb(dbName, { useCache: true });
+  const obj: any = {
+    baiguullagiinId: String(baiguullagiinId),
+    baaziinNer: dbName,
+    kholbolt,
+    kholboltFSM: kholbolt,
+  };
+  if (!Array.isArray(db.kholboltuud)) db.kholboltuud = [];
+  db.kholboltuud.push(obj);
+  console.log(`[FSM] 🔗 ${dbName} үндсэн холболтоор нээгдлээ`);
+  return obj;
+}
+
 export async function loadAllFsmConnections(): Promise<void> {
   try {
     const mainConn = db.erunkhiiKholbolt?.kholbolt;
@@ -34,19 +54,35 @@ export async function loadAllFsmConnections(): Promise<void> {
           ? db.kholboltuud.find((c: any) => c.baaziinNer === dbName)
           : null;
 
+        // irtsWeb-ийн байгууллагын FSM бааз (fsm_irts_*) нь үндсэн MongoDB дээр
+        // байдаг тул kholboltNemyeFSM-гүйгээр шууд нээнэ — тэр функц
+        // baaziinMedeelel-д мөр дахин нэмэх гээд unique индексээр унадаг.
+        if (!connObj && dbName.startsWith("fsm_irts_")) {
+          connObj = undsenKholboltoorNeekh(primaryOrgId, dbName);
+        }
+
         if (!connObj) {
-          await db.kholboltNemyeFSM(
-            primaryOrgId,
-            dbName,
-            sample.cloudMongoDBEsekh,
-            sample.clusterUrl,
-            sample.password,
-            sample.userName
-          );
-          
+          try {
+            await db.kholboltNemyeFSM(
+              primaryOrgId,
+              dbName,
+              sample.cloudMongoDBEsekh,
+              sample.clusterUrl,
+              sample.password,
+              sample.userName
+            );
+          } catch (err: any) {
+            console.error(`[FSM] ⚠️ kholboltNemyeFSM(${dbName}) алдаа:`, err?.message || err);
+          }
+
           // Wait briefly for registry update
           await new Promise(r => setTimeout(r, 100));
           connObj = db.kholboltuud.find((c: any) => c.baaziinNer === dbName);
+
+          // Үүлэн биш бааз бүртгэгдээгүй хэвээр бол үндсэн холболтоор нээнэ
+          if (!connObj && !sample.cloudMongoDBEsekh) {
+            connObj = undsenKholboltoorNeekh(primaryOrgId, dbName);
+          }
         }
 
         if (connObj) {
