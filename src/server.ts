@@ -54,6 +54,18 @@ app.use("/chatbot", chatbotRoutes);
 
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
+// Алдааг HTML "Internal Server Error" биш JSON-оор буцаана — вэб/апп-ын toast
+// дээр бодит шалтгаан харагдаж, pm2 log-д хаана унасан нь бичигдэнэ.
+app.use((err: any, req: Request, res: Response, _next: any) => {
+  console.error(`[Алдаа] ${req.method} ${req.originalUrl}:`, err);
+  if (res.headersSent) return;
+  const validation = err?.name === "ValidationError" || err?.name === "CastError";
+  res.status(validation ? 400 : err?.status || 500).json({
+    success: false,
+    message: err?.message || "Серверийн алдаа",
+  });
+});
+
 
 import { initSocket } from "./utils/socket";
 import { loadAllFsmConnections } from "./utils/fsmConnection";
