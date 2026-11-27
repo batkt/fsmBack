@@ -102,9 +102,12 @@ export const createProject = async (req: any, res: Response, next: any) => {
     // Create notifications for project members
     const { medegdelUusgekh }: any = require("../services/medegdelService");
     const notifications: any[] = [];
-    
+    // Төсөл үүсгэсэн хүнд өөрийнх нь үйлдлийн мэдэгдэл илгээхгүй (вэб дээр
+    // "амжилттай нэмэгдлээ" toast аль хэдийн гардаг — давхар харагдаж байсан)
+    const uusgegchId = String(req.ajiltan?.id || req.ajiltan?._id || "");
+
     // Notify project manager
-    if (project.udirdagchId) {
+    if (project.udirdagchId && String(project.udirdagchId) !== uusgegchId) {
       const notif = await medegdelUusgekh({
         ajiltniiId: project.udirdagchId,
         baiguullagiinId: project.baiguullagiinId,
@@ -122,7 +125,7 @@ export const createProject = async (req: any, res: Response, next: any) => {
     // Notify project members
     if (project.ajiltnuud && Array.isArray(project.ajiltnuud)) {
       for (const ajiltniiId of project.ajiltnuud) {
-        if (ajiltniiId !== project.udirdagchId) {
+        if (ajiltniiId !== project.udirdagchId && String(ajiltniiId) !== uusgegchId) {
           const notif = await medegdelUusgekh({
             ajiltniiId: ajiltniiId,
             baiguullagiinId: project.baiguullagiinId,

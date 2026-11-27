@@ -359,7 +359,7 @@ export const getBaiguullagaKpis = async (req: any, res: Response, next: any) => 
     const baiguullagiinId = req.params.id;
     const { ObjectId } = require("mongodb");
     const ajiltanCol: any = ajiltanColAvakh(req);
-    if (!ajiltanCol) return res.status(503).json({ success: false, message: "Ажилтны бааз тохируулаагүй байна" });
+    if (!ajiltanCol) return res.json({ success: true, data: [] }); // irts ажилтны бааз тохируулаагүй
 
     let idQuery: any[] = [baiguullagiinId, baiguullagiinId.toString()];
     try {
