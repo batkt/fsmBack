@@ -3,7 +3,7 @@ import { taskNegAvakh } from "../services/taskService";
 import { kpiShineelekh, kpiShineelekhUilchluulegch } from "../services/kpiService";
 import { emitToRoom } from "../utils/socket";
 import { getFsmConnFromReq } from "../utils/fsmConn";
-import { getErunkhiiCol } from "../utils/db";
+import { ajiltanColAvakh } from "../utils/irtsKholbolt";
 
  
 export const giveTaskPoints = async (req: any, res: Response, next: any) => {
@@ -302,7 +302,8 @@ export const refreshUserKpi = async (req: any, res: Response, next: any) => {
     console.log(`[KPI Refresh] Request for user ID: ${userId}`);
     
     const conn = getFsmConnFromReq(req);
-    const ajiltanCol = getErunkhiiCol("ajiltan");
+    const ajiltanCol: any = ajiltanColAvakh(req);
+    if (!ajiltanCol) return res.status(503).json({ success: false, message: "Ажилтны бааз тохируулаагүй байна" });
     
     console.log(`[KPI Refresh] Searching in collection: ${ajiltanCol.collectionName} on database: ${ajiltanCol.dbName || "default"}`);
 
@@ -357,7 +358,8 @@ export const getBaiguullagaKpis = async (req: any, res: Response, next: any) => 
   try {
     const baiguullagiinId = req.params.id;
     const { ObjectId } = require("mongodb");
-    const ajiltanCol = getErunkhiiCol("ajiltan");
+    const ajiltanCol: any = ajiltanColAvakh(req);
+    if (!ajiltanCol) return res.status(503).json({ success: false, message: "Ажилтны бааз тохируулаагүй байна" });
 
     let idQuery: any[] = [baiguullagiinId, baiguullagiinId.toString()];
     try {
@@ -410,7 +412,8 @@ export const refreshBaiguullagaKpis = async (req: any, res: Response, next: any)
   try {
     const { id: baiguullagiinId } = req.params;
     const { ObjectId } = require("mongodb");
-    const ajiltanCol = getErunkhiiCol("ajiltan");
+    const ajiltanCol: any = ajiltanColAvakh(req);
+    if (!ajiltanCol) return res.status(503).json({ success: false, message: "Ажилтны бааз тохируулаагүй байна" });
 
     let idQuery: any[] = [baiguullagiinId, baiguullagiinId.toString()];
     try {

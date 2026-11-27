@@ -1,3 +1,4 @@
+import { ajiltanColAvakh } from "../utils/irtsKholbolt";
 import { Response } from "express";
 import {
   chatJagsaalt,
@@ -137,8 +138,9 @@ export const deleteChat = async (req: any, res: Response, next: any) => {
          const { db }: any = require("zevbackv2");
          const mongoose = require("mongoose");
          
-         if (db.erunkhiiKholbolt?.kholbolt) {
-           const ajiltan = await db.erunkhiiKholbolt.kholbolt.collection("ajiltan").findOne({ 
+         const ajiltanCol: any = ajiltanColAvakh(req);
+         if (ajiltanCol) {
+           const ajiltan = await ajiltanCol.findOne({ 
              _id: new mongoose.Types.ObjectId(requesterId) 
            });
            if (ajiltan && (ajiltan.erkh === 'Admin' || ajiltan.erkh === 'Manager')) {
@@ -197,8 +199,9 @@ export const editChat = async (req: any, res: Response, next: any) => {
          const { db }: any = require("zevbackv2");
          const mongoose = require("mongoose");
          
-         if (db.erunkhiiKholbolt?.kholbolt) {
-           const ajiltan = await db.erunkhiiKholbolt.kholbolt.collection("ajiltan").findOne({ 
+         const ajiltanCol: any = ajiltanColAvakh(req);
+         if (ajiltanCol) {
+           const ajiltan = await ajiltanCol.findOne({ 
              _id: new mongoose.Types.ObjectId(requesterId) 
            });
            if (ajiltan && (ajiltan.erkh === 'Admin' || ajiltan.erkh === 'Manager')) {

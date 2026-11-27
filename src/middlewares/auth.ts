@@ -18,8 +18,23 @@ export const authMiddleware = (req: any, res: Response, next: any) => {
     return res.status(401).json({ success: false, message: "Токен олдсонгүй" });
   }
 
+  // turees/FSM токен эсвэл irtsWeb (irtsBack)-ийн токен аль алиныг хүлээн авна.
+  let decoded: any = null;
   try {
-    const decoded = jwt.verify(token, config.APP_SECRET) as any;
+    decoded = jwt.verify(token, config.APP_SECRET) as any;
+  } catch (err) {
+    try {
+      decoded = jwt.verify(token, config.IRTS_APP_SECRET) as any;
+      decoded.systemiinTurul = "irts";
+    } catch (err2) {
+      decoded = null;
+    }
+  }
+  if (!decoded) {
+    return res.status(401).json({ success: false, message: "Зөвшөөрөлгүй хандалт (Буруу токен)" });
+  }
+
+  try {
     req.ajiltan = decoded;
     
     if (decoded.baiguullagiinId && db.kholboltuud) {
